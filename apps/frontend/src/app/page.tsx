@@ -1,103 +1,240 @@
-import Image from "next/image";
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar } from "@/components/ui/calendar"
+import { Badge } from "@/components/ui/badge"
+import { Search, Calendar as CalendarIcon, Users, MapPin } from "lucide-react"
+import { useState, useEffect } from "react"
+
+interface Person {
+  id: string
+  name: string
+  location?: string
+  relationship?: string
+  availability?: string
+  description?: string
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<Person[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const searchPeople = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch('http://localhost:8000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            query SearchPeople($query: String!) {
+              searchPeople(query: $query) {
+                id
+                name
+                location
+                relationship
+                availability
+                description
+              }
+            }
+          `,
+          variables: { query },
+        }),
+      })
+
+      const data = await response.json()
+      setSearchResults(data.data?.searchPeople || [])
+    } catch (error) {
+      console.error('Search failed:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      searchPeople(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchQuery])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-16 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            Stay with <span className="text-blue-600 dark:text-blue-400">Friends</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            Find the perfect place to stay with people you know. Like Airbnb, but only for your trusted network.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <Badge variant="secondary" className="px-4 py-2">
+              <Users className="w-4 h-4 mr-2" />
+              Trusted Network Only
+            </Badge>
+            <Badge variant="secondary" className="px-4 py-2">
+              <MapPin className="w-4 h-4 mr-2" />
+              Unique Locations
+            </Badge>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Search Section */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <Tabs defaultValue="person" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="person" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Find by Person
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                Browse Calendar
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="person" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Search for Someone to Stay With</CardTitle>
+                  <CardDescription>
+                    Enter a name or location to find available stays with your friends and connections.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search by name, location, or relationship..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button disabled={isSearching}>
+                      <Search className="w-4 h-4 mr-2" />
+                      {isSearching ? 'Searching...' : 'Search'}
+                    </Button>
+                  </div>
+                  {searchQuery && (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {searchResults.length > 0 ? (
+                        searchResults.map((person) => (
+                          <Card key={person.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Users className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold">{person.name}</h3>
+                                  <p className="text-sm text-gray-600">
+                                    {person.relationship} • {person.location}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">
+                                Available {person.availability}
+                              </p>
+                              {person.description && (
+                                <p className="text-sm text-gray-600 mb-2">{person.description}</p>
+                              )}
+                              <Badge variant="outline">View Calendar</Badge>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : searchQuery && !isSearching ? (
+                        <div className="col-span-full text-center py-8">
+                          <p className="text-gray-500">No people found matching your search.</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="calendar" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Browse Available Dates</CardTitle>
+                  <CardDescription>
+                    Select dates to see who&apos;s available in your network during that time.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        className="rounded-md border"
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">
+                        Available on {selectedDate?.toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </h3>
+                      <div className="space-y-3">
+                        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-purple-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">Emma Davis</h4>
+                                <p className="text-sm text-gray-600">Austin, TX</p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">Spacious guest room with private bath</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-orange-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">Alex Rodriguez</h4>
+                                <p className="text-sm text-gray-600">Seattle, WA</p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">Cozy apartment downtown</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
