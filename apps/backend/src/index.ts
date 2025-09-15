@@ -3,7 +3,7 @@ import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import cors from 'cors';
 import { resolvers, typeDefs } from './schema';
-import { insertPerson, getAllPeople } from './db';
+import { insertPerson, getAllPeople, insertAvailability } from './db';
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -18,46 +18,91 @@ const seedDatabase = () => {
         location: 'San Francisco',
         relationship: 'Friend',
         availability: 'Dec 15-20',
-        description: 'Spacious guest room with private bath'
+        description: 'Spacious guest room with private bath',
+        availabilities: [
+          { startDate: '2025-12-15', endDate: '2025-12-20', notes: 'Holiday break' },
+          { startDate: '2025-12-22', endDate: '2025-12-28', notes: 'Christmas week' }
+        ]
       },
       {
         name: 'Mike Chen',
         location: 'New York',
         relationship: 'Colleague',
         availability: 'Jan 5-12',
-        description: 'Cozy apartment downtown'
+        description: 'Cozy apartment downtown',
+        availabilities: [
+          { startDate: '2026-01-05', endDate: '2026-01-12', notes: 'New Year vacation' },
+          { startDate: '2026-01-18', endDate: '2026-01-22', notes: 'Weekend stay' }
+        ]
       },
       {
         name: 'Emma Davis',
         location: 'Austin, TX',
         relationship: 'Friend',
         availability: 'Nov 20-25',
-        description: 'Beautiful house with garden'
+        description: 'Beautiful house with garden',
+        availabilities: [
+          { startDate: '2025-11-20', endDate: '2025-11-25', notes: 'Thanksgiving week' }
+        ]
       },
       {
         name: 'Alex Rodriguez',
         location: 'Seattle, WA',
         relationship: 'Family',
         availability: 'Dec 1-7',
-        description: 'Modern condo with city views'
+        description: 'Modern condo with city views',
+        availabilities: [
+          { startDate: '2025-12-01', endDate: '2025-12-07', notes: 'Family visit' }
+        ]
       },
       {
         name: 'Lisa Wang',
         location: 'Los Angeles',
         relationship: 'Friend',
         availability: 'Jan 15-20',
-        description: 'Beachfront apartment'
+        description: 'Beachfront apartment',
+        availabilities: [
+          { startDate: '2026-01-15', endDate: '2026-01-20', notes: 'Winter getaway' },
+          { startDate: '2025-12-10', endDate: '2025-12-15', notes: 'Pre-holiday visit' }
+        ]
       }
     ];
 
     for (const person of samplePeople) {
-      insertPerson.run(
+      const result = insertPerson.run(
         person.name,
         person.location,
         person.relationship,
         person.availability,
-        person.description
+        person.description,
+        null, // address
+        null, // city
+        null, // state
+        null, // zip_code
+        null, // country
+        null, // latitude
+        null, // longitude
+        JSON.stringify(['WiFi', 'Kitchen']), // amenities
+        'No smoking, quiet hours after 10pm', // house_rules
+        '3:00 PM', // check_in_time
+        '11:00 AM', // check_out_time
+        2, // max_guests
+        1, // bedrooms
+        1, // bathrooms
+        JSON.stringify(['https://example.com/photo1.jpg']) // photos
       );
+      const personId = result.lastInsertRowid;
+
+      // Add availability records
+      for (const availability of person.availabilities) {
+        insertAvailability.run(
+          personId,
+          availability.startDate,
+          availability.endDate,
+          'available',
+          availability.notes
+        );
+      }
     }
     console.log('Database seeded with sample data');
   }
