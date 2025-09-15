@@ -54,6 +54,7 @@ export const typeDefs = `#graphql
     searchPeople(query: String!): [Person!]!
     person(id: ID!): Person
     availabilitiesByDate(date: String!): [Availability!]!
+    availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
     personAvailabilities(personId: ID!): [Availability!]!
     availabilityDates(startDate: String!, endDate: String!): [String!]!
   }
@@ -115,6 +116,9 @@ export const resolvers = {
     },
     availabilitiesByDate: (_: any, { date }: { date: string }) => {
       return getAvailabilitiesByDateRange.all(date, date);
+    },
+    availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
+      return getAvailabilitiesByDateRange.all(endDate, startDate);
     },
     personAvailabilities: (_: any, { personId }: { personId: string }) => {
       return getPersonAvailabilities.all(personId);
