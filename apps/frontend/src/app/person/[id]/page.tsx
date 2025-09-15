@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, Users, Calendar as CalendarIcon, Home, Clock, Star, Send } from "lucide-react"
 import Link from 'next/link'
 import * as React from "react"
-import { parseLocalDate, formatDateRange } from '@/lib/date-utils'
+import { formatDateRange, formatDateForUrl } from '@/lib/date-utils'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import Image from 'next/image'
 
 interface Person {
   id: string
@@ -64,19 +65,18 @@ export default function PersonDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [bookingSubmitted, setBookingSubmitted] = useState(false)
 
-  useEffect(() => {
-    fetchPersonDetails()
-  }, [personId])
 
-  const fetchPersonDetails = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
+
+  useEffect(() => {
+    const fetchPersonDetails = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `
             query GetPerson($id: ID!) {
               person(id: $id) {
                 id
@@ -110,18 +110,21 @@ export default function PersonDetailPage() {
               }
             }
           `,
-          variables: { id: personId },
-        }),
-      })
+            variables: { id: personId },
+          }),
+        })
 
-      const data = await response.json()
-      setPerson(data.data?.person || null)
-    } catch (error) {
-      console.error('Failed to fetch person details:', error)
-    } finally {
-      setLoading(false)
+        const data = await response.json()
+        setPerson(data.data?.person || null)
+      } catch (error) {
+        console.error('Failed to fetch person details:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+
+    fetchPersonDetails()
+  }, [personId])
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,8 +150,8 @@ export default function PersonDetailPage() {
                 personId,
                 requesterName: bookingForm.requesterName,
                 requesterEmail: bookingForm.requesterEmail,
-                startDate: selectedDateRange.from.toISOString().split('T')[0],
-                endDate: selectedDateRange.to.toISOString().split('T')[0],
+                startDate: formatDateForUrl(selectedDateRange.from),
+                endDate: formatDateForUrl(selectedDateRange.to),
                 guests: bookingForm.guests,
                 message: bookingForm.message
               },
@@ -164,16 +167,6 @@ export default function PersonDetailPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const getAvailableDates = () => {
-    if (!person?.availabilities) return []
-    return person.availabilities
-      .filter(avail => avail.status === 'available')
-      .map(avail => ({
-        from: parseLocalDate(avail.startDate),
-        to: parseLocalDate(avail.endDate)
-      }))
   }
 
   if (loading) {
@@ -239,11 +232,14 @@ export default function PersonDetailPage() {
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2">
                     {person.photos.map((photo, index) => (
-                      <img
+                      <Image
+                        unoptimized
                         key={index}
                         src={photo}
                         alt={`${person.name}'s place`}
                         className="w-full h-48 object-cover rounded-lg"
+                        width={400}
+                        height={192}                       
                       />
                     ))}
                   </div>
@@ -413,8 +409,8 @@ export default function PersonDetailPage() {
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <p className="text-sm font-medium">
                       Selected: {formatDateRange(
-                        selectedDateRange.from.toISOString().split('T')[0],
-                        selectedDateRange.to.toISOString().split('T')[0]
+                        formatDateForUrl(selectedDateRange.from),
+                        formatDateForUrl(selectedDateRange.to)
                       )}
                     </p>
                   </div>
@@ -434,7 +430,7 @@ export default function PersonDetailPage() {
                     <Star className="w-12 h-12 text-green-500 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-green-600 mb-2">Request Sent!</h3>
                     <p className="text-gray-600 dark:text-gray-300">
-                      Your booking request has been sent to {person.name}. They'll get back to you soon.
+                      {`Your booking request has been sent to ${person.name}. They'll get back to you soon.`}
                     </p>
                   </div>
                 ) : (

@@ -23,10 +23,6 @@ export function CalendarWidget({
 
   return (
     <div className="flex-shrink-0">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-        <span className="text-sm text-gray-600">Available dates</span>
-      </div>
       <Calendar
         mode="single"
         showOutsideDays={false}
@@ -35,7 +31,7 @@ export function CalendarWidget({
         month={currentMonth}
         onMonthChange={setCurrentMonth}
         numberOfMonths={maxMonthsDisplayed}
-        className="rounded-md border w-full grid"
+        className="rounded-md w-full grid"
         classNames={{
           today: "font-semibold",
         }}

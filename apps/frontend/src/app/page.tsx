@@ -2,12 +2,14 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar as CalendarIcon, Users } from "lucide-react"
-import { getMonthDateRange } from '@/lib/date-utils'
+import { getMonthDateRange, formatDateForUrl, parseDateFromUrl } from '@/lib/date-utils'
 import * as React from "react"
 import { useState, useEffect, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { HeroSection } from "@/components/HeroSection"
 import { PersonSearchTab } from "@/components/PersonSearchTab"
 import { CalendarBrowseTab } from "@/components/CalendarBrowseTab"
+import { Suspense } from "react"
 
 interface Person {
   id: string
@@ -30,9 +32,9 @@ interface Availability {
 
 // NOTE: This needs to get the last day of the month on the screen, which could
 // be 2 or 3 months ahead depending on the screen size
-export const MAX_MONTHS_DISPLAYED = 2;
+export const MAX_MONTHS_DISPLAYED = 3;
 
-export default function Home() {
+function Home() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [calendarResults, setCalendarResults] = useState<Availability[]>([])
@@ -41,6 +43,10 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [allAvailabilities, setAllAvailabilities] = useState<Availability[]>([])
   const [isLoadingAll, setIsLoadingAll] = useState(false)
+  const [activeTab, setActiveTab] = useState("person")
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const fetchCalendarData = async (date: Date) => {
     setIsLoadingCalendar(true)
@@ -183,6 +189,54 @@ export default function Home() {
     fetchAllAvailabilities(currentMonth)
   }, [currentMonth, selectedDate, fetchAllAvailabilities])
 
+  // Helper function to parse date from URL parameter (treat as local date)
+  const parseDateFromParam = useCallback((dateString: string): Date => {
+    return parseDateFromUrl(dateString)
+  }, [])
+
+  // Helper function to format date for URL parameter
+  const formatDateForParam = useCallback((date: Date): string => {
+    return formatDateForUrl(date)
+  }, [])
+
+  const handleCalendarSearch = useCallback((startDate: string) => {
+    const date = parseDateFromParam(startDate)
+    setSelectedDate(date)
+    setActiveTab("calendar")
+    
+    // Update URL with the date
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('date', startDate)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, parseDateFromParam])
+
+  // Read date from URL on initial load
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    if (dateParam) {
+      const date = parseDateFromParam(dateParam)
+      if (!isNaN(date.getTime())) {
+        setSelectedDate(date)
+        setCurrentMonth(date) // Update currentMonth to match the selected date's month
+        setActiveTab("calendar")
+      }
+    }
+  }, [searchParams, parseDateFromParam])
+
+  // Wrapper for setSelectedDate that also updates URL
+  const handleDateSelect = useCallback((date: Date | undefined) => {
+    setSelectedDate(date)
+    
+    // Update URL with the date
+    const params = new URLSearchParams(searchParams.toString())
+    if (date) {
+      params.set('date', formatDateForParam(date))
+    } else {
+      params.delete('date')
+    }
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, formatDateForParam])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <HeroSection />
@@ -190,7 +244,7 @@ export default function Home() {
       {/* Search Section */}
       <section className="container mx-auto px-4 pb-16">
         <div className="max-w-4xl mx-auto">
-          <Tabs defaultValue="person" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="person" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -212,7 +266,7 @@ export default function Home() {
             <TabsContent value="calendar" className="space-y-6">
               <CalendarBrowseTab
                 selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
+                setSelectedDate={handleDateSelect}
                 currentMonth={currentMonth}
                 setCurrentMonth={setCurrentMonth}
                 availabilityDates={availabilityDates}
@@ -221,6 +275,7 @@ export default function Home() {
                 allAvailabilities={allAvailabilities}
                 isLoadingAll={isLoadingAll}
                 maxMonthsDisplayed={MAX_MONTHS_DISPLAYED}
+                onCalendarSearch={handleCalendarSearch}
               />
             </TabsContent>
           </Tabs>
@@ -229,3 +284,14 @@ export default function Home() {
     </div>
   )
 }
+
+// Wrapper component with Suspense boundary for useSearchParams
+function HomeWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Home />
+    </Suspense>
+  )
+}
+
+export default HomeWrapper

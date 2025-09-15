@@ -1,4 +1,5 @@
 import { AvailabilityCard } from "./AvailabilityCard"
+import { formatDateForUrl } from '@/lib/date-utils'
 
 interface Person {
   id: string
@@ -34,7 +35,7 @@ export function SelectedDateAvailabilities({
   return (
     <div className="space-y-4">
       <h3 className="font-semibold">
-        Available on {selectedDate?.toLocaleDateString('en-US', {
+        {selectedDate?.toLocaleDateString('en-US', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -46,12 +47,12 @@ export function SelectedDateAvailabilities({
           <p className="text-gray-500">Loading availability...</p>
         </div>
       ) : calendarResults.length > 0 ? (
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
           {calendarResults.map((availability) => (
             <AvailabilityCard
               key={availability.id}
               availability={availability}
-              linkHref={`/person/${availability.person.id}?date=${selectedDate?.toISOString().split('T')[0]}`}
+              linkHref={`/person/${availability.person.id}?date=${selectedDate ? formatDateForUrl(selectedDate) : ''}`}
               iconColor="purple"
             />
           ))}

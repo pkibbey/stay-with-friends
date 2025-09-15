@@ -1,5 +1,5 @@
 import { MAX_MONTHS_DISPLAYED } from '@/app/page'
-import { format, parseISO, startOfDay, endOfDay } from 'date-fns'
+import { format, startOfDay } from 'date-fns'
 
 /**
  * Utility functions for handling dates consistently across timezones
@@ -64,9 +64,21 @@ export const getMonthDateRange = (month: Date): { startDate: string, endDate: st
 }
 
 /**
- * Convert availability dates to Date objects for calendar use
- * Ensures consistent timezone handling
+ * Format a date for URL parameters (YYYY-MM-DD format in local timezone)
+ * This ensures consistent URL state regardless of user's timezone
  */
+export const formatDateForUrl = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd')
+}
+
+/**
+ * Parse a date from URL parameter (YYYY-MM-DD format) as local date
+ * This ensures consistent timezone handling when reading from URLs
+ */
+export const parseDateFromUrl = (dateString: string): Date => {
+  return parseLocalDate(dateString)
+}
+
 export const convertAvailabilityDates = (dateStrings: string[]): Date[] => {
   return dateStrings.map(dateStr => parseLocalDate(dateStr))
 }

@@ -32,6 +32,7 @@ interface CalendarBrowseTabProps {
   allAvailabilities: Availability[]
   isLoadingAll: boolean
   maxMonthsDisplayed: number
+  onCalendarSearch: (startDate: string) => void
 }
 
 export function CalendarBrowseTab({
@@ -44,7 +45,8 @@ export function CalendarBrowseTab({
   isLoadingCalendar,
   allAvailabilities,
   isLoadingAll,
-  maxMonthsDisplayed
+  maxMonthsDisplayed,
+  onCalendarSearch
 }: CalendarBrowseTabProps) {
   return (
     <Card>
@@ -55,7 +57,15 @@ export function CalendarBrowseTab({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex gap-6">
-        <div className="space-y-6 flex-1">
+        <CalendarWidget
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          currentMonth={currentMonth}
+          setCurrentMonth={setCurrentMonth}
+          availabilityDates={availabilityDates}
+          maxMonthsDisplayed={maxMonthsDisplayed}
+        />
+        <div className="space-y-6 flex-1 p-4">
           <SelectedDateAvailabilities
             selectedDate={selectedDate}
             calendarResults={calendarResults}
@@ -65,17 +75,9 @@ export function CalendarBrowseTab({
           <AllAvailabilities
             allAvailabilities={allAvailabilities}
             isLoadingAll={isLoadingAll}
+            onCalendarSearch={onCalendarSearch}
           />
         </div>
-
-        <CalendarWidget
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          availabilityDates={availabilityDates}
-          maxMonthsDisplayed={maxMonthsDisplayed}
-        />
       </CardContent>
     </Card>
   )
