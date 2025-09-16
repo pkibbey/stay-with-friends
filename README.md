@@ -23,6 +23,13 @@ A monorepo web app built with Turborepo, featuring a NextJS frontend and a TypeS
 4. Backend GraphQL at [http://localhost:4000/graphql](http://localhost:4000/graphql)
 5. Backend REST at [http://localhost:4000/api/hello](http://localhost:4000/api/hello)
 
+## Features
+
+### Calendar Behavior
+- **Date Selection**: Calendar dates can only be selected, not deselected. Once a date is chosen, users must select a different date to change their selection.
+- **Availability Highlighting**: Available dates are highlighted in blue on the calendar for easy identification.
+- **URL Persistence**: Selected dates are reflected in the URL query parameters for shareable links.
+
 ## Build
 
 ```bash

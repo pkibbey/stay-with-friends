@@ -11,7 +11,7 @@ interface BookingFormProps {
   personId: string
   personName: string
   maxGuests: number
-  selectedDateRange: {from: Date | undefined, to: Date | undefined}
+  selectedDate: Date | undefined
 }
 
 interface BookingFormData {
@@ -21,7 +21,7 @@ interface BookingFormData {
   message: string
 }
 
-export function BookingForm({ personId, personName, maxGuests, selectedDateRange }: BookingFormProps) {
+export function BookingForm({ personId, personName, maxGuests, selectedDate }: BookingFormProps) {
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
     requesterName: '',
     requesterEmail: '',
@@ -33,7 +33,7 @@ export function BookingForm({ personId, personName, maxGuests, selectedDateRange
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedDateRange.from || !selectedDateRange.to) return
+    if (!selectedDate) return
 
     setIsSubmitting(true)
     try {
@@ -55,8 +55,8 @@ export function BookingForm({ personId, personName, maxGuests, selectedDateRange
             personId,
             requesterName: bookingForm.requesterName,
             requesterEmail: bookingForm.requesterEmail,
-            startDate: formatDateForUrl(selectedDateRange.from),
-            endDate: formatDateForUrl(selectedDateRange.to),
+            startDate: formatDateForUrl(selectedDate),
+            endDate: formatDateForUrl(selectedDate), // Use same date for both start and end
             guests: bookingForm.guests,
             message: bookingForm.message
           },
@@ -139,7 +139,7 @@ export function BookingForm({ personId, personName, maxGuests, selectedDateRange
             <Button
               type="submit"
               className="w-full"
-              disabled={!selectedDateRange.from || !selectedDateRange.to || isSubmitting}
+              disabled={!selectedDate || isSubmitting}
             >
               {isSubmitting ? (
                 <>
@@ -154,9 +154,9 @@ export function BookingForm({ personId, personName, maxGuests, selectedDateRange
               )}
             </Button>
 
-            {!selectedDateRange.from || !selectedDateRange.to ? (
+            {!selectedDate ? (
               <p className="text-sm text-gray-500 text-center">
-                Please select dates to continue
+                Please select a date to continue
               </p>
             ) : null}
           </form>

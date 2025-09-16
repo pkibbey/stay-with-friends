@@ -55,7 +55,7 @@ export const formatDateRange = (startDate: string, endDate: string): string => {
  */
 export const getMonthDateRange = (month: Date): { startDate: string, endDate: string } => {
   const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1)
-  const endOfSecondMonth = new Date(month.getFullYear(), month.getMonth() + MAX_MONTHS_DISPLAYED, 0)
+  const endOfSecondMonth = new Date(month.getFullYear(), month.getMonth() + MAX_MONTHS_DISPLAYED + 2, 0)
 
   return {
     startDate: format(startOfMonth, 'yyyy-MM-dd'),

@@ -1,14 +1,33 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { formatDateRange, formatDateForUrl } from '@/lib/date-utils'
+import { formatDateForUrl, convertAvailabilityDates, parseLocalDate } from '@/lib/date-utils'
+import { MAX_MONTHS_DISPLAYED } from "@/app/page"
 
 interface AvailabilityCalendarProps {
-  selectedDateRange: {from: Date | undefined, to: Date | undefined}
-  onSelect: (range: {from: Date | undefined, to: Date | undefined} | undefined) => void
+  selectedDate: Date | undefined
+  onSelect: (date: Date | undefined) => void
+  availabilities?: Array<{ startDate: string; endDate: string; status: string }>
 }
 
-export function AvailabilityCalendar({ selectedDateRange, onSelect }: AvailabilityCalendarProps) {
+export function AvailabilityCalendar({ selectedDate, onSelect, availabilities = [] }: AvailabilityCalendarProps) {
+  // Convert availability data to date objects for the calendar modifiers
+  const availableDates = availabilities
+    .filter(availability => availability.status === 'available')
+    .flatMap(availability => {
+      // Use parseLocalDate for consistent timezone handling
+      const startDate = parseLocalDate(availability.startDate)
+      const endDate = parseLocalDate(availability.endDate)
+      const dates = []
+      
+      // Generate all dates between start and end (inclusive)
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        dates.push(new Date(date))
+      }
+      
+      return dates
+    })
+
   return (
     <Card>
       <CardHeader>
@@ -20,22 +39,20 @@ export function AvailabilityCalendar({ selectedDateRange, onSelect }: Availabili
       </CardHeader>
       <CardContent>
         <Calendar
-          mode="range"
-          selected={selectedDateRange.from && selectedDateRange.to ? {from: selectedDateRange.from, to: selectedDateRange.to} : undefined}
-          onSelect={(range) => onSelect({from: range?.from, to: range?.to})}
-          numberOfMonths={1}
+          key={selectedDate?.toISOString()}
+          mode="single"
+          selected={selectedDate}
+          onSelect={onSelect}
+          startMonth={selectedDate}
+          numberOfMonths={MAX_MONTHS_DISPLAYED}
           className="rounded-md border w-full"
+          modifiers={{
+            available: availableDates,
+          }}
+          modifiersClassNames={{
+            available: "[&>button]:text-blue-600 [&>button]:bg-blue-50",
+          }}
         />
-        {selectedDateRange.from && selectedDateRange.to && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm font-medium">
-              Selected: {formatDateRange(
-                formatDateForUrl(selectedDateRange.from),
-                formatDateForUrl(selectedDateRange.to)
-              )}
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   )

@@ -49,8 +49,8 @@ export function AvailabilityCard({ availability, onCalendarSearch, linkHref, ico
 
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-md transition-shadow">
-      <CardContent className="px-6">
-        <div className="flex items-center gap-3 mb-2">
+      <CardContent className="flex flex-col gap-2 px-6">
+        <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getIconClasses()}`}>
             <Users className="w-4 h-4" />
           </div>
@@ -61,7 +61,7 @@ export function AvailabilityCard({ availability, onCalendarSearch, linkHref, ico
             </p>
           </div>
         </div>
-        <p className="text-sm text-gray-600 mb-2">
+        <p className="text-sm text-gray-600 line-clamp-1">
           {availability.person.description}
         </p>
         <div className="grid md:flex items-center justify-between gap-2">

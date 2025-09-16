@@ -19,7 +19,7 @@ export function CalendarWidget({
   maxMonthsDisplayed
 }: CalendarWidgetProps) {
   // Create availabilityDates as an array of date strings
-  const bookedDates = convertAvailabilityDates(Array.from(availabilityDates))
+  const availableDates = convertAvailabilityDates(Array.from(availabilityDates))
 
   return (
     <div className="flex-shrink-0">
@@ -36,10 +36,10 @@ export function CalendarWidget({
           today: "font-semibold",
         }}
         modifiers={{
-          booked: bookedDates,
+          available: availableDates,
         }}
         modifiersClassNames={{
-          booked: "[&>button]:text-blue-600 [&>button]:bg-blue-50",
+          available: "[&>button]:text-blue-600 [&>button]:bg-blue-50",
         }}
       />
     </div>

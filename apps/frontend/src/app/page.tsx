@@ -32,7 +32,7 @@ interface Availability {
 
 // NOTE: This needs to get the last day of the month on the screen, which could
 // be 2 or 3 months ahead depending on the screen size
-export const MAX_MONTHS_DISPLAYED = 3;
+export const MAX_MONTHS_DISPLAYED = 1;
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState("")
