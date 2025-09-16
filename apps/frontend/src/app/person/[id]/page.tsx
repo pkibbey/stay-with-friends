@@ -195,7 +195,6 @@ export default function PersonDetailPage() {
       })
 
       const data = await response.json()
-      console.log('data: ', data);
       if (data.data?.updatePerson) {
         setPerson(data.data.updatePerson)
         setIsEditing(false)
@@ -434,7 +433,7 @@ export default function PersonDetailPage() {
       </PersonHeader>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {/* Sidebar */}
           <div className="space-y-6">
             {isEditing ? (
@@ -454,16 +453,23 @@ export default function PersonDetailPage() {
           
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {selectedDate && isDateAvailable(selectedDate) && (
+            {selectedDate && isDateAvailable(selectedDate) && !isEditing && (
               <BookingForm
                 personId={personId}
                 personName={person.name}
                 maxGuests={person.maxGuests || 1}
+                maxNights={30} // Assuming a max of 30 nights for booking
                 selectedDate={selectedDate}
               />
             )}
             
-            <PersonPhotos name={person.name} photos={person.photos} />
+            <PersonPhotos
+              name={person.name}
+              photos={person.photos}
+              isEditing={isEditing}
+              editedData={editedPerson}
+              onUpdate={updateEditedPerson}
+            />
 
             <PersonAbout
               name={person.name}

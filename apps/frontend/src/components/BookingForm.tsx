@@ -11,6 +11,7 @@ interface BookingFormProps {
   personId: string
   personName: string
   maxGuests: number
+  maxNights: number
   selectedDate: Date | undefined
 }
 
@@ -18,14 +19,16 @@ interface BookingFormData {
   requesterName: string
   requesterEmail: string
   guests: number
+  nights: number
   message: string
 }
 
-export function BookingForm({ personId, personName, maxGuests, selectedDate }: BookingFormProps) {
+export function BookingForm({ personId, personName, maxGuests, maxNights, selectedDate }: BookingFormProps) {
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
     requesterName: '',
     requesterEmail: '',
     guests: 1,
+    nights: 1,
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -124,6 +127,19 @@ export function BookingForm({ personId, personName, maxGuests, selectedDate }: B
                 required
               />
             </div>
+
+              <div>
+                <Label htmlFor="nights">Number of Nights</Label>
+                <Input
+                  id="nights"
+                  type="number"
+                  min="1"
+                  max={maxNights}
+                  value={bookingForm.nights}
+                  onChange={(e) => setBookingForm(prev => ({ ...prev, nights: parseInt(e.target.value) }))}
+                  required
+                />
+              </div>
 
             <div>
               <Label htmlFor="message">Message (Optional)</Label>

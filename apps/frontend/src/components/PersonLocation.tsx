@@ -2,6 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import dynamic from "next/dynamic"
+
+// Dynamically import MapComponent to avoid SSR issues
+const MapComponent = dynamic(() => import("./MapComponent").then(mod => ({ default: mod.MapComponent })), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-gray-200 dark:bg-gray-700 h-64 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-500 font-medium">Loading map...</p>
+      </div>
+    </div>
+  )
+})
 
 interface PersonLocationProps {
   name: string
@@ -30,8 +44,8 @@ export function PersonLocation({
   zipCode,
   country,
   location,
-  isEditing = false,
   editedData = {},
+  isEditing = false,
   onUpdate
 }: PersonLocationProps) {
   const displayAddress = isEditing ? (editedData.address || address) : address
@@ -111,61 +125,62 @@ export function PersonLocation({
           </div>
         </div>
 
-        {/* Map Placeholder */}
-        <div className="bg-gray-200 dark:bg-gray-700 h-64 rounded-lg flex items-center justify-center relative overflow-hidden">
-          <div className="text-center z-10 relative">
-            <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500 font-medium">Interactive Map</p>
-            <p className="text-sm text-gray-400">Location: {displayCity || location}</p>
-          </div>
-          {/* Simple map-like background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="w-full h-full bg-gradient-to-br from-blue-200 to-green-200 dark:from-blue-800 dark:to-green-800"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
-          </div>
-        </div>
+        {/* Interactive Map */}
+        {!isEditing && (
+          <MapComponent
+            address={displayAddress}
+            city={displayCity}
+            state={displayState}
+            zipCode={displayZipCode}
+            country={displayCountry}
+            location={location}
+            className="h-64"
+          />
+        )}
 
-        <div className="space-y-3">
-          <h4 className="font-medium flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            Getting There
-          </h4>
-          <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <p className="font-medium">Public Transportation</p>
-                <p>{displayCity || 'Local'} has good bus/train access. Check schedules for routes serving {location}.</p>
+        {!isEditing && (
+          <div className="space-y-3">
+            <h4 className="font-medium flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Getting There
+            </h4>
+            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium">Public Transportation</p>
+                  <p>{displayCity || 'Local'} has good bus/train access. Check schedules for routes serving {location}.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium">Parking</p>
+                  <p>Street parking available nearby. Permit may be required during business hours.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium">Airport</p>
+                  <p>Nearest airport: {displayCity || 'Local'} International (~30 min drive)</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium">Walking</p>
+                  <p>15-20 minute walk from nearest transit station. Scenic route through {location}.</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <p className="font-medium">Parking</p>
-                <p>Street parking available nearby. Permit may be required during business hours.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <p className="font-medium">Airport</p>
-                <p>Nearest airport: {displayCity || 'Local'} International (~30 min drive)</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <p className="font-medium">Walking</p>
-                <p>15-20 minute walk from nearest transit station. Scenic route through {location}.</p>
-              </div>
+            <div className="pt-2 border-t">
+              <p className="text-xs text-gray-500">
+                * Contact {name} directly for the most up-to-date directions and transportation options.
+              </p>
             </div>
           </div>
-          <div className="pt-2 border-t">
-            <p className="text-xs text-gray-500">
-              * Contact {name} directly for the most up-to-date directions and transportation options.
-            </p>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   )

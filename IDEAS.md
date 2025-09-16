@@ -14,3 +14,5 @@ Friends can see basic information about their existence, but should not be able 
 
 Friend status can be downgraded anonymously by either party, or by an internal automatic rule based system. Friendship upgrade must require confirmation from both parties.
 
+Allow real uploading of photos
+

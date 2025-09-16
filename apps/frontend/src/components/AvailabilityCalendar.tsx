@@ -41,6 +41,7 @@ export function AvailabilityCalendar({ selectedDate, onSelect, availabilities = 
         <Calendar
           key={selectedDate?.toISOString()}
           mode="single"
+          showOutsideDays={false}
           selected={selectedDate}
           onSelect={onSelect}
           startMonth={selectedDate}
