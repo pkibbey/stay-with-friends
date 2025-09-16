@@ -9,6 +9,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS people (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    email TEXT UNIQUE,
     location TEXT,
     relationship TEXT,
     availability TEXT,
@@ -30,6 +31,13 @@ db.exec(`
     photos TEXT
   )
 `);
+
+// Add unique constraint to email if it doesn't exist (migration for existing databases)
+try {
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_people_email ON people(email)`);
+} catch (error) {
+  console.log('Email unique index already exists or could not be created:', error);
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS availabilities (
@@ -62,13 +70,14 @@ db.exec(`
 // Prepare statements
 export const getAllPeople = db.prepare('SELECT * FROM people');
 export const getPersonById = db.prepare('SELECT * FROM people WHERE id = ?');
+export const getPersonByEmail = db.prepare('SELECT * FROM people WHERE email = ?');
 export const searchPeople = db.prepare(`
   SELECT * FROM people
   WHERE name LIKE ? OR location LIKE ? OR relationship LIKE ?
 `);
 export const insertPerson = db.prepare(`
-  INSERT INTO people (name, location, relationship, availability, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO people (name, email, location, relationship, availability, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 export const getPersonAvailabilities = db.prepare(`

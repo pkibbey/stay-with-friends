@@ -71,6 +71,7 @@ const seedDatabase = () => {
     for (const person of samplePeople) {
       const result = insertPerson.run(
         person.name,
+        null, // email - sample data doesn't have emails
         person.location,
         person.relationship,
         person.availability,

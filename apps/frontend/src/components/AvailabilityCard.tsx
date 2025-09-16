@@ -24,12 +24,11 @@ interface Availability {
 
 interface AvailabilityCardProps {
   availability: Availability
-  onCalendarSearch?: (startDate: string) => void
-  linkHref?: string
+  linkHref: string
   iconColor?: string
 }
 
-export function AvailabilityCard({ availability, onCalendarSearch, linkHref, iconColor = "purple" }: AvailabilityCardProps) {
+export function AvailabilityCard({ availability, linkHref, iconColor = "purple" }: AvailabilityCardProps) {
   const getIconClasses = () => {
     switch (iconColor) {
       case "purple":
@@ -38,12 +37,6 @@ export function AvailabilityCard({ availability, onCalendarSearch, linkHref, ico
         return "bg-green-100 text-green-600"
       default:
         return "bg-blue-100 text-blue-600"
-    }
-  }
-
-  const handleClick = () => {
-    if (onCalendarSearch) {
-      onCalendarSearch(availability.startDate)
     }
   }
 
@@ -76,17 +69,9 @@ export function AvailabilityCard({ availability, onCalendarSearch, linkHref, ico
     </Card>
   )
 
-  if (linkHref) {
-    return (
-      <Link href={linkHref}>
-        {cardContent}
-      </Link>
-    )
-  }
-
   return (
-    <div onClick={handleClick}>
+    <Link href={linkHref}>
       {cardContent}
-    </div>
+    </Link>
   )
 }

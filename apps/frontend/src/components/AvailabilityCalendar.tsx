@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { formatDateForUrl, convertAvailabilityDates, parseLocalDate } from '@/lib/date-utils'
+import { parseLocalDate } from '@/lib/date-utils'
 import { MAX_MONTHS_DISPLAYED } from "@/app/page"
 
 interface AvailabilityCalendarProps {

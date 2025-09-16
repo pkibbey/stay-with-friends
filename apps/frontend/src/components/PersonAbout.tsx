@@ -1,4 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Home, Users, Clock } from "lucide-react"
 
 interface PersonAboutProps {
@@ -9,6 +12,17 @@ interface PersonAboutProps {
   maxGuests?: number
   checkInTime?: string
   checkOutTime?: string
+  isEditing?: boolean
+  editedData?: {
+    name?: string
+    description?: string
+    bedrooms?: number
+    bathrooms?: number
+    maxGuests?: number
+    checkInTime?: string
+    checkOutTime?: string
+  }
+  onUpdate?: (field: string, value: string | number) => void
 }
 
 export function PersonAbout({
@@ -18,42 +32,126 @@ export function PersonAbout({
   bathrooms,
   maxGuests,
   checkInTime,
-  checkOutTime
+  checkOutTime,
+  isEditing = false,
+  editedData = {},
+  onUpdate
 }: PersonAboutProps) {
+  const displayData = isEditing ? { ...editedData, name } : {
+    description,
+    bedrooms,
+    bathrooms,
+    maxGuests,
+    checkInTime,
+    checkOutTime
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>About {name}</CardTitle>
+        <CardTitle>About {isEditing ? editedData.name : name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {description && (
-          <p className="text-gray-600 dark:text-gray-300">{description}</p>
-        )}
+        {isEditing ? (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={displayData.description || ''}
+                onChange={(e) => onUpdate?.('description', e.target.value)}
+                placeholder="Describe your place..."
+                rows={3}
+              />
+            </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Home className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">
-                {bedrooms} bedroom{bedrooms !== 1 ? 's' : ''}, {bathrooms} bathroom{bathrooms !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Up to {maxGuests} guests</span>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input
+                    id="bedrooms"
+                    type="number"
+                    value={displayData.bedrooms || ''}
+                    onChange={(e) => onUpdate?.('bedrooms', parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input
+                    id="bathrooms"
+                    type="number"
+                    value={displayData.bathrooms || ''}
+                    onChange={(e) => onUpdate?.('bathrooms', parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="maxGuests">Max Guests</Label>
+                  <Input
+                    id="maxGuests"
+                    type="number"
+                    value={displayData.maxGuests || ''}
+                    onChange={(e) => onUpdate?.('maxGuests', parseInt(e.target.value) || 1)}
+                    min="1"
+                  />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="checkInTime">Check-in Time</Label>
+                  <Input
+                    id="checkInTime"
+                    type="time"
+                    value={displayData.checkInTime || ''}
+                    onChange={(e) => onUpdate?.('checkInTime', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="checkOutTime">Check-out Time</Label>
+                  <Input
+                    id="checkOutTime"
+                    type="time"
+                    value={displayData.checkOutTime || ''}
+                    onChange={(e) => onUpdate?.('checkOutTime', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Check-in: {checkInTime || 'Flexible'}</span>
+        ) : (
+          <>
+            {displayData.description && (
+              <p className="text-gray-600 dark:text-gray-300">{displayData.description}</p>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm">
+                    {displayData.bedrooms} bedroom{displayData.bedrooms !== 1 ? 's' : ''}, {displayData.bathrooms} bathroom{displayData.bathrooms !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm">Up to {displayData.maxGuests} guests</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm">Check-in: {displayData.checkInTime || 'Flexible'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm">Check-out: {displayData.checkOutTime || 'Flexible'}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Check-out: {checkOutTime || 'Flexible'}</span>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )

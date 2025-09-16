@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface PersonLocationProps {
   name: string
@@ -9,6 +11,15 @@ interface PersonLocationProps {
   zipCode?: string
   country?: string
   location?: string
+  isEditing?: boolean
+  editedData?: {
+    address?: string
+    city?: string
+    state?: string
+    zipCode?: string
+    country?: string
+  }
+  onUpdate?: (field: string, value: string) => void
 }
 
 export function PersonLocation({
@@ -18,9 +29,18 @@ export function PersonLocation({
   state,
   zipCode,
   country,
-  location
+  location,
+  isEditing = false,
+  editedData = {},
+  onUpdate
 }: PersonLocationProps) {
-  const fullAddress = [address, city, state, zipCode, country]
+  const displayAddress = isEditing ? (editedData.address || address) : address
+  const displayCity = isEditing ? (editedData.city || city) : city
+  const displayState = isEditing ? (editedData.state || state) : state
+  const displayZipCode = isEditing ? (editedData.zipCode || zipCode) : zipCode
+  const displayCountry = isEditing ? (editedData.country || country) : country
+
+  const fullAddress = [displayAddress, displayCity, displayState, displayZipCode, displayCountry]
     .filter(Boolean)
     .join(', ')
 
@@ -32,8 +52,62 @@ export function PersonLocation({
       <CardContent className="space-y-4">
         <div className="flex items-start gap-2">
           <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
-          <div>
-            <p className="font-medium">{fullAddress}</p>
+          <div className="w-full">
+            {isEditing ? (
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor="address">Street Address</Label>
+                  <Input
+                    id="address"
+                    value={displayAddress || ''}
+                    onChange={(e) => onUpdate?.('address', e.target.value)}
+                    placeholder="Enter street address"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={displayCity || ''}
+                      onChange={(e) => onUpdate?.('city', e.target.value)}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      value={displayState || ''}
+                      onChange={(e) => onUpdate?.('state', e.target.value)}
+                      placeholder="State"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="zipCode">ZIP Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={displayZipCode || ''}
+                      onChange={(e) => onUpdate?.('zipCode', e.target.value)}
+                      placeholder="ZIP Code"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={displayCountry || ''}
+                      onChange={(e) => onUpdate?.('country', e.target.value)}
+                      placeholder="Country"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="font-medium">{fullAddress}</p>
+            )}
           </div>
         </div>
 
@@ -42,7 +116,7 @@ export function PersonLocation({
           <div className="text-center z-10 relative">
             <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500 font-medium">Interactive Map</p>
-            <p className="text-sm text-gray-400">Location: {city || location}</p>
+            <p className="text-sm text-gray-400">Location: {displayCity || location}</p>
           </div>
           {/* Simple map-like background pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -61,7 +135,7 @@ export function PersonLocation({
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <p className="font-medium">Public Transportation</p>
-                <p>{city || 'Local'} has good bus/train access. Check schedules for routes serving {location}.</p>
+                <p>{displayCity || 'Local'} has good bus/train access. Check schedules for routes serving {location}.</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -75,7 +149,7 @@ export function PersonLocation({
               <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <p className="font-medium">Airport</p>
-                <p>Nearest airport: {city || 'Local'} International (~30 min drive)</p>
+                <p>Nearest airport: {displayCity || 'Local'} International (~30 min drive)</p>
               </div>
             </div>
             <div className="flex items-start gap-2">

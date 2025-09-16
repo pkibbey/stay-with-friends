@@ -1,4 +1,4 @@
-# Friends BNB
+# Stay With Friends
 
 A monorepo web app built with Turborepo, featuring a NextJS frontend and a TypeScript backend.
 

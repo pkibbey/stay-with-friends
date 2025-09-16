@@ -1,3 +1,4 @@
+import { formatDateForUrl, parseLocalDate } from "@/lib/date-utils"
 import { AvailabilityCard } from "./AvailabilityCard"
 
 interface Person {
@@ -21,10 +22,9 @@ interface Availability {
 interface AllAvailabilitiesProps {
   allAvailabilities: Availability[]
   isLoadingAll: boolean
-  onCalendarSearch: (startDate: string) => void
 }
 
-export function AllAvailabilities({ allAvailabilities, isLoadingAll, onCalendarSearch }: AllAvailabilitiesProps) {
+export function AllAvailabilities({ allAvailabilities, isLoadingAll }: AllAvailabilitiesProps) {
   if (allAvailabilities.length === 0) return null
 
   return (
@@ -40,7 +40,7 @@ export function AllAvailabilities({ allAvailabilities, isLoadingAll, onCalendarS
             <AvailabilityCard
               key={availability.id}
               availability={availability}
-              onCalendarSearch={onCalendarSearch}
+              linkHref={`/person/${availability.person.id}?date=${availability.startDate ? formatDateForUrl(parseLocalDate(availability.startDate)) : ''}`}
               iconColor="green"
             />
           ))}

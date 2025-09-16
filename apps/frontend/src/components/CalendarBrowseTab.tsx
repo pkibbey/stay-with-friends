@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarWidget } from "./CalendarWidget"
 import { SelectedDateAvailabilities } from "./SelectedDateAvailabilities"
 import { AllAvailabilities } from "./AllAvailabilities"
@@ -32,7 +31,6 @@ interface CalendarBrowseTabProps {
   allAvailabilities: Availability[]
   isLoadingAll: boolean
   maxMonthsDisplayed: number
-  onCalendarSearch: (startDate: string) => void
 }
 
 export function CalendarBrowseTab({
@@ -45,18 +43,18 @@ export function CalendarBrowseTab({
   isLoadingCalendar,
   allAvailabilities,
   isLoadingAll,
-  maxMonthsDisplayed,
-  onCalendarSearch
+  maxMonthsDisplayed
 }: CalendarBrowseTabProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Browse Available Dates</CardTitle>
-        <CardDescription>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Browse Available Dates</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           Select dates to see who&apos;s available in your network during that time.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex gap-6">
+        </p>
+      </div>
+      
+      <div className="flex gap-6">
         <CalendarWidget
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
@@ -75,10 +73,9 @@ export function CalendarBrowseTab({
           <AllAvailabilities
             allAvailabilities={allAvailabilities}
             isLoadingAll={isLoadingAll}
-            onCalendarSearch={onCalendarSearch}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
