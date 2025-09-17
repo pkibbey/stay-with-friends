@@ -29,14 +29,14 @@ interface Listing {
   checkOutTime: string
   photos: string[]
   isActive: boolean
-  availabilities: Array<{
+  availabilities?: Array<{
     id: string
     startDate: string
     endDate: string
     status: string
     notes?: string
   }>
-  user: {
+  user?: {
     id: string
     name: string
     email: string
@@ -69,6 +69,10 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
     const startDate = parseLocalDate(filters.startDate)
     const endDate = parseLocalDate(filters.endDate)
 
+    if (!listing.availabilities || listing.availabilities.length === 0) {
+      return false
+    }
+
     return listing.availabilities.some(availability => {
       if (availability.status !== 'available') return false
 
@@ -79,13 +83,13 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
     })
   }, [listing.availabilities, filters.startDate, filters.endDate])
 
-  const availableNow = listing.availabilities.some(availability => {
+  const availableNow = listing.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
     const today = new Date()
     const start = parseLocalDate(availability.startDate)
     const end = parseLocalDate(availability.endDate)
     return today >= start && today <= end
-  })
+  }) || false
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -133,11 +137,6 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
               {listing.description}
             </CardDescription>
           </div>
-          <div className="ml-3 text-right">
-            <div className="text-lg font-semibold text-green-600">
-              Free Stay
-            </div>
-          </div>
         </div>
       </CardHeader>
 
@@ -155,22 +154,23 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
         </div>
 
         {/* Host info */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-600">
-                {listing.user.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium">{listing.user.name}</p>
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-yellow-500" />
-                <span className="text-xs text-gray-500">Trusted host</span>
+        {listing.user && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-blue-600">
+                  {listing.user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">{listing.user.name}</p>
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 text-yellow-500" />
+                  <span className="text-xs text-gray-500">Trusted host</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div>)}
 
         {/* Amenities */}
         {listing.amenities.length > 0 && (

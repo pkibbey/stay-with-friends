@@ -257,9 +257,6 @@ export function MapComponent({
                 <p class="text-xs text-gray-600">${listing.city}, ${listing.state}</p>
               </div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-green-600">
-                  Free Stay
-                </span>
                 <span class="text-xs text-gray-500">${listing.maxGuests} guests</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">

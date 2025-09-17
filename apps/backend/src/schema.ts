@@ -2,6 +2,7 @@ export const typeDefs = `#graphql
   type Host {
     id: ID!
     name: String!
+    title: String! # Alias for name to match frontend expectations
     email: String
     location: String
     relationship: String
@@ -23,6 +24,10 @@ export const typeDefs = `#graphql
     bathrooms: Int
     photos: [String!]
     availabilities: [Availability!]!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    user: User!
   }
 
   type Availability {
@@ -72,6 +77,19 @@ export const typeDefs = `#graphql
     hosts: [Host!]!
     searchHosts(query: String!): [Host!]!
     host(id: ID!): Host
+    # Listing aliases for hosts (for frontend compatibility)
+    listings: [Host!]!
+    searchListings(query: String!): [Host!]!
+    searchListingsAdvanced(
+      query: String
+      startDate: String
+      endDate: String
+      location: String
+      amenities: [String!]
+      trustedOnly: Boolean
+      guests: Int
+    ): [Host!]!
+    userListings(userId: ID!): [Host!]!
     availabilitiesByDate(date: String!): [Availability!]!
     availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
     hostAvailabilities(hostId: ID!): [Availability!]!
@@ -105,6 +123,8 @@ export const typeDefs = `#graphql
       bathrooms: Int
       photos: [String!]
     ): Host!
+    # Listing alias for createHost
+    createListing(input: CreateListingInput!): Host!
     createAvailability(
       hostId: ID!
       startDate: String!
@@ -139,6 +159,26 @@ export const typeDefs = `#graphql
     availability: String
     description: String
     email: String!
+  }
+
+  input CreateListingInput {
+    title: String!
+    description: String!
+    address: String!
+    city: String!
+    state: String!
+    zipCode: String!
+    country: String!
+    latitude: Float
+    longitude: Float
+    maxGuests: Int
+    bedrooms: Int
+    bathrooms: Int
+    amenities: [String!]
+    houseRules: String
+    checkInTime: String
+    checkOutTime: String
+    photos: [String!]
   }
 
   input UpdateHostInput {
@@ -186,6 +226,26 @@ export const resolvers = {
     },
     host: (_: any, { id }: { id: string }) => {
       return getHostById.get(id);
+    },
+    // Listing aliases for hosts (for frontend compatibility)
+    listings: () => getAllHosts.all(),
+    searchListings: (_: any, { query }: { query: string }) => {
+      const searchTerm = `%${query}%`;
+      return searchHosts.all(searchTerm, searchTerm, searchTerm);
+    },
+    searchListingsAdvanced: (_: any, args: any) => {
+      // For now, use the basic search - can be enhanced later
+      if (args.query) {
+        const searchTerm = `%${args.query}%`;
+        return searchHosts.all(searchTerm, searchTerm, searchTerm);
+      }
+      // If no query, return all hosts
+      return getAllHosts.all();
+    },
+    userListings: (_: any, { userId }: { userId: string }) => {
+      // Get hosts created by a specific user
+      // For now, return empty array as we don't have user_id in hosts table
+      return [];
     },
     availabilitiesByDate: (_: any, { date }: { date: string }) => {
       return getAvailabilitiesByDateRange.all(date, date);
@@ -243,6 +303,43 @@ export const resolvers = {
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
           throw new Error('A host with this email already exists');
+        }
+        throw error;
+      }
+    },
+    createListing: (_: any, { input }: { input: any }) => {
+      try {
+        const result = insertHost.run(
+          input.title, // Use title as name
+          null, // email - will be set from context if available
+          null, // location
+          null, // relationship
+          null, // availability
+          input.description,
+          input.address,
+          input.city,
+          input.state,
+          input.zipCode,
+          input.country,
+          input.latitude,
+          input.longitude,
+          input.amenities ? JSON.stringify(input.amenities) : null,
+          input.houseRules,
+          input.checkInTime,
+          input.checkOutTime,
+          input.maxGuests,
+          input.bedrooms,
+          input.bathrooms,
+          input.photos ? JSON.stringify(input.photos) : null
+        );
+        return {
+          id: result.lastInsertRowid,
+          name: input.title,
+          ...input,
+        };
+      } catch (error: any) {
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+          throw new Error('A listing with this email already exists');
         }
         throw error;
       }
@@ -513,6 +610,23 @@ export const resolvers = {
     },
   },
   Host: {
+    title: (parent: any) => parent.name, // Alias name as title for frontend compatibility
+    isActive: () => true, // Default to active for all hosts
+    createdAt: () => new Date().toISOString(), // Default timestamp
+    updatedAt: () => new Date().toISOString(), // Default timestamp
+    user: (parent: any) => {
+      // Try to find user by email, or create a default user object
+      if (parent.email) {
+        const user = getUserByEmail.get(parent.email);
+        if (user) return user;
+      }
+      // Return a default user object if no user found
+      return {
+        id: '1',
+        name: parent.name,
+        email: parent.email || 'unknown@example.com'
+      };
+    },
     availabilities: (parent: any) => {
       return getHostAvailabilities.all(parent.id);
     },

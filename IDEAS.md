@@ -11,3 +11,5 @@ Friend status can be downgraded anonymously by either party, or by an internal a
 
 Allow real uploading of photos
 
+Add Google login instead of magic link which requires email server to work - can this be run on the nextjs web instance, or on a serverless endpoint?
+

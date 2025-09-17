@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { parseLocalDate, formatDateForUrl } from '@/lib/date-utils'
-import { SearchFilters } from '@/components/SearchFilters'
-import { SearchResults } from '@/components/SearchResults'
 import { MapComponent } from '@/components/MapComponent'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Map, List, Filter } from 'lucide-react'
+import { SearchFilters } from '@/components/SearchFilters'
+import { SearchResults } from '@/components/SearchResults'
 
 interface Listing {
   id: string
@@ -229,7 +228,7 @@ function SearchPage() {
             )}
 
             {view === 'list' ? (
-              <SearchResults 
+              <SearchResults
                 listings={listings}
                 isLoading={isLoading}
                 filters={filters}

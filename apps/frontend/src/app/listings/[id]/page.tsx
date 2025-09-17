@@ -218,9 +218,6 @@ export default function ListingDetailPage() {
                     <Bath className="w-5 h-5 text-gray-500" />
                     <span>{listing.bathrooms} bathrooms</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span>Free Stay</span>
-                  </div>
                 </div>
 
                 {/* Amenities */}
@@ -311,7 +308,6 @@ export default function ListingDetailPage() {
             <Card className="sticky top-6">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span className="text-green-600">Free stay</span>
                   <Badge variant="default">Available</Badge>
                 </CardTitle>
               </CardHeader>
