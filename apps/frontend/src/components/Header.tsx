@@ -24,6 +24,9 @@ export function Header() {
               <Link href="/connections" className="text-gray-600 hover:text-gray-900">
                 Connections
               </Link>
+              <Link href="/manage-hosting" className="text-gray-600 hover:text-gray-900">
+                Manage Hosting
+              </Link>
               <Button variant="outline" className='cursor-pointer' onClick={() => signOut()}>
                 Sign Out
               </Button>

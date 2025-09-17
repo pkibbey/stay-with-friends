@@ -1,4 +1,4 @@
-Maybe we could have the person you are staying with as the unique identifier, that you can have multiple people visiting this specific friend, but you can't have a person stay at multiple places in the same night.
+Maybe we could have the host you are staying with as the unique identifier, that you can have multiple people visiting this specific friend, but you can't have a host stay at multiple places in the same night.
 
 Change the word Friends in the title to be the search bar for finding friends 
 - make it obvious with animation and have it selected to type initially
