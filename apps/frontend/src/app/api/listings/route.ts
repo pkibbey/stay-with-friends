@@ -22,17 +22,90 @@ async function graphqlRequest(query: string, variables: any = {}) {
   return data.data
 }
 
-// GET /api/listings - Get all listings or user's listings
+// GET /api/listings - Get all listings or user's listings with advanced search
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
     const search = searchParams.get('search')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    const location = searchParams.get('location')
+    const amenities = searchParams.getAll('amenities')
+    const trustedOnly = searchParams.get('trustedOnly') === 'true'
+    const guests = searchParams.get('guests')
 
     let query: string
     let variables: any = {}
 
-    if (search) {
+    if (search || startDate || endDate || location || amenities.length > 0 || trustedOnly || guests) {
+      // Advanced search with filters
+      query = `
+        query SearchListingsAdvanced(
+          $query: String
+          $startDate: String
+          $endDate: String
+          $location: String
+          $amenities: [String!]
+          $trustedOnly: Boolean
+          $guests: Int
+        ) {
+          searchListingsAdvanced(
+            query: $query
+            startDate: $startDate
+            endDate: $endDate
+            location: $location
+            amenities: $amenities
+            trustedOnly: $trustedOnly
+            guests: $guests
+          ) {
+            id
+            title
+            description
+            address
+            city
+            state
+            zipCode
+            country
+            latitude
+            longitude
+            maxGuests
+            bedrooms
+            bathrooms
+            amenities
+            houseRules
+            checkInTime
+            checkOutTime
+            photos
+            isActive
+            createdAt
+            updatedAt
+            availabilities {
+              id
+              startDate
+              endDate
+              status
+              notes
+            }
+            user {
+              id
+              name
+              email
+            }
+          }
+        }
+      `
+      variables = {
+        query: search || null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        location: location || null,
+        amenities: amenities.length > 0 ? amenities : null,
+        trustedOnly: trustedOnly || null,
+        guests: guests ? parseInt(guests) : null
+      }
+    } else if (search) {
+      // Simple search (backward compatibility)
       query = `
         query SearchListings($query: String!) {
           searchListings(query: $query) {
@@ -41,14 +114,24 @@ export async function GET(request: NextRequest) {
             description
             city
             state
-            pricePerNight
-            isFree
             maxGuests
             bedrooms
             bathrooms
             photos
             amenities
             isActive
+            availabilities {
+              id
+              startDate
+              endDate
+              status
+              notes
+            }
+            user {
+              id
+              name
+              email
+            }
           }
         }
       `
@@ -67,8 +150,6 @@ export async function GET(request: NextRequest) {
             country
             latitude
             longitude
-            pricePerNight
-            isFree
             maxGuests
             bedrooms
             bathrooms
@@ -93,8 +174,6 @@ export async function GET(request: NextRequest) {
             description
             city
             state
-            pricePerNight
-            isFree
             maxGuests
             bedrooms
             bathrooms
@@ -107,7 +186,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await graphqlRequest(query, variables)
-    const listings = data.searchListings || data.userListings || data.listings
+    const listings = data.searchListingsAdvanced || data.searchListings || data.userListings || data.listings
 
     return NextResponse.json({ listings })
   } catch (error: any) {
@@ -162,8 +241,6 @@ export async function POST(request: NextRequest) {
           country
           latitude
           longitude
-          pricePerNight
-          isFree
           maxGuests
           bedrooms
           bathrooms

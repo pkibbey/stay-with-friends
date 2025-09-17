@@ -25,9 +25,10 @@ async function graphqlRequest(query: string, variables: any = {}) {
 // GET /api/listings/[id] - Get a specific listing
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const query = `
       query GetListing($id: ID!) {
         listing(id: $id) {
@@ -41,8 +42,6 @@ export async function GET(
           country
           latitude
           longitude
-          pricePerNight
-          isFree
           maxGuests
           bedrooms
           bathrooms
@@ -70,7 +69,7 @@ export async function GET(
       }
     `
 
-    const data = await graphqlRequest(query, { id: params.id })
+    const data = await graphqlRequest(query, { id })
     
     if (!data.listing) {
       return NextResponse.json(
@@ -92,9 +91,10 @@ export async function GET(
 // PUT /api/listings/[id] - Update a listing
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -135,8 +135,6 @@ export async function PUT(
           country
           latitude
           longitude
-          pricePerNight
-          isFree
           maxGuests
           bedrooms
           bathrooms
@@ -155,7 +153,7 @@ export async function PUT(
     // For now, we'll use a context workaround since the backend expects userId in context
     const modifiedBody = {
       query,
-      variables: { id: params.id, input: body },
+      variables: { id: id, input: body },
       context: { userId: userData.user.id }
     }
 
@@ -185,9 +183,10 @@ export async function PUT(
 // DELETE /api/listings/[id] - Delete a listing
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -222,7 +221,7 @@ export async function DELETE(
     // For now, we'll use a context workaround since the backend expects userId in context
     const modifiedBody = {
       query,
-      variables: { id: params.id },
+      variables: { id: id },
       context: { userId: userData.user.id }
     }
 

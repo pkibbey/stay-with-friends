@@ -9,7 +9,7 @@ export function Header() {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between h-16">
         <Link href="/" className="text-xl font-bold">
           StayWithFriends
         </Link>
@@ -18,6 +18,9 @@ export function Header() {
             <div>Loading...</div>
           ) : session ? (
             <>
+              <Link href="/search" className="text-gray-600 hover:text-gray-900">
+                Search
+              </Link>
               <Link href="/profile" className="text-gray-600 hover:text-gray-900">
                 Profile
               </Link>
@@ -32,9 +35,14 @@ export function Header() {
               </Button>
             </>
           ) : (
-            <Button onClick={() => signIn()}>
-              Sign In
-            </Button>
+            <>
+              <Link href="/search" className="text-gray-600 hover:text-gray-900">
+                Search
+              </Link>
+              <Button onClick={() => signIn()}>
+                Sign In
+              </Button>
+            </>
           )}
         </nav>
       </div>

@@ -48,8 +48,6 @@ export default function EditListingPage() {
         country: listing.country,
         latitude: listing.latitude,
         longitude: listing.longitude,
-        pricePerNight: listing.pricePerNight,
-        isFree: listing.isFree,
         maxGuests: listing.maxGuests,
         bedrooms: listing.bedrooms,
         bathrooms: listing.bathrooms,

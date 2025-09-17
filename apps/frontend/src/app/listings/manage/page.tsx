@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, Trash2, MapPin, Users, DollarSign, Home } from 'lucide-react'
+import { Plus, Edit, Trash2, MapPin, Users, Home } from 'lucide-react'
 
 interface Listing {
   id: string
@@ -16,8 +16,6 @@ interface Listing {
   address: string
   city: string
   state: string
-  pricePerNight?: number
-  isFree: boolean
   maxGuests?: number
   bedrooms?: number
   bathrooms?: number
@@ -195,10 +193,6 @@ export default function ManageListingsPage() {
                   <div className="flex items-center text-gray-600">
                     <Users className="w-4 h-4 mr-1" />
                     {listing.maxGuests} guests
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <DollarSign className="w-4 h-4 mr-1" />
-                    {listing.isFree ? 'Free for friends' : `$${listing.pricePerNight}/night`}
                   </div>
                 </div>
                 

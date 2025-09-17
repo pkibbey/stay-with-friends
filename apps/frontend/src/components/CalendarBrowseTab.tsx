@@ -69,10 +69,17 @@ export function CalendarBrowseTab({
             className="w-full bg-white/50 dark:bg-gray-900"
           />
         </div>
-        <Button disabled={isSearching} className="w-full sm:w-auto">
-          <Search className="w-4 h-4 mr-2" />
-          {isSearching ? 'Searching...' : 'Search'}
-        </Button>
+        <div className="flex gap-2">
+          <Button disabled={isSearching} className="w-full sm:w-auto">
+            <Search className="w-4 h-4 mr-2" />
+            {isSearching ? 'Searching...' : 'Search'}
+          </Button>
+          <Link href="/search">
+            <Button variant="outline" className="w-full sm:w-auto">
+              Advanced Search
+            </Button>
+          </Link>
+        </div>
       </div>
       
       {/* Email Invitation Section */}

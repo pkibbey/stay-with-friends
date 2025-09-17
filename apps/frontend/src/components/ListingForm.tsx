@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { FileUpload } from "@/components/ui/file-upload"
-import { Home, MapPin, DollarSign, Users, Clock, Shield, Camera } from "lucide-react"
+import { Home, MapPin, Users, Clock, Shield, Camera } from "lucide-react"
 
 export interface ListingFormData {
   id?: string
@@ -21,8 +20,6 @@ export interface ListingFormData {
   country: string
   latitude?: number
   longitude?: number
-  pricePerNight?: number
-  isFree: boolean
   maxGuests?: number
   bedrooms?: number
   bathrooms?: number
@@ -77,8 +74,6 @@ export function ListingForm({
     state: '',
     zipCode: '',
     country: 'US',
-    pricePerNight: 0,
-    isFree: false,
     maxGuests: 1,
     bedrooms: 1,
     bathrooms: 1,
@@ -109,9 +104,6 @@ export function ListingForm({
     }
     if (!formData.state.trim()) {
       newErrors.state = 'State is required'
-    }
-    if (!formData.isFree && (!formData.pricePerNight || formData.pricePerNight <= 0)) {
-      newErrors.pricePerNight = 'Price per night must be greater than 0 when not free'
     }
     if (!formData.maxGuests || formData.maxGuests < 1) {
       newErrors.maxGuests = 'Must accommodate at least 1 guest'
@@ -304,44 +296,6 @@ export function ListingForm({
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Pricing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Pricing
-            </CardTitle>
-            <CardDescription>Set your pricing or offer it for free to friends</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isFree"
-                checked={formData.isFree}
-                onCheckedChange={(checked) => updateField('isFree', checked)}
-              />
-              <Label htmlFor="isFree">This is free for friends</Label>
-            </div>
-
-            {!formData.isFree && (
-              <div>
-                <Label htmlFor="pricePerNight">Price per Night ($) *</Label>
-                <Input
-                  id="pricePerNight"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.pricePerNight || ''}
-                  onChange={(e) => updateField('pricePerNight', parseFloat(e.target.value) || 0)}
-                  placeholder="100.00"
-                  className={errors.pricePerNight ? 'border-red-500' : ''}
-                />
-                {errors.pricePerNight && <p className="text-sm text-red-500 mt-1">{errors.pricePerNight}</p>}
-              </div>
-            )}
           </CardContent>
         </Card>
 
