@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { AvailabilityManager } from '@/components/AvailabilityManager'
+import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock } from 'lucide-react'
 
@@ -121,33 +122,33 @@ export default function ManageHostingPage() {
 
   if (!session) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageLayout title="Hosting" showHeader={false}>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Please sign in to manage your hosting</h1>
           <p className="text-gray-600">You need to be signed in to access hosting management features.</p>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
+  const headerActions = (
+    <Button onClick={() => setShowAddForm(!showAddForm)} className="flex items-center gap-2">
+      <Plus className="w-4 h-4" />
+      Add New Hosting
+    </Button>
+  )
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex items-center gap-4 mb-8">
+    <PageLayout 
+      title="Manage Your Hosting" 
+      subtitle="Add and manage your properties for friends to stay"
+      headerActions={headerActions}
+    >
+      <div className="flex items-center gap-4 mb-6">
         <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
-      </div>
-
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Manage Your Hosting</h1>
-          <p className="text-gray-600 mt-2">Add and manage your properties for friends to stay</p>
-        </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add New Hosting
-        </Button>
       </div>
 
       {showAddForm && (
@@ -374,6 +375,6 @@ export default function ManageHostingPage() {
           ))
         )}
       </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLayout } from '@/components/PageLayout'
 
 interface Connection {
   id: string
@@ -159,24 +160,26 @@ export default function Connections() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Please sign in</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.href = '/auth/signin'}>
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <PageLayout title="Connections" showHeader={false}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Please sign in</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = '/auth/signin'}>
+                Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <PageLayout title="Connections" subtitle="Manage your trusted network">
+      <div>
         <div className="grid gap-6">
           {/* Add Connection */}
           <Card>
@@ -276,6 +279,6 @@ export default function Connections() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageLayout>
   )
 }

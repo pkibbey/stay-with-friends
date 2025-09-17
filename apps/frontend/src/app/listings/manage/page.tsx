@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PageLayout } from '@/components/PageLayout'
 import { Plus, Edit, Trash2, MapPin, Users, Home } from 'lucide-react'
 
 interface Listing {
@@ -89,18 +90,20 @@ export default function ManageListingsPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your listings...</p>
+      <PageLayout title="Manage Listings" showHeader={false}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your listings...</p>
+          </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageLayout title="Manage Listings" showHeader={false}>
         <Card>
           <CardHeader>
             <CardTitle>Authentication Required</CardTitle>
@@ -110,27 +113,25 @@ export default function ManageListingsPage() {
             <p>Please log in to continue.</p>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Your Listings</h1>
-          <p className="text-gray-600 mt-2">
-            Create, edit, and manage your property listings
-          </p>
-        </div>
-        <Link href="/listings/create">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Listing
-          </Button>
-        </Link>
-      </div>
+  const headerActions = (
+    <Link href="/listings/create">
+      <Button>
+        <Plus className="w-4 h-4 mr-2" />
+        Create New Listing
+      </Button>
+    </Link>
+  )
 
+  return (
+    <PageLayout 
+      title="Manage Your Listings" 
+      subtitle="Create, edit, and manage your property listings"
+      headerActions={headerActions}
+    >
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800">{error}</p>
@@ -233,6 +234,6 @@ export default function ManageListingsPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

@@ -357,7 +357,7 @@ function Home() {
 
       {/* Full-width Calendar Section */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="max-w-4xl mx-auto">
+        <div>
           <CalendarBrowseTab
             selectedDate={selectedDate}
             setSelectedDate={handleDateSelect}

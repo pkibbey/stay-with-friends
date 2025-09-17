@@ -124,7 +124,7 @@ export function HostProfileForm({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8">
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
         <Card>

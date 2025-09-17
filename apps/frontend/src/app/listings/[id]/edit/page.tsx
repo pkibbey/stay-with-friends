@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { ListingForm, ListingFormData } from '@/components/ListingForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLayout } from '@/components/PageLayout'
 
 export default function EditListingPage() {
   const router = useRouter()
@@ -102,18 +103,20 @@ export default function EditListingPage() {
 
   if (status === 'loading' || isLoadingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading listing...</p>
+      <PageLayout title="Edit Listing" showHeader={false}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading listing...</p>
+          </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageLayout title="Edit Listing" showHeader={false}>
         <Card>
           <CardHeader>
             <CardTitle>Authentication Required</CardTitle>
@@ -123,13 +126,13 @@ export default function EditListingPage() {
             <p>Please log in to continue.</p>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageLayout title="Error" showHeader={false}>
         <Card>
           <CardHeader>
             <CardTitle>Error</CardTitle>
@@ -139,13 +142,13 @@ export default function EditListingPage() {
             <p>Unable to load the listing for editing.</p>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   if (!initialData) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageLayout title="Listing Not Found" showHeader={false}>
         <Card>
           <CardHeader>
             <CardTitle>Listing Not Found</CardTitle>
@@ -155,19 +158,15 @@ export default function EditListingPage() {
             <p>Please check the URL and try again.</p>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Edit Listing</h1>
-        <p className="text-gray-600 mt-2">
-          Update your property details and settings
-        </p>
-      </div>
-
+    <PageLayout 
+      title="Edit Listing" 
+      subtitle="Update your property details and settings"
+    >
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800">{error}</p>
@@ -181,6 +180,6 @@ export default function EditListingPage() {
         isLoading={isLoading}
         submitLabel="Update Listing"
       />
-    </div>
+    </PageLayout>
   )
 }

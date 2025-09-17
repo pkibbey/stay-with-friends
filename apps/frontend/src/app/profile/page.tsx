@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { signOut } from 'next-auth/react'
+import { PageLayout } from '@/components/PageLayout'
 
 interface User {
   id: string
@@ -99,24 +100,26 @@ export default function Profile() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Please sign in</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.href = '/auth/signin'}>
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <PageLayout title="Profile" showHeader={false}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Please sign in</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = '/auth/signin'}>
+                Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-2xl">
+    <PageLayout title="Profile" subtitle="Manage your account information">
+      <div>
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>
@@ -156,6 +159,6 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   )
 }
