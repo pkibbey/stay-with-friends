@@ -1,28 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from 'next/image'
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { X, ImageIcon } from "lucide-react"
 import { FileUpload } from "@/components/ui/file-upload"
+import { Host, PartialHost } from "@/types"
 
-interface PersonPhotosProps {
-  name: string
-  photos?: string[]
+interface HostPhotosProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    photos?: string[]
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string[]) => void
 }
 
-export function PersonPhotos({
-  name,
-  photos = [],
+export function HostPhotos({
+  host,
   isEditing = false,
   editedData = {},
   onUpdate
-}: PersonPhotosProps) {
-  const displayPhotos = isEditing ? (editedData.photos || photos) : photos
+}: HostPhotosProps) {
+  const displayPhotos = isEditing ? (editedData.photos || []) : host.photos || []
 
   const removePhoto = useCallback((index: number) => {
     const updatedPhotos = displayPhotos.filter((_, i) => i !== index)

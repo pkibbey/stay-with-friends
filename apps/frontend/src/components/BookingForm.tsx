@@ -6,11 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, Star } from "lucide-react"
 import { formatDateForUrl } from '@/lib/date-utils'
+import type { Host } from '@/types'
 
 interface BookingFormProps {
-  personId: string
-  personName: string
-  maxGuests: number
+  host: Host
   maxNights: number
   selectedDate: Date | undefined
 }
@@ -23,7 +22,7 @@ interface BookingFormData {
   message: string
 }
 
-export function BookingForm({ personId, personName, maxGuests, maxNights, selectedDate }: BookingFormProps) {
+export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps) {
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
     requesterName: '',
     requesterEmail: '',
@@ -40,22 +39,22 @@ export function BookingForm({ personId, personName, maxGuests, maxNights, select
 
     setIsSubmitting(true)
     try {
-      const response = await fetch('http://localhost:8000/graphql', {
+      const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           query: `
-            mutation CreateBookingRequest($personId: ID!, $requesterName: String!, $requesterEmail: String!, $startDate: String!, $endDate: String!, $guests: Int!, $message: String) {
-              createBookingRequest(personId: $personId, requesterName: $requesterName, requesterEmail: $requesterEmail, startDate: $startDate, endDate: $endDate, guests: $guests, message: $message) {
+            mutation CreateBookingRequest($hostId: ID!, $requesterName: String!, $requesterEmail: String!, $startDate: String!, $endDate: String!, $guests: Int!, $message: String) {
+              createBookingRequest(hostId: $hostId, requesterName: $requesterName, requesterEmail: $requesterEmail, startDate: $startDate, endDate: $endDate, guests: $guests, message: $message) {
                 id
                 status
               }
             }
           `,
           variables: {
-            personId,
+            hostId: host.id,
             requesterName: bookingForm.requesterName,
             requesterEmail: bookingForm.requesterEmail,
             startDate: formatDateForUrl(selectedDate),
@@ -81,7 +80,7 @@ export function BookingForm({ personId, personName, maxGuests, maxNights, select
     <Card>
       <CardHeader>
         <CardTitle>Request to Stay</CardTitle>
-        <CardDescription>Send a booking request to {personName}</CardDescription>
+        <CardDescription>Send a booking request to {host.name}</CardDescription>
       </CardHeader>
       <CardContent>
         {bookingSubmitted ? (
@@ -89,7 +88,7 @@ export function BookingForm({ personId, personName, maxGuests, maxNights, select
             <Star className="w-12 h-12 text-green-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-green-600 mb-2">Request Sent!</h3>
             <p className="text-gray-600 dark:text-gray-300">
-              {`Your booking request has been sent to ${personName}. They'll get back to you soon.`}
+              {`Your booking request has been sent to ${host.name}. They'll get back to you soon.`}
             </p>
           </div>
         ) : (
@@ -121,7 +120,7 @@ export function BookingForm({ personId, personName, maxGuests, maxNights, select
                 id="guests"
                 type="number"
                 min="1"
-                max={maxGuests}
+                max={host.maxGuests || 1}
                 value={bookingForm.guests}
                 onChange={(e) => setBookingForm(prev => ({ ...prev, guests: parseInt(e.target.value) }))}
                 required

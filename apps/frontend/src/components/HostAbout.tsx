@@ -2,54 +2,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Host, PartialHost } from "@/types"
 import { Home, Users, Clock } from "lucide-react"
 
-interface PersonAboutProps {
-  name: string
-  description?: string
-  bedrooms?: number
-  bathrooms?: number
-  maxGuests?: number
-  checkInTime?: string
-  checkOutTime?: string
+interface HostAboutProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    name?: string
-    description?: string
-    bedrooms?: number
-    bathrooms?: number
-    maxGuests?: number
-    checkInTime?: string
-    checkOutTime?: string
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string | number) => void
 }
 
-export function PersonAbout({
-  name,
-  description,
-  bedrooms,
-  bathrooms,
-  maxGuests,
-  checkInTime,
-  checkOutTime,
+export function HostAbout({
+  host,
   isEditing = false,
   editedData = {},
   onUpdate
-}: PersonAboutProps) {
-  const displayData = isEditing ? { ...editedData, name } : {
-    description,
-    bedrooms,
-    bathrooms,
-    maxGuests,
-    checkInTime,
-    checkOutTime
-  }
+}: HostAboutProps) {
+  const displayData = isEditing ? { ...editedData, ...host } : host
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>About {isEditing ? editedData.name : name}</CardTitle>
+        <CardTitle>About {isEditing ? editedData.name : host.name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isEditing ? (

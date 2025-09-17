@@ -8,7 +8,7 @@ import { useState } from 'react'
 
 interface Availability {
   id: string
-  personId: string
+  hostId: string
   startDate: string
   endDate: string
   status: string

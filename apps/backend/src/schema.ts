@@ -1,5 +1,5 @@
 export const typeDefs = `#graphql
-  type Person {
+  type Host {
     id: ID!
     name: String!
     email: String
@@ -27,17 +27,17 @@ export const typeDefs = `#graphql
 
   type Availability {
     id: ID!
-    personId: ID!
+    hostId: ID!
     startDate: String!
     endDate: String!
     status: String!
     notes: String
-    person: Person!
+    host: Host!
   }
 
   type BookingRequest {
     id: ID!
-    personId: ID!
+    hostId: ID!
     requesterName: String!
     requesterEmail: String!
     startDate: String!
@@ -46,23 +46,45 @@ export const typeDefs = `#graphql
     message: String
     status: String!
     createdAt: String!
-    person: Person!
+    host: Host!
+  }
+
+  type User {
+    id: ID!
+    email: String!
+    name: String
+    emailVerified: String
+    image: String
+    createdAt: String!
+  }
+
+  type Connection {
+    id: ID!
+    userId: ID!
+    connectedUserId: ID!
+    status: String!
+    createdAt: String!
+    connectedUser: User!
   }
 
   type Query {
     hello: String
-    people: [Person!]!
-    searchPeople(query: String!): [Person!]!
-    person(id: ID!): Person
+    hosts: [Host!]!
+    searchHosts(query: String!): [Host!]!
+    host(id: ID!): Host
     availabilitiesByDate(date: String!): [Availability!]!
     availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
-    personAvailabilities(personId: ID!): [Availability!]!
+    hostAvailabilities(hostId: ID!): [Availability!]!
     availabilityDates(startDate: String!, endDate: String!): [String!]!
+    user(email: String!): User
+    connections(userId: ID!): [Connection!]!
+    connectionRequests(userId: ID!): [Connection!]!
   }
 
   type Mutation {
-    createPerson(
+    createHost(
       name: String!
+      email: String!
       location: String
       relationship: String
       availability: String
@@ -82,16 +104,16 @@ export const typeDefs = `#graphql
       bedrooms: Int
       bathrooms: Int
       photos: [String!]
-    ): Person!
+    ): Host!
     createAvailability(
-      personId: ID!
+      hostId: ID!
       startDate: String!
       endDate: String!
       status: String
       notes: String
     ): Availability!
     createBookingRequest(
-      personId: ID!
+      hostId: ID!
       requesterName: String!
       requesterEmail: String!
       startDate: String!
@@ -101,9 +123,13 @@ export const typeDefs = `#graphql
     ): BookingRequest!
     checkEmailExists(email: String!): Boolean!
     sendInvitationEmail(email: String!, invitationUrl: String!): Boolean!
-    createPlace(input: CreatePlaceInput!): Person!
-    updatePerson(id: ID!, input: UpdatePersonInput!): Person!
-    deletePerson(id: ID!): Boolean!
+    createPlace(input: CreatePlaceInput!): Host!
+    updateHost(id: ID!, input: UpdateHostInput!): Host!
+    deleteHost(id: ID!): Boolean!
+    createUser(email: String!, name: String, image: String): User!
+    updateUser(id: ID!, name: String, image: String): User!
+    createConnection(userId: ID!, connectedUserEmail: String!): Connection!
+    updateConnectionStatus(connectionId: ID!, status: String!): Connection!
   }
 
   input CreatePlaceInput {
@@ -115,7 +141,7 @@ export const typeDefs = `#graphql
     email: String!
   }
 
-  input UpdatePersonInput {
+  input UpdateHostInput {
     name: String
     location: String
     relationship: String
@@ -148,18 +174,18 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllPeople, getPersonById, getPersonByEmail, searchPeople, insertPerson, getPersonAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest } from './db';
+import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus } from './db';
 
 export const resolvers = {
   Query: {
     hello: () => 'Hello world!',
-    people: () => getAllPeople.all(),
-    searchPeople: (_: any, { query }: { query: string }) => {
+    hosts: () => getAllHosts.all(),
+    searchHosts: (_: any, { query }: { query: string }) => {
       const searchTerm = `%${query}%`;
-      return searchPeople.all(searchTerm, searchTerm, searchTerm);
+      return searchHosts.all(searchTerm, searchTerm, searchTerm);
     },
-    person: (_: any, { id }: { id: string }) => {
-      return getPersonById.get(id);
+    host: (_: any, { id }: { id: string }) => {
+      return getHostById.get(id);
     },
     availabilitiesByDate: (_: any, { date }: { date: string }) => {
       return getAvailabilitiesByDateRange.all(date, date);
@@ -167,18 +193,27 @@ export const resolvers = {
     availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
       return getAvailabilitiesByDateRange.all(endDate, startDate);
     },
-    personAvailabilities: (_: any, { personId }: { personId: string }) => {
-      return getPersonAvailabilities.all(personId);
+    hostAvailabilities: (_: any, { hostId }: { hostId: string }) => {
+      return getHostAvailabilities.all(hostId);
     },
     availabilityDates: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
       const results = getAvailabilityDates.all(startDate, endDate, endDate, startDate) as { date: string }[];
       return results.map(row => row.date);
     },
+    user: (_: any, { email }: { email: string }) => {
+      return getUserByEmail.get(email);
+    },
+    connections: (_: any, { userId }: { userId: string }) => {
+      return getConnections.all(userId);
+    },
+    connectionRequests: (_: any, { userId }: { userId: string }) => {
+      return getConnectionRequests.all(userId);
+    },
   },
   Mutation: {
-    createPerson: (_: any, args: any) => {
+    createHost: (_: any, args: any) => {
       try {
-        const result = insertPerson.run(
+        const result = insertHost.run(
           args.name,
           args.email,
           args.location,
@@ -207,14 +242,14 @@ export const resolvers = {
         };
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          throw new Error('A person with this email already exists');
+          throw new Error('A host with this email already exists');
         }
         throw error;
       }
     },
     createAvailability: (_: any, args: any) => {
       const result = insertAvailability.run(
-        args.personId,
+        args.hostId,
         args.startDate,
         args.endDate,
         args.status || 'available',
@@ -222,13 +257,13 @@ export const resolvers = {
       );
       return {
         id: result.lastInsertRowid,
-        personId: args.personId,
+        hostId: args.hostId,
         ...args,
       };
     },
     createBookingRequest: (_: any, args: any) => {
       const result = insertBookingRequest.run(
-        args.personId,
+        args.hostId,
         args.requesterName,
         args.requesterEmail,
         args.startDate,
@@ -245,8 +280,8 @@ export const resolvers = {
       };
     },
     checkEmailExists: (_: any, { email }: { email: string }) => {
-      const person = getPersonByEmail.get(email);
-      return !!person;
+      const host = getHostByEmail.get(email);
+      return !!host;
     },
     sendInvitationEmail: (_: any, { email, invitationUrl }: { email: string, invitationUrl: string }) => {
       // In a real implementation, you'd integrate with an email service like SendGrid, Mailgun, etc.
@@ -255,7 +290,7 @@ export const resolvers = {
       return true;
     },
     createPlace: (_: any, { input }: { input: any }) => {
-      const result = insertPerson.run(
+      const result = insertHost.run(
         input.name,
         input.email,
         input.location,
@@ -283,7 +318,7 @@ export const resolvers = {
         ...input,
       };
     },
-    updatePerson: (_: any, { id, input }: { id: string, input: any }) => {
+    updateHost: (_: any, { id, input }: { id: string, input: any }) => {
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
 
       try {
@@ -374,24 +409,25 @@ export const resolvers = {
       if (input.email !== undefined) {
         updates.push('email = ?')
         values.push(input.email)
-      }        if (updates.length === 0) {
-          // No updates provided, return current person
-          return getPersonById.get(id)
+      }        
+        if (updates.length === 0) {
+          // No updates provided, return current host
+          return getHostById.get(id)
         }
 
-        const updateQuery = `UPDATE people SET ${updates.join(', ')} WHERE id = ?`
+        const updateQuery = `UPDATE hosts SET ${updates.join(', ')} WHERE id = ?`
         values.push(id)
 
         db.prepare(updateQuery).run(...values)
 
         // Handle availabilities update
         if (input.availabilities !== undefined) {
-          // Delete existing availabilities for this person
-          db.prepare('DELETE FROM availabilities WHERE person_id = ?').run(id)
+          // Delete existing availabilities for this host
+          db.prepare('DELETE FROM availabilities WHERE host_id = ?').run(id)
 
           // Insert new availabilities
           const insertAvailabilityStmt = db.prepare(`
-            INSERT INTO availabilities (person_id, start_date, end_date, status, notes)
+            INSERT INTO availabilities (host_id, start_date, end_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
           `)
 
@@ -406,42 +442,79 @@ export const resolvers = {
           }
         }
 
-        // Return updated person
-        return getPersonById.get(id)
+        // Return updated host
+        return getHostById.get(id)
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          throw new Error('A person with this email already exists');
+          throw new Error('A host with this email already exists');
         }
         throw error;
       } finally {
         db.close()
       }
     },
-    deletePerson: (_: any, { id }: { id: string }) => {
+    deleteHost: (_: any, { id }: { id: string }) => {
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
 
       try {
         // Delete availabilities first (foreign key constraint)
-        db.prepare('DELETE FROM availabilities WHERE person_id = ?').run(id)
+        db.prepare('DELETE FROM availabilities WHERE host_id = ?').run(id)
 
         // Delete booking requests
-        db.prepare('DELETE FROM booking_requests WHERE person_id = ?').run(id)
+        db.prepare('DELETE FROM booking_requests WHERE host_id = ?').run(id)
 
-        // Delete the person
-        const result = db.prepare('DELETE FROM people WHERE id = ?').run(id)
+        // Delete the host
+        const result = db.prepare('DELETE FROM hosts WHERE id = ?').run(id)
 
         return result.changes > 0
       } catch (error) {
-        console.error('Error deleting person:', error)
+        console.error('Error deleting host:', error)
         return false
       } finally {
         db.close()
       }
     },
+    createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }) => {
+      const result = insertUser.run(email, name, null, image);
+      return {
+        id: result.lastInsertRowid,
+        email,
+        name,
+        image,
+        createdAt: new Date().toISOString(),
+      };
+    },
+    updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }) => {
+      updateUser.run(name, image, id);
+      return getUserById.get(id);
+    },
+    createConnection: (_: any, { userId, connectedUserEmail }: { userId: string, connectedUserEmail: string }) => {
+      const connectedUser = getUserByEmail.get(connectedUserEmail) as any;
+      if (!connectedUser) {
+        throw new Error('User with this email not found');
+      }
+      
+      const result = insertConnection.run(userId, connectedUser.id, 'pending');
+      return {
+        id: result.lastInsertRowid,
+        userId,
+        connectedUserId: connectedUser.id,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+    },
+    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }) => {
+      const result = updateConnectionStatus.run(status, connectionId);
+      // Return the updated connection
+      const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
+      const connection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
+      db.close();
+      return connection;
+    },
   },
-  Person: {
+  Host: {
     availabilities: (parent: any) => {
-      return getPersonAvailabilities.all(parent.id);
+      return getHostAvailabilities.all(parent.id);
     },
     zipCode: (parent: any) => parent.zip_code,
     houseRules: (parent: any) => parent.house_rules,
@@ -452,22 +525,32 @@ export const resolvers = {
     photos: (parent: any) => parent.photos ? JSON.parse(parent.photos) : [],
   },
   Availability: {
-    person: (parent: any) => {
-      return getPersonById.get(parent.person_id);
+    host: (parent: any) => {
+      return getHostById.get(parent.host_id);
     },
     startDate: (parent: any) => parent.start_date,
     endDate: (parent: any) => parent.end_date,
-    personId: (parent: any) => parent.person_id,
+    hostId: (parent: any) => parent.host_id,
   },
   BookingRequest: {
-    person: (parent: any) => {
-      return getPersonById.get(parent.person_id);
+    host: (parent: any) => {
+      return getHostById.get(parent.host_id);
     },
-    personId: (parent: any) => parent.person_id,
+    hostId: (parent: any) => parent.host_id,
     requesterName: (parent: any) => parent.requester_name,
     requesterEmail: (parent: any) => parent.requester_email,
     startDate: (parent: any) => parent.start_date,
     endDate: (parent: any) => parent.end_date,
+    createdAt: (parent: any) => parent.created_at,
+  },
+  User: {
+    emailVerified: (parent: any) => parent.email_verified,
+    createdAt: (parent: any) => parent.created_at,
+  },
+  Connection: {
+    connectedUser: (parent: any) => {
+      return getUserById.get(parent.connected_user_id);
+    },
     createdAt: (parent: any) => parent.created_at,
   },
 };

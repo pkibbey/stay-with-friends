@@ -4,25 +4,24 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { X, Plus } from "lucide-react"
 import { useState } from "react"
+import { Host, PartialHost } from "@/types"
 
-interface PersonAmenitiesProps {
-  amenities?: string[]
+interface HostAmenitiesProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    amenities?: string[]
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string[]) => void
 }
 
-export function PersonAmenities({ 
-  amenities = [], 
+export function HostAmenities({ 
+  host,
   isEditing = false,
   editedData = {},
   onUpdate
-}: PersonAmenitiesProps) {
+}: HostAmenitiesProps) {
   const [newAmenity, setNewAmenity] = useState("")
-  
-  const displayAmenities = isEditing ? (editedData.amenities || amenities) : amenities
+
+  const displayAmenities = isEditing ? (editedData.amenities || host.amenities || []) : host.amenities || []
 
   const addAmenity = () => {
     if (newAmenity.trim()) {

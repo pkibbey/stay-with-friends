@@ -2,12 +2,12 @@
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { PersonHeader } from "@/components/PersonHeader"
-import { PersonPhotos } from "@/components/PersonPhotos"
-import { PersonAbout } from "@/components/PersonAbout"
-import { PersonAmenities } from "@/components/PersonAmenities"
-import { PersonHouseRules } from "@/components/PersonHouseRules"
-import { PersonLocation } from "@/components/PersonLocation"
+import { HostHeader } from "@/components/HostHeader"
+import { HostPhotos } from "@/components/HostPhotos"
+import { HostAbout } from "@/components/HostAbout"
+import { HostAmenities } from "@/components/HostAmenities"
+import { HostHouseRules } from "@/components/HostHouseRules"
+import { HostLocation } from "@/components/HostLocation"
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar"
 import { AvailabilityManager } from "@/components/AvailabilityManager"
 import { BookingForm } from "@/components/BookingForm"
@@ -16,65 +16,31 @@ import { ArrowLeft, Edit, Save, X, Trash2 } from "lucide-react"
 import Link from 'next/link'
 import * as React from "react"
 import { parseDateFromUrl, formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
+import type { Host, Availability } from '@/types'
 
-interface Person {
-  id: string
-  name: string
-  location?: string
-  relationship?: string
-  availability?: string
-  description?: string
-  address?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  country?: string
-  latitude?: number
-  longitude?: number
-  amenities?: string[]
-  houseRules?: string
-  checkInTime?: string
-  checkOutTime?: string
-  maxGuests?: number
-  bedrooms?: number
-  bathrooms?: number
-  photos?: string[]
-  email?: string
-  availabilities: Availability[]
-}
-
-interface Availability {
-  id: string
-  personId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-}
-
-export default function PersonDetailPage() {
+export default function HostDetailPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const personId = params.id as string
+  const hostId = params.id as string
 
-  const [person, setPerson] = useState<Person | null>(null)
+  const [host, setHost] = useState<Host | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isEditing, setIsEditing] = useState(false)
-  const [editedPerson, setEditedPerson] = useState<Partial<Person>>({})
+  const [editedHost, setEditedHost] = useState<Partial<Host>>({})
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   // Function to check if a date is available
   const isDateAvailable = (date: Date | undefined): boolean => {
-    if (!date || !person?.availabilities) return false
+    if (!date || !host?.availabilities) return false
     
     // Use the same timezone handling as parseDateFromUrl for consistency
     const dateString = formatDateForUrl(date)
     const checkDate = parseLocalDate(dateString)
     
-    return person.availabilities.some(availability => {
+    return host.availabilities.some(availability => {
       if (availability.status !== 'available') return false
       
       // Parse availability dates with consistent timezone handling
@@ -103,22 +69,22 @@ export default function PersonDetailPage() {
   // Function to start editing
   const handleEdit = () => {
     setIsEditing(true)
-    setEditedPerson({ ...person })
+    setEditedHost({ ...host })
   }
 
   // Function to cancel editing
   const handleCancelEdit = () => {
     setIsEditing(false)
-    setEditedPerson({})
+    setEditedHost({})
   }
 
   // Function to save changes
   const handleSave = async () => {
-    if (!person) return
+    if (!host) return
 
     setSaving(true)
     try {
-      const response = await fetch('http://localhost:8000/graphql', {
+      const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,30 +126,30 @@ export default function PersonDetailPage() {
             }
           `,
           variables: {
-            id: person.id,
+            id: host.id,
             input: {
-              name: editedPerson.name,
-              location: editedPerson.location,
-              relationship: editedPerson.relationship,
-              availability: editedPerson.availability,
-              description: editedPerson.description,
-              address: editedPerson.address,
-              city: editedPerson.city,
-              state: editedPerson.state,
-              zipCode: editedPerson.zipCode,
-              country: editedPerson.country,
-              latitude: editedPerson.latitude,
-              longitude: editedPerson.longitude,
-              amenities: editedPerson.amenities,
-              houseRules: editedPerson.houseRules,
-              checkInTime: editedPerson.checkInTime,
-              checkOutTime: editedPerson.checkOutTime,
-              maxGuests: editedPerson.maxGuests,
-              bedrooms: editedPerson.bedrooms,
-              bathrooms: editedPerson.bathrooms,
-              photos: editedPerson.photos,
-              email: editedPerson.email,
-              availabilities: editedPerson.availabilities?.map(avail => ({
+              name: editedHost.name,
+              location: editedHost.location,
+              relationship: editedHost.relationship,
+              availability: editedHost.availability,
+              description: editedHost.description,
+              address: editedHost.address,
+              city: editedHost.city,
+              state: editedHost.state,
+              zipCode: editedHost.zipCode,
+              country: editedHost.country,
+              latitude: editedHost.latitude,
+              longitude: editedHost.longitude,
+              amenities: editedHost.amenities,
+              houseRules: editedHost.houseRules,
+              checkInTime: editedHost.checkInTime,
+              checkOutTime: editedHost.checkOutTime,
+              maxGuests: editedHost.maxGuests,
+              bedrooms: editedHost.bedrooms,
+              bathrooms: editedHost.bathrooms,
+              photos: editedHost.photos,
+              email: editedHost.email,
+              availabilities: editedHost.availabilities?.map(avail => ({
                 startDate: avail.startDate,
                 endDate: avail.endDate,
                 status: avail.status,
@@ -196,9 +162,9 @@ export default function PersonDetailPage() {
 
       const data = await response.json()
       if (data.data?.updatePerson) {
-        setPerson(data.data.updatePerson)
+        setHost(data.data.updatePerson)
         setIsEditing(false)
-        setEditedPerson({})
+        setEditedHost({})
       } else {
         console.error('Failed to update person:', data.errors)
         const errorMessage = data.errors?.[0]?.message || 'Failed to save changes. Please try again.'
@@ -212,37 +178,37 @@ export default function PersonDetailPage() {
     }
   }
 
-  // Function to delete person
+  // Function to delete host
   const handleDelete = async () => {
-    if (!person) return
+    if (!host) return
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${person.name}? This action cannot be undone.`
+      `Are you sure you want to delete ${host.name}? This action cannot be undone.`
     )
 
     if (!confirmDelete) return
 
     setDeleting(true)
     try {
-      const response = await fetch('http://localhost:8000/graphql', {
+      const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           query: `
-            mutation DeletePerson($id: ID!) {
-              deletePerson(id: $id)
+            mutation DeleteHost($id: ID!) {
+              deleteHost(id: $id)
             }
           `,
           variables: {
-            id: person.id,
+            id: host.id,
           },
         }),
       })
 
       const data = await response.json()
-      if (data.data?.deletePerson) {
+      if (data.data?.deleteHost) {
         // Redirect to home page after successful deletion
         router.push('/')
       } else {
@@ -257,9 +223,9 @@ export default function PersonDetailPage() {
     }
   }
 
-  // Function to update edited person data
-  const updateEditedPerson = (field: string, value: string | number | string[] | Availability[]) => {
-    setEditedPerson(prev => ({
+  // Function to update edited host data
+  const updateEditedHost = (field: string, value: string | number | string[] | Availability[]) => {
+    setEditedHost(prev => ({
       ...prev,
       [field]: value
     }))
@@ -269,27 +235,27 @@ export default function PersonDetailPage() {
   const handleAddAvailability = (startDate: string, endDate: string, notes?: string) => {
     const newAvailability = {
       id: `temp-${Date.now()}`, // Temporary ID for new availabilities
-      personId,
+      hostId,
       startDate,
       endDate,
       status: 'available',
       notes: notes || ''
     }
 
-    const currentAvailabilities = editedPerson.availabilities || person?.availabilities || []
-    updateEditedPerson('availabilities', [...currentAvailabilities, newAvailability])
+    const currentAvailabilities = editedHost.availabilities || host?.availabilities || []
+    updateEditedHost('availabilities', [...currentAvailabilities, newAvailability])
   }
 
   // Function to remove availability
   const handleRemoveAvailability = (id: string) => {
-    const currentAvailabilities = editedPerson.availabilities || person?.availabilities || []
-    updateEditedPerson('availabilities', currentAvailabilities.filter(avail => avail.id !== id))
+    const currentAvailabilities = editedHost.availabilities || host?.availabilities || []
+    updateEditedHost('availabilities', currentAvailabilities.filter(avail => avail.id !== id))
   }
 
   useEffect(() => {
-    const fetchPersonDetails = async () => {
+    const fetchHostDetails = async () => {
       try {
-        const response = await fetch('http://localhost:8000/graphql', {
+        const response = await fetch('http://localhost:4000/graphql', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -330,21 +296,21 @@ export default function PersonDetailPage() {
               }
             }
           `,
-            variables: { id: personId },
+            variables: { id: hostId },
           }),
         })
 
         const data = await response.json()
-        setPerson(data.data?.person || null)
+        setHost(data.data?.host || null)
       } catch (error) {
-        console.error('Failed to fetch person details:', error)
+        console.error('Failed to fetch host details:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPersonDetails()
-  }, [personId])
+    fetchHostDetails()
+  }, [hostId])
 
   // Handle date parameter from URL
   useEffect(() => {
@@ -372,11 +338,11 @@ export default function PersonDetailPage() {
     )
   }
 
-  if (!person) {
+  if (!host) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Person not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Host not found</h1>
           <Link href="/">
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -390,14 +356,11 @@ export default function PersonDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <PersonHeader
-        name={person.name}
-        relationship={person.relationship}
-        location={person.location}
-        email={person.email}
+      <HostHeader
+        host={host}
         isEditing={isEditing}
-        editedData={editedPerson}
-        onUpdate={updateEditedPerson}
+        editedData={editedHost}
+        onUpdate={updateEditedHost}
       >
         {/* Edit Controls */}
         <div className="container mx-auto px-4 py-4">
@@ -416,7 +379,7 @@ export default function PersonDetailPage() {
                   disabled={deleting || saving}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  {deleting ? 'Deleting...' : 'Delete Person'}
+                  {deleting ? 'Deleting...' : 'Delete Host'}
                 </Button>
                 <Button onClick={handleCancelEdit} variant="outline" size="sm" disabled={saving}>
                   <X className="w-4 h-4 mr-2" />
@@ -430,7 +393,7 @@ export default function PersonDetailPage() {
             )}
           </div>
         </div>
-      </PersonHeader>
+      </HostHeader>
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -438,7 +401,7 @@ export default function PersonDetailPage() {
           <div className="space-y-6">
             {isEditing ? (
               <AvailabilityManager
-                availabilities={editedPerson.availabilities || person?.availabilities || []}
+                availabilities={editedHost.availabilities || host?.availabilities || []}
                 onAddAvailability={handleAddAvailability}
                 onRemoveAvailability={handleRemoveAvailability}
               />
@@ -446,7 +409,7 @@ export default function PersonDetailPage() {
               <AvailabilityCalendar
                 selectedDate={selectedDate}
                 onSelect={handleDateSelect}
-                availabilities={person.availabilities}
+                availabilities={host.availabilities}
               />
             )}
           </div>
@@ -455,63 +418,42 @@ export default function PersonDetailPage() {
           <div className="lg:col-span-2 space-y-8">
             {selectedDate && isDateAvailable(selectedDate) && !isEditing && (
               <BookingForm
-                personId={personId}
-                personName={person.name}
-                maxGuests={person.maxGuests || 1}
+                host={host}
                 maxNights={30} // Assuming a max of 30 nights for booking
                 selectedDate={selectedDate}
               />
-            )}
-            
-            <PersonPhotos
-              name={person.name}
-              photos={person.photos}
+            )}            
+            <HostPhotos
+              host={host}
               isEditing={isEditing}
-              editedData={editedPerson}
-              onUpdate={updateEditedPerson}
+              editedData={editedHost}
+              onUpdate={updateEditedHost}
             />
-
-            <PersonAbout
-              name={person.name}
-              description={person.description}
-              bedrooms={person.bedrooms}
-              bathrooms={person.bathrooms}
-              maxGuests={person.maxGuests}
-              checkInTime={person.checkInTime}
-              checkOutTime={person.checkOutTime}
+            <HostAbout
+              host={host}
               isEditing={isEditing}
-              editedData={editedPerson}
-              onUpdate={updateEditedPerson}
+              editedData={editedHost}
+              onUpdate={updateEditedHost}
             />
-
-            <PersonAmenities 
-              amenities={person.amenities} 
+            <HostAmenities
+              host={host}
               isEditing={isEditing}
-              editedData={editedPerson}
-              onUpdate={updateEditedPerson}
+              editedData={editedHost}
+              onUpdate={updateEditedHost}
             />
-
-            <PersonHouseRules 
-              houseRules={person.houseRules} 
+            <HostHouseRules
+              host={host}
               isEditing={isEditing}
-              editedData={editedPerson}
-              onUpdate={updateEditedPerson}
+              editedData={editedHost}
+              onUpdate={updateEditedHost}
             />
-
-            <PersonLocation
-              name={person.name}
-              address={person.address}
-              city={person.city}
-              state={person.state}
-              zipCode={person.zipCode}
-              country={person.country}
-              location={person.location}
+            <HostLocation
+              host={host}
               isEditing={isEditing}
-              editedData={editedPerson}
-              onUpdate={updateEditedPerson}
+              editedData={editedHost}
+              onUpdate={updateEditedHost}
             />
           </div>
-
         </div>
       </div>
     </div>

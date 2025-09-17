@@ -3,16 +3,16 @@ import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import cors from 'cors';
 import { resolvers, typeDefs } from './schema';
-import { insertPerson, getAllPeople, insertAvailability } from './db';
+import { insertHost, getAllHosts, insertAvailability } from './db';
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 4000;
 
 // Seed database with sample data
 const seedDatabase = () => {
-  const existingPeople = getAllPeople.all();
-  if (existingPeople.length === 0) {
-    const samplePeople = [
+  const existingHosts = getAllHosts.all();
+  if (existingHosts.length === 0) {
+    const sampleHosts = [
       {
         name: 'Sarah Johnson',
         location: 'San Francisco',
@@ -68,14 +68,14 @@ const seedDatabase = () => {
       }
     ];
 
-    for (const person of samplePeople) {
-      const result = insertPerson.run(
-        person.name,
+    for (const host of sampleHosts) {
+      const result = insertHost.run(
+        host.name,
         null, // email - sample data doesn't have emails
-        person.location,
-        person.relationship,
-        person.availability,
-        person.description,
+        host.location,
+        host.relationship,
+        host.availability,
+        host.description,
         null, // address
         null, // city
         null, // state
@@ -92,12 +92,12 @@ const seedDatabase = () => {
         1, // bathrooms
         JSON.stringify(['https://example.com/photo1.jpg']) // photos
       );
-      const personId = result.lastInsertRowid;
+      const hostId = result.lastInsertRowid;
 
       // Add availability records
-      for (const availability of person.availabilities) {
+      for (const availability of host.availabilities) {
         insertAvailability.run(
-          personId,
+          hostId,
           availability.startDate,
           availability.endDate,
           'available',

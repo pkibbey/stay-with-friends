@@ -1,23 +1,6 @@
 import { AvailabilityCard } from "./AvailabilityCard"
 import { formatDateForUrl } from '@/lib/date-utils'
-
-interface Person {
-  id: string
-  name: string
-  location?: string
-  relationship?: string
-  description?: string
-}
-
-interface Availability {
-  id: string
-  personId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-  person: Person
-}
+import type { Availability } from '@/types'
 
 interface SelectedDateAvailabilitiesProps {
   selectedDate: Date | undefined
@@ -33,7 +16,7 @@ export function SelectedDateAvailabilities({
   if (!selectedDate) return null
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="font-semibold">
         {selectedDate?.toLocaleDateString('en-US', {
           weekday: 'long',
@@ -52,7 +35,7 @@ export function SelectedDateAvailabilities({
             <AvailabilityCard
               key={availability.id}
               availability={availability}
-              linkHref={`/person/${availability.person.id}?date=${selectedDate ? formatDateForUrl(selectedDate) : ''}`}
+              linkHref={`/host/${availability.host?.id || availability.hostId}?date=${selectedDate ? formatDateForUrl(selectedDate) : ''}`}
               iconColor="purple"
             />
           ))}

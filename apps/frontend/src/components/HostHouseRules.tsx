@@ -1,23 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Host, PartialHost } from "@/types"
 
-interface PersonHouseRulesProps {
-  houseRules?: string
+interface HostHouseRulesProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    houseRules?: string
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string) => void
 }
 
-export function PersonHouseRules({ 
-  houseRules, 
+export function HostHouseRules({ 
+  host,
   isEditing = false,
   editedData = {},
   onUpdate
-}: PersonHouseRulesProps) {
-  const displayRules = isEditing ? (editedData.houseRules || houseRules) : houseRules
+}: HostHouseRulesProps) {
+  const displayRules = isEditing ? (editedData.houseRules || host.houseRules || "") : host.houseRules || ""
 
   if (!isEditing && !displayRules) {
     return null

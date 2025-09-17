@@ -10,7 +10,7 @@ export function HeroSection() {
         <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
           Find the perfect place to stay with people you know. Like AirBNB, but only for your trusted network.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Badge variant="secondary" className="px-4 py-2">
             <Users className="w-4 h-4 mr-2" />
             Trusted Network Only

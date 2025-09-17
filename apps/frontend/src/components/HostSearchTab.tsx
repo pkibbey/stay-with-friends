@@ -5,15 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Users } from "lucide-react"
 import Link from 'next/link'
 import { useState, useEffect } from "react"
-
-interface Host {
-  id: string
-  name: string
-  location?: string
-  relationship?: string
-  availability?: string
-  description?: string
-}
+import type { HostSummary } from '@/types'
 
 interface HostSearchTabProps {
   searchQuery: string
@@ -21,7 +13,7 @@ interface HostSearchTabProps {
 }
 
 export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProps) {
-  const [searchResults, setSearchResults] = useState<Host[]>([])
+  const [searchResults, setSearchResults] = useState<HostSummary[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
   const searchHosts = async (query: string) => {
@@ -77,7 +69,7 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
       <CardHeader>
         <CardTitle>Search for Someone to Stay With</CardTitle>
         <CardDescription>
-          Enter a name or location to find available stays with your friends and connections.
+          Enter a name or location to find available hosts in your friends and connections network.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

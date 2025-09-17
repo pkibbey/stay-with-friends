@@ -1,23 +1,6 @@
 import { formatDateForUrl, parseLocalDate } from "@/lib/date-utils"
 import { AvailabilityCard } from "./AvailabilityCard"
-
-interface Person {
-  id: string
-  name: string
-  location?: string
-  relationship?: string
-  description?: string
-}
-
-interface Availability {
-  id: string
-  personId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-  person: Person
-}
+import type { Availability } from '@/types'
 
 interface AllAvailabilitiesProps {
   allAvailabilities: Availability[]
@@ -28,7 +11,7 @@ export function AllAvailabilities({ allAvailabilities, isLoadingAll }: AllAvaila
   if (allAvailabilities.length === 0) return null
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="font-semibold">Available later</h3>
       {isLoadingAll ? (
         <div className="text-center py-8">
@@ -40,7 +23,7 @@ export function AllAvailabilities({ allAvailabilities, isLoadingAll }: AllAvaila
             <AvailabilityCard
               key={availability.id}
               availability={availability}
-              linkHref={`/person/${availability.person.id}?date=${availability.startDate ? formatDateForUrl(parseLocalDate(availability.startDate)) : ''}`}
+              linkHref={`/host/${availability.host?.id || availability.hostId}?date=${availability.startDate ? formatDateForUrl(parseLocalDate(availability.startDate)) : ''}`}
               iconColor="green"
             />
           ))}

@@ -3,24 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Users } from "lucide-react"
 import Link from 'next/link'
 import { formatDateRange } from '@/lib/date-utils'
-
-interface Person {
-  id: string
-  name: string
-  location?: string
-  relationship?: string
-  description?: string
-}
-
-interface Availability {
-  id: string
-  personId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-  person: Person
-}
+import type { Availability } from '@/types'
 
 interface AvailabilityCardProps {
   availability: Availability
@@ -40,6 +23,11 @@ export function AvailabilityCard({ availability, linkHref, iconColor = "purple" 
     }
   }
 
+  // If no host data, return empty fragment
+  if (!availability.host) {
+    return null
+  }
+
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-md transition-shadow">
       <CardContent className="flex flex-col gap-2 px-6">
@@ -48,14 +36,14 @@ export function AvailabilityCard({ availability, linkHref, iconColor = "purple" 
             <Users className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="font-medium">{availability.person.name}</h4>
+            <h4 className="font-medium">{availability.host.name}</h4>
             <p className="text-sm text-gray-600">
-              {availability.person.relationship} • {availability.person.location}
+              {availability.host.relationship} • {availability.host.location}
             </p>
           </div>
         </div>
         <p className="text-sm text-gray-600 line-clamp-1">
-          {availability.person.description}
+          {availability.host.description}
         </p>
         <div className="grid md:flex items-center justify-between gap-2">
           <Badge variant="outline" className="text-xs">

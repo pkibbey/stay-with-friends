@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import dynamic from "next/dynamic"
+import { Host, PartialHost } from "@/types"
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("./MapComponent").then(mod => ({ default: mod.MapComponent })), {
@@ -17,42 +18,25 @@ const MapComponent = dynamic(() => import("./MapComponent").then(mod => ({ defau
   )
 })
 
-interface PersonLocationProps {
-  name: string
-  address?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  country?: string
-  location?: string
+interface HostLocationProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    address?: string
-    city?: string
-    state?: string
-    zipCode?: string
-    country?: string
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string) => void
 }
 
-export function PersonLocation({
-  name,
-  address,
-  city,
-  state,
-  zipCode,
-  country,
-  location,
+export function HostLocation({
+  host,
   editedData = {},
   isEditing = false,
   onUpdate
-}: PersonLocationProps) {
-  const displayAddress = isEditing ? (editedData.address || address) : address
-  const displayCity = isEditing ? (editedData.city || city) : city
-  const displayState = isEditing ? (editedData.state || state) : state
-  const displayZipCode = isEditing ? (editedData.zipCode || zipCode) : zipCode
-  const displayCountry = isEditing ? (editedData.country || country) : country
+}: HostLocationProps) {
+  const displayAddress = isEditing ? (editedData.address || host.address) : host.address
+  const displayCity = isEditing ? (editedData.city || host.city) : host.city
+  const displayState = isEditing ? (editedData.state || host.state) : host.state
+  const displayZipCode = isEditing ? (editedData.zipCode || host.zipCode) : host.zipCode
+  const displayCountry = isEditing ? (editedData.country || host.country) : host.country
+  const displayLocation = isEditing ? (editedData.location || host.location) : host.location
 
   const fullAddress = [displayAddress, displayCity, displayState, displayZipCode, displayCountry]
     .filter(Boolean)
@@ -133,7 +117,7 @@ export function PersonLocation({
             state={displayState}
             zipCode={displayZipCode}
             country={displayCountry}
-            location={location}
+            location={displayLocation}
             className="h-64"
           />
         )}
@@ -149,7 +133,7 @@ export function PersonLocation({
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <p className="font-medium">Public Transportation</p>
-                  <p>{displayCity || 'Local'} has good bus/train access. Check schedules for routes serving {location}.</p>
+                  <p>{displayCity || 'Local'} has good bus/train access. Check schedules for routes serving {host.location || 'the area'}.</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -170,13 +154,13 @@ export function PersonLocation({
                 <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <p className="font-medium">Walking</p>
-                  <p>15-20 minute walk from nearest transit station. Scenic route through {location}.</p>
+                  <p>15-20 minute walk from nearest transit station. Scenic route through {host.location}.</p>
                 </div>
               </div>
             </div>
             <div className="pt-2 border-t">
               <p className="text-xs text-gray-500">
-                * Contact {name} directly for the most up-to-date directions and transportation options.
+                * Contact {host.name} directly for the most up-to-date directions and transportation options.
               </p>
             </div>
           </div>

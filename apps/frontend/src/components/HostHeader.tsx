@@ -1,41 +1,31 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Host, PartialHost } from "@/types"
 import { ArrowLeft, Users } from "lucide-react"
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-interface PersonHeaderProps {
-  name: string
-  relationship?: string
-  location?: string
-  email?: string
+interface HostHeaderProps {
+  host: Host
   isEditing?: boolean
-  editedData?: {
-    name?: string
-    relationship?: string
-    location?: string
-    email?: string
-  }
+  editedData?: PartialHost
   onUpdate?: (field: string, value: string) => void
   children?: React.ReactNode
 }
 
-export function PersonHeader({ 
-  name, 
-  relationship, 
-  location, 
-  email,
+export function HostHeader({ 
+  host,
   isEditing = false,
   editedData = {},
   onUpdate,
   children
-}: PersonHeaderProps) {
+}: HostHeaderProps) {
   const searchParams = useSearchParams()
   const dateParam = searchParams.get('date')
   const backUrl = dateParam ? `/?date=${dateParam}` : '/'
 
-  const displayData = isEditing ? editedData : { name, relationship, location, email }
+  const displayData = isEditing ? editedData : host
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-sm">
