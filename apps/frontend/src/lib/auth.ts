@@ -23,7 +23,7 @@ export const authOptions = {
           pass: process.env.EMAIL_SERVER_PASSWORD,
         },
       },
-      from: process.env.EMAIL_FROM || 'noreply@friendsbnb.com',
+      from: process.env.EMAIL_FROM || 'noreply@staywithfriends.com',
       sendVerificationRequest: async ({ identifier: email, url, provider }) => {
         // For development, log the URL and write it to a temp file so it can be
         // captured programmatically during tests or debugging.
@@ -34,7 +34,7 @@ export const authOptions = {
             // Lazily require fs to avoid bundling issues
             const fs = await import('fs')
             const entry = `${new Date().toISOString()}\t${email}\t${url}\n`
-            fs.appendFileSync('/tmp/friendsbnb-magic-link.log', entry, { encoding: 'utf8' })
+            fs.appendFileSync('/tmp/staywithfriends-magic-link.log', entry, { encoding: 'utf8' })
           } catch (err) {
             console.error('Failed to write magic link to /tmp:', err)
           }
@@ -43,9 +43,9 @@ export const authOptions = {
           const result = await transport.sendMail({
             to: email,
             from: provider.from,
-            subject: 'Sign in to Friends BNB',
-            text: `Sign in to Friends BNB\n\n${url}\n\n`,
-            html: `<p>Sign in to Friends BNB</p><p><a href="${url}">Click here to sign in</a></p>`,
+            subject: 'Sign in to Stay With Friends',
+            text: `Sign in to Stay With Friends\n\n${url}\n\n`,
+            html: `<p>Sign in to Stay With Friends</p><p><a href="${url}">Click here to sign in</a></p>`,
           })
           console.log('Email sent:', result)
         }

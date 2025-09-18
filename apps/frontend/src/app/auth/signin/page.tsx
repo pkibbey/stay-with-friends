@@ -27,7 +27,7 @@ export default function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign in to Friends BNB</CardTitle>
+          <CardTitle>Sign in to Stay With Friends</CardTitle>
           <CardDescription>
             Enter your email to receive a magic link
             {process.env.NODE_ENV === 'development' && (
