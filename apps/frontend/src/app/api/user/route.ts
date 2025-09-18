@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // This is a simple GraphQL client function
-async function graphqlRequest(query: string, variables: any = {}) {
+async function graphqlRequest(query: string, variables: object = {}) {
   const response = await fetch('http://localhost:4000/graphql', {
     method: 'POST',
     headers: {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ user: data.user })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json(
       { error: 'Failed to fetch user' },

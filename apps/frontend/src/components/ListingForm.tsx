@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Home, MapPin, Users, Clock, Shield, Camera } from "lucide-react"
+import Image from 'next/image'
 
 export interface ListingFormData {
   id?: string
@@ -123,7 +124,7 @@ export function ListingForm({
     await onSubmit(formData)
   }
 
-  const updateField = (field: keyof ListingFormData, value: any) => {
+  const updateField = (field: keyof ListingFormData, value: string | number | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
@@ -138,10 +139,6 @@ export function ListingForm({
         ? prev.amenities.filter(a => a !== amenity)
         : [...prev.amenities, amenity]
     }))
-  }
-
-  const handlePhotoUpload = (urls: string[]) => {
-    setFormData(prev => ({ ...prev, photos: [...prev.photos, ...urls] }))
   }
 
   const removePhoto = (index: number) => {
@@ -397,7 +394,8 @@ export function ListingForm({
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {formData.photos.map((photo, index) => (
                     <div key={index} className="relative">
-                      <img
+                      <Image
+                        unoptimized
                         src={photo}
                         alt={`Property photo ${index + 1}`}
                         className="w-full h-32 object-cover rounded-lg"

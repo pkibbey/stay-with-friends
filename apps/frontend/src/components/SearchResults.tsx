@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
 import { MapPin, Users, Calendar, Home, Star, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
+import Image from 'next/image'
 
 interface Listing {
   id: string
@@ -95,7 +96,10 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video bg-gray-200 relative">
         {listing.photos.length > 0 ? (
-          <img
+          <Image
+            unoptimized
+            width={400}
+            height={300}
             src={listing.photos[0]}
             alt={listing.title}
             className="w-full h-full object-cover"

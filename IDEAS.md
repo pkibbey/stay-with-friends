@@ -13,3 +13,4 @@ Allow real uploading of photos
 
 Add Google login instead of magic link which requires email server to work - can this be run on the nextjs web instance, or on a serverless endpoint?
 
+We want to restrict the user by the number of properties they can offer. Not the number of beds they can provide. It's about connection, so we avoid many-to-one connection options, and lean on one-to-many connection options.

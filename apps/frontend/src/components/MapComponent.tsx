@@ -11,10 +11,7 @@ import { Feature } from 'ol'
 import { Point } from 'ol/geom'
 import { Style, Icon, Text, Fill, Stroke } from 'ol/style'
 import Overlay from 'ol/Overlay'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { MapPin, Users } from 'lucide-react'
-import Link from 'next/link'
+import { MapPin } from 'lucide-react'
 import 'ol/ol.css'
 
 interface Listing {
@@ -330,7 +327,7 @@ export function MapComponent({
         popupRef.current = null
       }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Handle single location mode
   useEffect(() => {

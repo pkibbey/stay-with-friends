@@ -51,7 +51,7 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null)
   const [localQuery, setLocalQuery] = useState(filters.query)
 
-  const handleFilterChange = (key: keyof SearchFiltersState, value: any) => {
+  const handleFilterChange = (key: keyof SearchFiltersState, value: string | number | boolean | string[] | null) => {
     const newFilters = { ...filters, [key]: value }
     onFiltersChange(newFilters)
   }

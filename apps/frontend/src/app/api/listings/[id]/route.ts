@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
 // This is a simple GraphQL client function
-async function graphqlRequest(query: string, variables: any = {}) {
+async function graphqlRequest(query: string, variables: object = {}) {
   const response = await fetch('http://localhost:4000/graphql', {
     method: 'POST',
     headers: {
@@ -79,7 +79,7 @@ export async function GET(
     }
 
     return NextResponse.json({ listing: data.listing })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching listing:', error)
     return NextResponse.json(
       { error: 'Failed to fetch listing' },
@@ -171,10 +171,10 @@ export async function PUT(
     }
 
     return NextResponse.json({ listing: data.data.updateListing })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating listing:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to update listing' },
+      { error: error || 'Failed to update listing' },
       { status: 500 }
     )
   }
@@ -239,10 +239,10 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: data.data.deleteListing })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting listing:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to delete listing' },
+      { error: error || 'Failed to delete listing' },
       { status: 500 }
     )
   }

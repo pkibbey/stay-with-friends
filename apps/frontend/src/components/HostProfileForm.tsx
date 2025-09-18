@@ -106,7 +106,7 @@ export function HostProfileForm({
     await onSubmit(formData)
   }
 
-  const updateField = (field: keyof HostProfileData, value: any) => {
+  const updateField = (field: keyof HostProfileData, value: string | number | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
