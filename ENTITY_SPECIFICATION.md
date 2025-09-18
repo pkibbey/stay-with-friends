@@ -62,7 +62,6 @@ CREATE TABLE users (
 - `name` (string, required): Title/name of the property (e.g., "Cozy Downtown Apartment")
 - `email` (string, optional): Contact email for the host (may differ from user email)
 - `location` (string, optional): General location description
-- `relationship` (string, optional): Relationship context (e.g., "college friend", "family")
 - `availability` (string, optional): General availability description
 - `description` (string, optional): Detailed description of the property
 - `address` (string, optional): Street address
@@ -103,7 +102,6 @@ CREATE TABLE hosts (
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   location TEXT,
-  relationship TEXT,
   availability TEXT,
   description TEXT,
   address TEXT,
@@ -174,8 +172,7 @@ CREATE TABLE availabilities (
 **Properties**:
 - `id` (string): Unique identifier for the booking request
 - `hostId` (string, required): Reference to the requested host property
-- `requesterName` (string, required): Name of the person making the request
-- `requesterEmail` (string, required): Email of the person making the request
+- `requesterId` (string, required): ID of the user making the request
 - `startDate` (string, required): Requested start date (ISO date format)
 - `endDate` (string, required): Requested end date (ISO date format)
 - `guests` (number, required): Number of guests for the stay
@@ -185,12 +182,13 @@ CREATE TABLE availabilities (
 
 **Relationships**:
 - Many-to-One with `Host` (request is for a specific host)
-- Indirectly related to `User` through email matching
+- Many-to-One with `User` (request is made by a specific user)
 
 **Business Rules**:
 - Start date must be before end date
 - Number of guests cannot exceed host's maxGuests limit
 - Requests can only be made for available date ranges
+- Only authenticated users can make booking requests
 - Host reviews and responds to requests
 
 **Valid Status Values**:
@@ -204,15 +202,15 @@ CREATE TABLE availabilities (
 CREATE TABLE booking_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   host_id INTEGER NOT NULL,
-  requester_name TEXT NOT NULL,
-  requester_email TEXT NOT NULL,
+  requester_id INTEGER NOT NULL,
   start_date TEXT NOT NULL,
   end_date TEXT NOT NULL,
   guests INTEGER NOT NULL,
   message TEXT,
   status TEXT DEFAULT 'pending',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (host_id) REFERENCES hosts (id)
+  FOREIGN KEY (host_id) REFERENCES hosts (id),
+  FOREIGN KEY (requester_id) REFERENCES users (id)
 )
 ```
 
@@ -226,6 +224,7 @@ CREATE TABLE booking_requests (
 - `id` (string): Unique identifier for the connection
 - `userId` (string, required): ID of the user who initiated the connection
 - `connectedUserId` (string, required): ID of the user being connected to
+- `relationship` (string, optional): Type of relationship (e.g., "friend", "family", "colleague", "roommate")
 - `status` (string, required): Current status of the connection
 - `createdAt` (string, required): When the connection was created
 
@@ -238,6 +237,7 @@ CREATE TABLE booking_requests (
 - Connections are directional but can be mutual
 - Users can block unwanted connections
 - Connected users have enhanced visibility of each other's listings
+- Relationship type helps provide context for the connection and can be used for filtering or organization
 
 **Valid Status Values**:
 - `pending`: Connection request sent but not yet accepted
@@ -250,6 +250,7 @@ CREATE TABLE connections (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   connected_user_id INTEGER NOT NULL,
+  relationship TEXT,
   status TEXT DEFAULT 'pending',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users (id),
@@ -266,7 +267,7 @@ CREATE TABLE connections (
 User
 ├── hosts (1:N) → Host
 ├── connections (1:N) → Connection
-└── booking_requests (1:N via email) → BookingRequest
+└── booking_requests (1:N) → BookingRequest
 
 Host
 ├── user (N:1) → User
@@ -278,7 +279,7 @@ Availability
 
 BookingRequest
 ├── host (N:1) → Host
-└── requester (N:1 via email) → User
+└── requester (N:1) → User
 
 Connection
 ├── user (N:1) → User
@@ -335,9 +336,10 @@ Connection
 - Booking requests must align with available periods
 
 ### Search & Discovery
-- Search includes name, location, and relationship context
+- Search includes name and location information
 - Inactive hosts are excluded from search results
 - Geographic coordinates enable map-based discovery
+- Connection relationships provide context for host discovery
 
 ---
 
