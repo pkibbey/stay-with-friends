@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,17 +16,14 @@ interface BookingFormProps {
 }
 
 interface BookingFormData {
-  requesterName: string
-  requesterEmail: string
   guests: number
   nights: number
   message: string
 }
 
 export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps) {
+  const { data: session } = useSession()
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
-    requesterName: '',
-    requesterEmail: '',
     guests: 1,
     nights: 1,
     message: ''
@@ -37,6 +35,11 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
     e.preventDefault()
     if (!selectedDate) return
 
+    // Calculate end date based on start date + number of nights
+    const startDate = new Date(selectedDate)
+    const endDate = new Date(startDate)
+    endDate.setDate(startDate.getDate() + bookingForm.nights)
+
     setIsSubmitting(true)
     try {
       const response = await fetch('http://localhost:4000/graphql', {
@@ -46,8 +49,8 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
         },
         body: JSON.stringify({
           query: `
-            mutation CreateBookingRequest($hostId: ID!, $requesterName: String!, $requesterEmail: String!, $startDate: String!, $endDate: String!, $guests: Int!, $message: String) {
-              createBookingRequest(hostId: $hostId, requesterName: $requesterName, requesterEmail: $requesterEmail, startDate: $startDate, endDate: $endDate, guests: $guests, message: $message) {
+            mutation CreateBookingRequest($hostId: ID!, $requesterId: ID!, $startDate: String!, $endDate: String!, $guests: Int!, $message: String) {
+              createBookingRequest(hostId: $hostId, requesterId: $requesterId, startDate: $startDate, endDate: $endDate, guests: $guests, message: $message) {
                 id
                 status
               }
@@ -55,10 +58,9 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
           `,
           variables: {
             hostId: host.id,
-            requesterName: bookingForm.requesterName,
-            requesterEmail: bookingForm.requesterEmail,
-            startDate: formatDateForUrl(selectedDate),
-            endDate: formatDateForUrl(selectedDate), // Use same date for both start and end
+            requesterId: (session?.user as { id?: string })?.id,
+            startDate: formatDateForUrl(startDate),
+            endDate: formatDateForUrl(endDate),
             guests: bookingForm.guests,
             message: bookingForm.message
           },
@@ -93,26 +95,21 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
           </div>
         ) : (
           <form onSubmit={handleBookingSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Your Name</Label>
-              <Input
-                id="name"
-                value={bookingForm.requesterName}
-                onChange={(e) => setBookingForm(prev => ({ ...prev, requesterName: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={bookingForm.requesterEmail}
-                onChange={(e) => setBookingForm(prev => ({ ...prev, requesterEmail: e.target.value }))}
-                required
-              />
-            </div>
+            {/* Date Summary */}
+            {selectedDate && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Stay Details</h4>
+                <div className="text-sm space-y-1">
+                  <div>Check-in: {selectedDate.toLocaleDateString()}</div>
+                  <div>Check-out: {(() => {
+                    const endDate = new Date(selectedDate)
+                    endDate.setDate(selectedDate.getDate() + bookingForm.nights)
+                    return endDate.toLocaleDateString()
+                  })()}</div>
+                  <div>Duration: {bookingForm.nights} night{bookingForm.nights !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="guests">Number of Guests</Label>
@@ -127,18 +124,18 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
               />
             </div>
 
-              <div>
-                <Label htmlFor="nights">Number of Nights</Label>
-                <Input
-                  id="nights"
-                  type="number"
-                  min="1"
-                  max={maxNights}
-                  value={bookingForm.nights}
-                  onChange={(e) => setBookingForm(prev => ({ ...prev, nights: parseInt(e.target.value) }))}
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="nights">Number of Nights</Label>
+              <Input
+                id="nights"
+                type="number"
+                min="1"
+                max={maxNights}
+                value={bookingForm.nights}
+                onChange={(e) => setBookingForm(prev => ({ ...prev, nights: parseInt(e.target.value) }))}
+                required
+              />
+            </div>
 
             <div>
               <Label htmlFor="message">Message (Optional)</Label>

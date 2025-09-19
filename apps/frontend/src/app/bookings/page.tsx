@@ -55,6 +55,7 @@ export default function BookingsPage() {
   const { data: session, status } = useSession()
   const [myRequests, setMyRequests] = useState<BookingRequest[]>([])
   const [incomingRequests, setIncomingRequests] = useState<BookingRequest[]>([])
+  console.log('incomingRequests: ', incomingRequests);
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -63,7 +64,10 @@ export default function BookingsPage() {
   const fetchBookingRequests = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
+    console.log('userId: ', userId);
     console.log('Fetching booking requests for userId:', userId)
+    console.log('Full session object:', session)
+    console.log('Session status:', status)
     if (!userId) {
       console.log('No userId found, skipping fetch')
       setLoading(false)
@@ -169,6 +173,7 @@ export default function BookingsPage() {
         console.error('GraphQL errors in incoming requests:', incomingRequestsData.errors)
       }
       
+      console.log('incomingRequestsData.data: ', incomingRequestsData.data);
       setIncomingRequests(incomingRequestsData.data?.bookingRequestsByHostUser || [])
     } catch (error) {
       console.error('Error fetching booking requests:', error)
@@ -176,7 +181,7 @@ export default function BookingsPage() {
     } finally {
       setLoading(false)
     }
-  }, [session?.user])
+  }, [session, status])
 
   useEffect(() => {
     console.log('Session state changed:', session, 'Status:', status)

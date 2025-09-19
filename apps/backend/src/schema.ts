@@ -485,8 +485,8 @@ export const resolvers = {
       validateOptionalText(args.message, 'Message', 1000);
 
       const result = insertBookingRequest.run(
-        args.hostId,
-        args.requesterId,
+        parseInt(args.hostId),
+        parseInt(args.requesterId),
         args.startDate,
         args.endDate,
         args.guests,
@@ -494,10 +494,15 @@ export const resolvers = {
         'pending'
       );
       return {
-        id: result.lastInsertRowid,
-        ...args,
+        id: result.lastInsertRowid.toString(),
+        host_id: parseInt(args.hostId),
+        requester_id: parseInt(args.requesterId),
+        start_date: args.startDate,
+        end_date: args.endDate,
+        guests: args.guests,
+        message: args.message,
         status: 'pending',
-        createdAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       };
     },
     updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }) => {

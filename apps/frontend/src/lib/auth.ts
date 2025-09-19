@@ -8,6 +8,9 @@ import { db } from "./db"
 
 export const authOptions = {
   adapter: DrizzleAdapter(db),
+  session: {
+    strategy: "jwt" as const, // Force JWT strategy to make session callback work properly
+  },
   // Enable debug logging in development to help diagnose configuration issues
   debug: process.env.NODE_ENV !== 'production',
   logger: {
@@ -97,16 +100,58 @@ export const authOptions = {
       return true
     },
     async session({ session, token }: { session: any; token: any }) {
-      if (token?.sub) {
+      console.log('Session callback called with token:', token.sub, 'backendUserId:', token.backendUserId)
+      
+      if (token?.backendUserId) {
+        if (!session.user) session.user = {}
+        session.user.id = token.backendUserId
+        console.log('Set session.user.id to:', session.user.id)
+      } else if (token?.sub) {
+        // Fallback to NextAuth user ID if no backend user ID
         if (!session.user) session.user = {}
         session.user.id = token.sub
+        console.log('Using NextAuth user ID as fallback:', session.user.id)
       }
+      
+      console.log('Returning session with user:', session.user)
       return session
     },
-    async jwt({ token, user }: { token: any; user?: any }) {
-      if (user) {
-        token.sub = user.id
+    async jwt({ token, user, account }: { token: any; user?: any; account?: any }) {
+      console.log('JWT callback called with:', { token: token.sub, user: user?.email, account: account?.provider })
+      
+      // On sign in, fetch the backend user ID
+      if (account?.provider === 'email' && user?.email) {
+        try {
+          console.log('Fetching backend user ID for email:', user.email)
+          const response = await fetch('http://localhost:4000/graphql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `
+                query GetUser($email: String!) {
+                  user(email: $email) {
+                    id
+                    email
+                    name
+                  }
+                }
+              `,
+              variables: { email: user.email },
+            }),
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            if (data.data?.user?.id) {
+              token.backendUserId = data.data.user.id.toString()
+              console.log('Stored backend user ID in token:', token.backendUserId)
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching backend user ID in JWT callback:', error)
+        }
       }
+      
       return token
     },
   },
