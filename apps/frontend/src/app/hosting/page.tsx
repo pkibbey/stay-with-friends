@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { AvailabilityManager } from '@/components/AvailabilityManager'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare } from 'lucide-react'
 
 interface Availability {
   id: string
@@ -25,6 +25,38 @@ interface Availability {
 export default function ManageHostingPage() {
   const { data: session } = useSession()
   const [showAddForm, setShowAddForm] = useState(false)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+
+  useEffect(() => {
+    const fetchPendingRequestsCount = async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userId = (session?.user as any)?.id
+      if (!userId) return
+
+      try {
+        const response = await fetch('http://localhost:4000/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query GetPendingRequestsCount($userId: ID!) {
+                pendingBookingRequestsCount(userId: $userId)
+              }
+            `,
+            variables: { userId },
+          }),
+        })
+        const data = await response.json()
+        setPendingRequestsCount(data.data?.pendingBookingRequestsCount || 0)
+      } catch (error) {
+        console.error('Error fetching pending requests count:', error)
+      }
+    }
+
+    if (session?.user) {
+      fetchPendingRequestsCount()
+    }
+  }, [session?.user])
 
   // Mock data - in real app this would come from your backend
   const [hostings, setHostings] = useState([
@@ -142,6 +174,37 @@ export default function ManageHostingPage() {
           Back to Home
         </Link>
       </div>
+
+      {/* Booking Requests Summary */}
+      <Card className="mb-6">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              <div>
+                <h3 className="font-medium">Booking Requests</h3>
+                <p className="text-sm text-gray-600">
+                  {pendingRequestsCount > 0 
+                    ? `You have ${pendingRequestsCount} pending request${pendingRequestsCount !== 1 ? 's' : ''}`
+                    : 'No pending requests'
+                  }
+                </p>
+              </div>
+            </div>
+            <Link href="/bookings">
+              <Button variant="outline" size="sm">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                View All Requests
+                {pendingRequestsCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 px-1 py-0 text-xs min-w-[1.2rem] h-5">
+                    {pendingRequestsCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {showAddForm && (
         <Card className="mb-8">

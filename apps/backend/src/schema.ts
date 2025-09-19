@@ -5,7 +5,6 @@ export const typeDefs = `#graphql
     title: String! # Alias for name to match frontend expectations
     email: String
     location: String
-    availability: String
     description: String
     address: String
     city: String
@@ -48,6 +47,8 @@ export const typeDefs = `#graphql
     guests: Int!
     message: String
     status: String!
+    responseMessage: String
+    respondedAt: String
     createdAt: String!
     host: Host!
     requester: User!
@@ -106,6 +107,10 @@ export const typeDefs = `#graphql
     user(email: String!): User
     connections(userId: ID!): [Connection!]!
     connectionRequests(userId: ID!): [Connection!]!
+    bookingRequestsByHost(hostId: ID!): [BookingRequest!]!
+    bookingRequestsByRequester(requesterId: ID!): [BookingRequest!]!
+    bookingRequestsByHostUser(userId: ID!): [BookingRequest!]!
+    pendingBookingRequestsCount(userId: ID!): Int!
     invitation(token: String!): Invitation
     invitations(inviterId: ID!): [Invitation!]!
   }
@@ -116,7 +121,6 @@ export const typeDefs = `#graphql
       name: String!
       email: String!
       location: String
-      availability: String
       description: String
       address: String
       city: String
@@ -151,9 +155,13 @@ export const typeDefs = `#graphql
       guests: Int!
       message: String
     ): BookingRequest!
+    updateBookingRequestStatus(
+      id: ID!
+      status: String!
+      responseMessage: String
+    ): BookingRequest!
     checkEmailExists(email: String!): Boolean!
     sendInvitationEmail(email: String!, invitationUrl: String!): Boolean!
-    createPlace(input: CreatePlaceInput!): Host!
     updateHost(id: ID!, input: UpdateHostInput!): Host!
     deleteHost(id: ID!): Boolean!
     createUser(email: String!, name: String, image: String): User!
@@ -163,14 +171,6 @@ export const typeDefs = `#graphql
     createInvitation(inviterId: ID!, inviteeEmail: String!, inviteeName: String, message: String): Invitation!
     acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
     cancelInvitation(invitationId: ID!): Boolean!
-  }
-
-  input CreatePlaceInput {
-    name: String!
-    location: String
-    availability: String
-    description: String
-    email: String!
   }
 
   input CreateListingInput {
@@ -195,8 +195,7 @@ export const typeDefs = `#graphql
 
   input UpdateHostInput {
     name: String
-    location: String
-    availability: String
+    location: String    
     description: String
     address: String
     city: String
@@ -230,7 +229,7 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
+import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
 
 // Validation functions
 export const validateEmail = (email: string): void => {
@@ -357,6 +356,30 @@ export const resolvers = {
     invitations: (_: any, { inviterId }: { inviterId: string }) => {
       return getInvitationsByInviter.all(inviterId);
     },
+    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }) => {
+      return getBookingRequestsByHost.all(hostId);
+    },
+    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }) => {
+      return getBookingRequestsByRequester.all(requesterId);
+    },
+    bookingRequestsByHostUser: (_: any, { userId }: { userId: string }) => {
+      // Get all booking requests for hosts owned by this user
+      const allHosts = getAllHosts.all();
+      const userHosts = allHosts.filter((host: any) => host.user_id === parseInt(userId));
+      const allRequests: any[] = [];
+      
+      for (const host of userHosts) {
+        const requests = getBookingRequestsByHost.all((host as any).id);
+        allRequests.push(...requests);
+      }
+      
+      // Sort by created_at desc
+      return allRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    },
+    pendingBookingRequestsCount: (_: any, { userId }: { userId: string }) => {
+      const result = getPendingBookingRequestsCountByHostUser.get(userId) as any;
+      return result?.count || 0;
+    },
   },
   Mutation: {
     createHost: (_: any, args: any) => {
@@ -367,7 +390,6 @@ export const resolvers = {
         
         // Validate optional text fields
         validateOptionalText(args.location, 'Location', 255);
-        validateOptionalText(args.availability, 'Availability', 500);
         validateOptionalText(args.description, 'Description', 2000);
         validateOptionalText(args.address, 'Address', 255);
         validateOptionalText(args.city, 'City', 100);
@@ -397,7 +419,6 @@ export const resolvers = {
           args.name,
           args.email,
           args.location,
-          args.availability,
           args.description,
           args.address,
           args.city,
@@ -515,6 +536,63 @@ export const resolvers = {
         createdAt: new Date().toISOString(),
       };
     },
+    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }) => {
+      // Validate status
+      validateStatus(status, ['pending', 'approved', 'declined', 'cancelled']);
+
+      // Get current booking request to check it exists and get details for availability update
+      const bookingRequest = getBookingRequestById.get(id) as any;
+      if (!bookingRequest) {
+        throw new Error('Booking request not found');
+      }
+
+      // Update the booking request status
+      updateBookingRequestStatus.run(status, responseMessage || null, id);
+
+      // If approved, update availability to mark dates as booked
+      if (status === 'approved') {
+        // First check if there are overlapping availabilities for these dates
+        const overlappingAvailabilities = getAvailabilitiesByDateRange.all(bookingRequest.end_date, bookingRequest.start_date);
+        
+        if (overlappingAvailabilities.length === 0) {
+          // No existing availability period, create a new one marked as booked
+          insertAvailability.run(
+            bookingRequest.host_id,
+            bookingRequest.start_date,
+            bookingRequest.end_date,
+            'booked',
+            `Booked by ${bookingRequest.requester_name || bookingRequest.requester_email}`
+          );
+        } else {
+          // Update existing availability periods to booked status
+          // This is a simplified approach - in production you might want more sophisticated availability management
+          const Database = require('better-sqlite3');
+          const dbPath = require('path').join(__dirname, '..', 'database.db');
+          const tempDb = new Database(dbPath);
+          
+          try {
+            tempDb.prepare(`
+              UPDATE availabilities 
+              SET status = 'booked', notes = ?
+              WHERE host_id = ? 
+              AND start_date <= ? 
+              AND end_date >= ?
+              AND status = 'available'
+            `).run(
+              `Booked by ${bookingRequest.requester_name || bookingRequest.requester_email}`,
+              bookingRequest.host_id,
+              bookingRequest.end_date,
+              bookingRequest.start_date
+            );
+          } finally {
+            tempDb.close();
+          }
+        }
+      }
+
+      // Return updated booking request
+      return getBookingRequestById.get(id);
+    },
     checkEmailExists: (_: any, { email }: { email: string }) => {
       validateEmail(email);
       const host = getHostByEmail.get(email);
@@ -530,35 +608,6 @@ export const resolvers = {
       
       return true;
     },
-    createPlace: (_: any, { input }: { input: any }) => {
-      const result = insertHost.run(
-        null, // user_id
-        input.name,
-        input.email,
-        input.location,
-        input.availability,
-        input.description,
-        null, // address
-        null, // city
-        null, // state
-        null, // zipCode
-        null, // country
-        null, // latitude
-        null, // longitude
-        null, // amenities
-        null, // houseRules
-        null, // checkInTime
-        null, // checkOutTime
-        null, // maxGuests
-        null, // bedrooms
-        null, // bathrooms
-        null  // photos
-      );
-      return {
-        id: result.lastInsertRowid,
-        ...input,
-      };
-    },
     updateHost: (_: any, { id, input }: { id: string, input: any }) => {
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
 
@@ -569,7 +618,6 @@ export const resolvers = {
         
         // Validate optional text fields if provided
         if (input.location !== undefined) validateOptionalText(input.location, 'Location', 255);
-        if (input.availability !== undefined) validateOptionalText(input.availability, 'Availability', 500);
         if (input.description !== undefined) validateOptionalText(input.description, 'Description', 2000);
         if (input.address !== undefined) validateOptionalText(input.address, 'Address', 255);
         if (input.city !== undefined) validateOptionalText(input.city, 'City', 100);
@@ -623,10 +671,6 @@ export const resolvers = {
         if (input.location !== undefined) {
           updates.push('location = ?')
           values.push(input.location)
-        }
-        if (input.availability !== undefined) {
-          updates.push('availability = ?')
-          values.push(input.availability)
         }
         if (input.description !== undefined) {
           updates.push('description = ?')
@@ -975,6 +1019,8 @@ export const resolvers = {
     startDate: (parent: any) => parent.start_date,
     endDate: (parent: any) => parent.end_date,
     createdAt: (parent: any) => parent.created_at,
+    responseMessage: (parent: any) => parent.response_message,
+    respondedAt: (parent: any) => parent.responded_at,
   },
   User: {
     emailVerified: (parent: any) => parent.email_verified,

@@ -21,7 +21,6 @@ function InvitePageContent() {
     name: '',
     location: '',
     description: '',
-    availability: '',
     relationship: ''
   })
 
@@ -37,13 +36,12 @@ function InvitePageContent() {
         },
         body: JSON.stringify({
           query: `
-            mutation CreatePlace($input: CreatePlaceInput!) {
-              createPlace(input: $input) {
+            mutation createHost($input: CreateHostInput!) {
+              createHost(input: $input) {
                 id
                 name
                 location
                 description
-                availability
               }
             }
           `,
@@ -57,15 +55,15 @@ function InvitePageContent() {
       })
 
       const data = await response.json()
-      if (data.data?.createPlace) {
+      if (data.data?.createHost) {
         setIsSubmitted(true)
       } else {
         console.error('GraphQL error:', data.errors)
-        alert('Failed to create place. Please try again.')
+        alert('Failed to create host. Please try again.')
       }
     } catch (error) {
-      console.error('Failed to create place:', error)
-      alert('Failed to create place. Please try again.')
+      console.error('Failed to create host:', error)
+      alert('Failed to create host. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -210,17 +208,6 @@ function InvitePageContent() {
                     onChange={(e) => handleInputChange('relationship', e.target.value)}
                     placeholder="Friend, Family, Colleague, etc."
                     required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="availability">When are you typically available?</Label>
-                  <Textarea
-                    id="availability"
-                    value={formData.availability}
-                    onChange={(e) => handleInputChange('availability', e.target.value)}
-                    placeholder="Describe your general availability (e.g., weekends, holidays, etc.)"
-                    rows={3}
                   />
                 </div>
 

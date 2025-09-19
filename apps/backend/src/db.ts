@@ -131,6 +131,24 @@ try {
   console.log('Booking requests table migration not needed or completed.');
 }
 
+// Migrate booking_requests table to add response fields
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(booking_requests)").all() as any[];
+  const hasResponseMessage = tableInfo.some((col: any) => col.name === 'response_message');
+  const hasRespondedAt = tableInfo.some((col: any) => col.name === 'responded_at');
+  
+  if (!hasResponseMessage) {
+    console.log('Adding response_message field to booking_requests table...');
+    db.exec('ALTER TABLE booking_requests ADD COLUMN response_message TEXT');
+  }
+  if (!hasRespondedAt) {
+    console.log('Adding responded_at field to booking_requests table...');
+    db.exec('ALTER TABLE booking_requests ADD COLUMN responded_at DATETIME');
+  }
+} catch (error) {
+  console.log('Booking requests response fields migration not needed or completed.');
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS booking_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,6 +159,8 @@ db.exec(`
     guests INTEGER NOT NULL,
     message TEXT,
     status TEXT DEFAULT 'pending',
+    response_message TEXT,
+    responded_at DATETIME,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (host_id) REFERENCES hosts (id),
     FOREIGN KEY (requester_id) REFERENCES users (id)
@@ -311,6 +331,45 @@ export const insertAvailability = db.prepare(`
 export const insertBookingRequest = db.prepare(`
   INSERT INTO booking_requests (host_id, requester_id, start_date, end_date, guests, message, status)
   VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+
+export const getBookingRequestsByHost = db.prepare(`
+  SELECT br.*, u.email as requester_email, u.name as requester_name, u.image as requester_image
+  FROM booking_requests br
+  JOIN users u ON br.requester_id = u.id
+  WHERE br.host_id = ?
+  ORDER BY br.created_at DESC
+`);
+
+export const getBookingRequestsByRequester = db.prepare(`
+  SELECT br.*, h.name as host_name, h.location as host_location, h.email as host_email
+  FROM booking_requests br
+  JOIN hosts h ON br.host_id = h.id
+  WHERE br.requester_id = ?
+  ORDER BY br.created_at DESC
+`);
+
+export const updateBookingRequestStatus = db.prepare(`
+  UPDATE booking_requests 
+  SET status = ?, response_message = ?, responded_at = CURRENT_TIMESTAMP
+  WHERE id = ?
+`);
+
+export const getBookingRequestById = db.prepare(`
+  SELECT br.*, 
+         h.name as host_name, h.location as host_location, h.email as host_email, h.user_id as host_user_id,
+         u.email as requester_email, u.name as requester_name, u.image as requester_image
+  FROM booking_requests br
+  JOIN hosts h ON br.host_id = h.id
+  JOIN users u ON br.requester_id = u.id
+  WHERE br.id = ?
+`);
+
+export const getPendingBookingRequestsCountByHostUser = db.prepare(`
+  SELECT COUNT(*) as count
+  FROM booking_requests br
+  JOIN hosts h ON br.host_id = h.id
+  WHERE h.user_id = ? AND br.status = 'pending'
 `);
 
 export const getAvailabilityDates = db.prepare(`

@@ -75,7 +75,6 @@ describe('Database Operations', () => {
         hostData.name,
         hostData.email,
         hostData.location,
-        hostData.availability,
         hostData.description,
         hostData.address,
         hostData.city,

@@ -17,7 +17,6 @@ const seedDatabase = () => {
         name: 'Sarah Johnson',
         location: 'San Francisco',
         relationship: 'Friend',
-        availability: 'Dec 15-20',
         description: 'Spacious guest room with private bath',
         availabilities: [
           { startDate: '2025-12-15', endDate: '2025-12-20', notes: 'Holiday break' },
@@ -27,8 +26,7 @@ const seedDatabase = () => {
       {
         name: 'Mike Chen',
         location: 'New York',
-        relationship: 'Colleague',
-        availability: 'Jan 5-12',
+        relationship: 'Colleague',        
         description: 'Cozy apartment downtown',
         availabilities: [
           { startDate: '2026-01-05', endDate: '2026-01-12', notes: 'New Year vacation' },
@@ -38,8 +36,7 @@ const seedDatabase = () => {
       {
         name: 'Emma Davis',
         location: 'Austin, TX',
-        relationship: 'Friend',
-        availability: 'Nov 20-25',
+        relationship: 'Friend',        
         description: 'Beautiful house with garden',
         availabilities: [
           { startDate: '2025-11-20', endDate: '2025-11-25', notes: 'Thanksgiving week' }
@@ -48,8 +45,7 @@ const seedDatabase = () => {
       {
         name: 'Alex Rodriguez',
         location: 'Seattle, WA',
-        relationship: 'Family',
-        availability: 'Dec 1-7',
+        relationship: 'Family',        
         description: 'Modern condo with city views',
         availabilities: [
           { startDate: '2025-12-01', endDate: '2025-12-07', notes: 'Family visit' }
@@ -58,8 +54,7 @@ const seedDatabase = () => {
       {
         name: 'Lisa Wang',
         location: 'Los Angeles',
-        relationship: 'Friend',
-        availability: 'Jan 15-20',
+        relationship: 'Friend',        
         description: 'Beachfront apartment',
         availabilities: [
           { startDate: '2026-01-15', endDate: '2026-01-20', notes: 'Winter getaway' },
@@ -74,7 +69,6 @@ const seedDatabase = () => {
         null, // email - sample data doesn't have emails
         host.location,
         host.relationship,
-        host.availability,
         host.description,
         null, // address
         null, // city

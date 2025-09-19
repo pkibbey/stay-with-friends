@@ -102,9 +102,6 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
                           </p>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Available {host.availability}
-                      </p>
                       {host.description && (
                         <p className="text-sm text-gray-600 mb-2">{host.description}</p>
                       )}

@@ -128,7 +128,7 @@ export default function Profile() {
           <CardContent className="space-y-6">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" value={session.user.email || ''} disabled />
+              <Input id="email" value={session.user?.email || ''} disabled />
             </div>
             <div>
               <Label htmlFor="name">Name</Label>
@@ -151,9 +151,6 @@ export default function Profile() {
             <div className="flex gap-4">
               <Button onClick={handleUpdateProfile} disabled={loading}>
                 {loading ? 'Updating...' : 'Update Profile'}
-              </Button>
-              <Button variant="outline" onClick={() => signOut()}>
-                Sign Out
               </Button>
             </div>
           </CardContent>
