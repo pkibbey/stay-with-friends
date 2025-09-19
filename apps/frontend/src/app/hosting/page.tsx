@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { AvailabilityManager } from '@/components/AvailabilityManager'
+import { FileUpload } from '@/components/ui/file-upload'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2 } from 'lucide-react'
@@ -319,6 +321,42 @@ export default function ManageHostingPage() {
       alert('Failed to save changes')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Upload a single image file to backend and append returned URL to editForm.photos
+  const handleFileUpload = async (file: File | null) => {
+    if (!file) return
+    // Client-side validation: type and size
+    if (!file.type || !file.type.startsWith('image/')) {
+      alert('Please upload a valid image file')
+      return
+    }
+    const maxBytes = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxBytes) {
+      alert('Image is too large. Maximum size is 5 MB.')
+      return
+    }
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const resp = await fetch('http://localhost:4000/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await resp.json()
+      if (data?.url) {
+        const currentPhotos = Array.isArray(editForm.photos) ? editForm.photos : []
+        updateEditForm('photos', [...currentPhotos, data.url])
+      } else {
+        console.error('Upload failed', data)
+        alert('Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert('Failed to upload image')
     }
   }
 
@@ -666,6 +704,31 @@ export default function ManageHostingPage() {
                         placeholder="Describe your space..."
                         rows={3}
                       />
+                    </div>
+                    
+                    <div>
+                      <Label>Photos</Label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileUpload onChange={(files) => handleFileUpload(files && files.length ? files[0] : null)} />
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {(Array.isArray(editForm.photos) ? editForm.photos : []).map((p: string, idx: number) => (
+                          <div key={idx} className="w-24 h-16 bg-gray-100 rounded overflow-hidden relative">
+                            <Image unoptimized src={p} alt={`photo-${idx}`} fill className="object-cover" sizes="96px" />
+                            <button
+                              type="button"
+                              className="absolute top-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1"
+                              onClick={() => {
+                                const photos = Array.isArray(editForm.photos) ? [...editForm.photos] : []
+                                photos.splice(idx, 1)
+                                updateEditForm('photos', photos)
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

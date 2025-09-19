@@ -228,6 +228,8 @@ export const typeDefs = `#graphql
 `;
 
 import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
+import fs from 'fs';
+import path from 'path';
 
 // Validation functions
 export const validateEmail = (email: string): void => {
@@ -704,6 +706,32 @@ export const resolvers = {
           values.push(input.bathrooms)
         }
       if (input.photos !== undefined) {
+        // Delete files that were removed from the photos list (only local uploads)
+        try {
+          const existingHost: any = getHostById.get(id);
+          const existingPhotos = existingHost && existingHost.photos ? JSON.parse(existingHost.photos) : [];
+          const newPhotos = input.photos || [];
+          const removed = existingPhotos.filter((p: string) => !newPhotos.includes(p));
+          const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+          for (const removedUrl of removed) {
+            try {
+              // Only delete files that point to our uploads directory
+              if (typeof removedUrl === 'string' && removedUrl.includes('/uploads/')) {
+                const fileName = path.basename(removedUrl);
+                const filePath = path.join(uploadsDir, fileName);
+                if (fs.existsSync(filePath)) {
+                  fs.unlinkSync(filePath);
+                }
+              }
+            } catch (e) {
+              // Log and continue - do not fail the whole update for filesystem issues
+              console.error('Failed to delete removed photo file', removedUrl, e);
+            }
+          }
+        } catch (e) {
+          console.error('Error while cleaning up removed photos:', e);
+        }
+
         updates.push('photos = ?')
         values.push(input.photos ? JSON.stringify(input.photos) : null)
       }
