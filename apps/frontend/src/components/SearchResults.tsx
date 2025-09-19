@@ -9,7 +9,7 @@ import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
 import { MapPin, Users, Calendar, Home, Star, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-import { HostProfileData } from '@/types'
+import { Host, HostProfileData } from '@/types'
 
 interface SearchFiltersState {
   query: string
@@ -22,7 +22,7 @@ interface SearchFiltersState {
 }
 
 interface SearchResultsProps {
-  listings: HostProfileData[]
+  hosts: HostProfileData[]
   isLoading: boolean
   filters: SearchFiltersState
 }
@@ -62,7 +62,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video bg-gray-200 relative">
-        {result.photos.length > 0 ? (
+        {result.photos &&result.photos.length > 0 ? (
           <Image
             unoptimized
             width={400}
@@ -91,7 +91,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
         </div>
 
         {/* Photo count */}
-        {result.photos.length > 1 && (
+        {result.photos && result.photos.length > 1 && (
           <div className="absolute top-3 right-3">
             <Badge variant="outline" className="bg-white/90 text-gray-700">
               +{result.photos.length - 1} photos
@@ -125,7 +125,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
         </div>
 
         {/* Amenities */}
-        {result.amenities.length > 0 && (
+        {result.amenities && result.amenities.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {result.amenities.slice(0, 4).map((amenity) => (
               <Badge key={amenity} variant="outline" className="text-xs">
@@ -174,7 +174,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
   )
 }
 
-export function SearchResults({ listings, isLoading, filters }: SearchResultsProps) {
+export function SearchResults({ hosts, isLoading, filters }: SearchResultsProps) {
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -201,7 +201,7 @@ export function SearchResults({ listings, isLoading, filters }: SearchResultsPro
     )
   }
 
-  if (listings.length === 0) {
+  if (hosts.length === 0) {
     return (
       <Card className="text-center py-12">
         <CardContent>
@@ -224,7 +224,7 @@ export function SearchResults({ listings, isLoading, filters }: SearchResultsPro
     <div className="space-y-6">
       {/* Results summary */}
       <div className="text-sm text-gray-600">
-        Showing {listings.length} {listings.length === 1 ? 'result' : 'results'}
+        Showing {hosts.length} {hosts.length === 1 ? 'result' : 'results'}
         {filters.startDate && filters.endDate && (
           <span> for {formatDisplayDate(filters.startDate)} - {formatDisplayDate(filters.endDate)}</span>
         )}
@@ -232,10 +232,10 @@ export function SearchResults({ listings, isLoading, filters }: SearchResultsPro
 
       {/* Results grid */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {listings.map((result) => (
+        {hosts.map((host) => (
           <ResultCard 
-            key={result.id} 
-            result={result} 
+            key={host.id} 
+            result={host} 
             filters={filters}
           />
         ))}

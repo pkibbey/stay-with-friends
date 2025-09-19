@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react'
+import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapComponent } from '@/components/MapComponent'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,9 +24,10 @@ interface SearchFiltersState {
 function SearchPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const hasInitialized = useRef(false)
   
   // Search state
-  const [listings, setListings] = useState<HostProfileData[]>([])
+  const [hosts, setHosts] = useState<HostProfileData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
@@ -59,36 +60,156 @@ function SearchPage() {
   }, [router])
 
   // Search function
-  const searchListings = useCallback(async (searchFilters: SearchFiltersState) => {
+  const searchHosts = useCallback(async (searchFilters: SearchFiltersState) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams()
-      
-      // Add search parameters
-      if (searchFilters.query) params.append('search', searchFilters.query)
-      if (searchFilters.startDate) params.append('startDate', searchFilters.startDate)
-      if (searchFilters.endDate) params.append('endDate', searchFilters.endDate)
-      if (searchFilters.location) params.append('location', searchFilters.location)
-      if (searchFilters.amenities.length > 0) {
-        searchFilters.amenities.forEach(amenity => params.append('amenities', amenity))
-      }
-      if (searchFilters.trustedHostsOnly) params.append('trustedOnly', 'true')
-      if (searchFilters.guests > 1) params.append('guests', searchFilters.guests.toString())
+      let query: string
+      let variables: {
+        query?: string | null
+        startDate?: string | null
+        endDate?: string | null
+        location?: string | null
+        amenities?: string[] | null
+        trustedOnly?: boolean | null
+        guests?: number | null
+      } = {}
 
-      const response = await fetch(`/api/listings?${params.toString()}`)
+      if (searchFilters.query || searchFilters.startDate || searchFilters.endDate || searchFilters.location || searchFilters.amenities.length > 0 || searchFilters.trustedHostsOnly || searchFilters.guests > 1) {
+        // Advanced search with filters
+        query = `
+          query SearchHostsAdvanced(
+            $query: String
+            $startDate: String
+            $endDate: String
+            $location: String
+            $amenities: [String!]
+            $trustedOnly: Boolean
+            $guests: Int
+          ) {
+            searchHostsAdvanced(
+              query: $query
+              startDate: $startDate
+              endDate: $endDate
+              location: $location
+              amenities: $amenities
+              trustedOnly: $trustedOnly
+              guests: $guests
+            ) {
+              id
+              title
+              description
+              address
+              city
+              state
+              zipCode
+              country
+              latitude
+              longitude
+              maxGuests
+              bedrooms
+              bathrooms
+              amenities
+              houseRules
+              checkInTime
+              checkOutTime
+              photos
+              createdAt
+              updatedAt
+              availabilities {
+                id
+                startDate
+                endDate
+                status
+                notes
+              }
+              user {
+                id
+                name
+                email
+              }
+            }
+          }
+        `
+        variables = {
+          query: searchFilters.query || null,
+          startDate: searchFilters.startDate || null,
+          endDate: searchFilters.endDate || null,
+          location: searchFilters.location || null,
+          amenities: searchFilters.amenities.length > 0 ? searchFilters.amenities : null,
+          trustedOnly: searchFilters.trustedHostsOnly || null,
+          guests: searchFilters.guests > 1 ? searchFilters.guests : null
+        }
+      } else {
+        // Get all hosts when no filters are applied
+        query = `
+          query GetAllHosts {
+            hosts {
+              id
+              title
+              description
+              address
+              city
+              state
+              zipCode
+              country
+              latitude
+              longitude
+              maxGuests
+              bedrooms
+              bathrooms
+              amenities
+              houseRules
+              checkInTime
+              checkOutTime
+              photos
+              createdAt
+              updatedAt
+              availabilities {
+                id
+                startDate
+                endDate
+                status
+                notes
+              }
+              user {
+                id
+                name
+                email
+              }
+            }
+          }
+        `
+      }
+
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables,
+        }),
+      })
       
       if (!response.ok) {
-        throw new Error('Failed to search listings')
+        throw new Error('Failed to search hosts')
       }
 
       const data = await response.json()
-      setListings(data.listings || [])
+      
+      if (data.errors) {
+        throw new Error(data.errors[0].message)
+      }
+
+      const hosts = data.data?.searchHostsAdvanced || data.data?.hosts || []
+      setHosts(hosts)
     } catch (err) {
       console.error('Search error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to search listings')
-      setListings([])
+      setError(err instanceof Error ? err.message : 'Failed to search hosts')
+      setHosts([])
     } finally {
       setIsLoading(false)
     }
@@ -98,25 +219,28 @@ function SearchPage() {
   const handleFiltersChange = useCallback((newFilters: SearchFiltersState) => {
     setFilters(newFilters)
     updateURL(newFilters)
-    searchListings(newFilters)
-  }, [updateURL, searchListings])
+    searchHosts(newFilters)
+  }, [updateURL, searchHosts])
 
   // Initial search on mount
   useEffect(() => {
-    searchListings(filters)
-  }, []) // Only run on mount
+    if (!hasInitialized.current) {
+      hasInitialized.current = true
+      searchHosts(filters)
+    }
+  }, [filters, searchHosts])
 
   // Handle view change
   const handleViewChange = (newView: 'list' | 'map') => {
     setView(newView)
-    if (newView === 'map' && listings.length > 0) {
+    if (newView === 'map' && hosts.length > 0) {
       // Ensure we have lat/lng data for map view
-      const listingsWithCoords = listings.filter(listing => 
-        listing.latitude && listing.longitude
+      const hostsWithCoords = hosts.filter(host => 
+        host.latitude && host.longitude
       )
-      if (listingsWithCoords.length === 0) {
+      if (hostsWithCoords.length === 0) {
         // Could show a message about geocoding addresses
-        console.warn('No listings have coordinates for map view')
+        console.warn('No hosts have coordinates for map view')
       }
     }
   }
@@ -128,9 +252,9 @@ function SearchPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Search Listings</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Search Hosts</h1>
               <p className="text-gray-600 mt-1">
-                {listings.length} {listings.length === 1 ? 'property' : 'properties'} available
+                {hosts.length} {hosts.length === 1 ? 'host' : 'hosts'} available
               </p>
             </div>
             
@@ -184,7 +308,7 @@ function SearchPage() {
                     <p>{error}</p>
                     <Button 
                       variant="outline" 
-                      onClick={() => searchListings(filters)}
+                      onClick={() => searchHosts(filters)}
                       className="mt-3"
                     >
                       Try Again
@@ -196,14 +320,14 @@ function SearchPage() {
 
             {view === 'list' ? (
               <SearchResults
-                listings={listings}
+                hosts={hosts}
                 isLoading={isLoading}
                 filters={filters}
               />
             ) : (
               <div className="h-[600px] lg:h-[700px]">
                 <MapComponent 
-                  listings={listings}
+                  hosts={hosts}
                   isLoading={isLoading}
                 />
               </div>

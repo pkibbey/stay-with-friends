@@ -24,8 +24,7 @@ interface MapComponentProps {
   country?: string
   location?: string
   className?: string
-  // Multiple listings for search results
-  listings?: HostProfileData[]
+  hosts?: HostProfileData[]
   isLoading?: boolean
 }
 
@@ -37,7 +36,7 @@ export function MapComponent({
   country,
   location,
   className = "h-64",
-  listings = [],
+  hosts = [],
   isLoading = false
 }: MapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null)
@@ -115,8 +114,8 @@ export function MapComponent({
     }
   }, [])
 
-  const addListingsToMap = useCallback(async (listings: HostProfileData[], map: Map) => {
-    if (listings.length === 0) return
+  const addHostsToMap = useCallback(async (hosts: HostProfileData[], map: Map) => {
+    if (hosts.length === 0) return
 
     // Remove existing markers
     if (markerLayerRef.current) {
@@ -126,17 +125,17 @@ export function MapComponent({
     const features: Feature[] = []
     const bounds: number[][] = []
 
-    for (const listing of listings) {
+    for (const host of hosts) {
       let lat: number, lon: number
 
       // Use coordinates if available, otherwise geocode
-      if (listing.latitude && listing.longitude) {
-        lat = listing.latitude
-        lon = listing.longitude
+      if (host.latitude && host.longitude) {
+        lat = host.latitude
+        lon = host.longitude
       } else {
-        // Geocode the listing address
+        // Geocode the host address
         try {
-          const locationString = [listing.address, listing.city, listing.state, listing.zipCode, listing.country]
+          const locationString = [host.address, host.city, host.state, host.zipCode, host.country]
             .filter(Boolean)
             .join(', ')
           
@@ -149,10 +148,10 @@ export function MapComponent({
             lat = parseFloat(data[0].lat)
             lon = parseFloat(data[0].lon)
           } else {
-            continue // Skip this listing if geocoding fails
+            continue // Skip this host if geocoding fails
           }
         } catch (error) {
-          console.warn(`Geocoding failed for listing ${listing.id}:`, error)
+          console.warn(`Geocoding failed for host ${host.id}:`, error)
           continue
         }
       }
@@ -163,7 +162,7 @@ export function MapComponent({
       // Create marker feature
       const marker = new Feature({
         geometry: new Point(coordinates),
-        listing: listing, // Store listing data for popup
+        host: host, // Store host data for popup
       })
 
       // Style the marker with price
@@ -218,8 +217,8 @@ export function MapComponent({
     map.on('click', (event) => {
       const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature)
       
-      if (feature && feature.get('listing')) {
-        const listing = feature.get('listing') as HostProfileData
+      if (feature && feature.get('host')) {
+        const host = feature.get('host') as HostProfileData
         const coordinates = (feature.getGeometry() as Point).getCoordinates()
         
         if (popupRef.current && popupOverlayRef.current) {
@@ -227,16 +226,16 @@ export function MapComponent({
           popupRef.current.innerHTML = `
             <div class="max-w-sm">
               <div class="mb-2">
-                <h3 class="font-semibold text-sm line-clamp-2">${listing.title}</h3>
-                <p class="text-xs text-gray-600">${listing.city}, ${listing.state}</p>
+                <h3 class="font-semibold text-sm line-clamp-2">${host.title}</h3>
+                <p class="text-xs text-gray-600">${host.city}, ${host.state}</p>
               </div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-500">${listing.maxGuests} guests</span>
+                <span class="text-xs text-gray-500">${host.maxGuests} guests</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">
-                Host: ${listing.name}
+                Host: ${host.name}
               </div>
-              <a href="/host/${listing.id}" class="text-xs text-blue-600 hover:text-blue-800">
+              <a href="/host/${host.id}" class="text-xs text-blue-600 hover:text-blue-800">
                 View Details →
               </a>
             </div>
@@ -314,20 +313,20 @@ export function MapComponent({
 
   // Handle single location mode
   useEffect(() => {
-    if (!olMapRef.current || listings.length > 0) return
+    if (!olMapRef.current || hosts.length > 0) return
 
     const locationString = fullAddress || location || ''
     if (locationString) {
       geocodeLocation(locationString, olMapRef.current)
     }
-  }, [fullAddress, location, geocodeLocation, listings.length])
+  }, [fullAddress, location, geocodeLocation, hosts.length])
 
-  // Handle multiple listings mode
+  // Handle multiple hosts mode
   useEffect(() => {
-    if (!olMapRef.current || listings.length === 0) return
+    if (!olMapRef.current || hosts.length === 0) return
 
-    addListingsToMap(listings, olMapRef.current)
-  }, [listings, addListingsToMap])
+    addHostsToMap(hosts, olMapRef.current)
+  }, [hosts, addHostsToMap])
 
   if (isLoading) {
     return (
@@ -347,7 +346,7 @@ export function MapComponent({
         className={`w-full rounded-lg overflow-hidden ${className}`}
         style={{ minHeight: '200px' }}
       />
-      {listings.length === 0 && !fullAddress && !location && (
+      {hosts.length === 0 && !fullAddress && !location && (
         <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
           <div className="text-center text-gray-500">
             <MapPin className="w-8 h-8 mx-auto mb-2" />

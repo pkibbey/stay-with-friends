@@ -90,8 +90,7 @@ export const typeDefs = `#graphql
     hosts: [Host!]!
     searchHosts(query: String!): [Host!]!
     host(id: ID!): Host
-    searchListings(query: String!): [Host!]!
-    searchListingsAdvanced(
+    searchHostsAdvanced(
       query: String
       startDate: String
       endDate: String
@@ -100,7 +99,6 @@ export const typeDefs = `#graphql
       trustedOnly: Boolean
       guests: Int
     ): [Host!]!
-    userListings(userId: ID!): [Host!]!
     availabilitiesByDate(date: String!): [Availability!]!
     availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
     hostAvailabilities(hostId: ID!): [Availability!]!
@@ -320,11 +318,7 @@ export const resolvers = {
     host: (_: any, { id }: { id: string }) => {
       return getHostById.get(id);
     },
-    searchListings: (_: any, { query }: { query: string }) => {
-      const searchTerm = `%${query}%`;
-      return searchHosts.all(searchTerm, searchTerm);
-    },
-    searchListingsAdvanced: (_: any, args: any) => {
+    searchHostsAdvanced: (_: any, args: any) => {
       // For now, use the basic search - can be enhanced later
       if (args.query) {
         const searchTerm = `%${args.query}%`;
@@ -332,11 +326,6 @@ export const resolvers = {
       }
       // If no query, return all hosts
       return getAllHosts.all();
-    },
-    userListings: (_: any, { userId }: { userId: string }) => {
-      // Get hosts created by a specific user
-      // For now, return empty array as we don't have user_id in hosts table
-      return [];
     },
     availabilitiesByDate: (_: any, { date }: { date: string }) => {
       return getAvailabilitiesByDateRange.all(date, date);
@@ -469,7 +458,7 @@ export const resolvers = {
         };
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          throw new Error('A listing with this email already exists');
+          throw new Error('A host with this email already exists');
         }
         throw error;
       }
@@ -536,7 +525,7 @@ export const resolvers = {
       }
       // In a real implementation, you'd integrate with an email service like SendGrid, Mailgun, etc.
       // For now, we'll just log the invitation and return success
-      console.log(`Sending invitation email to ${email} with URL: ${invitationUrl}`);
+      
       return true;
     },
     createPlace: (_: any, { input }: { input: any }) => {
@@ -763,7 +752,7 @@ export const resolvers = {
 
         return result.changes > 0
       } catch (error) {
-        console.error('Error deleting host:', error)
+        
         return false
       } finally {
         db.close()

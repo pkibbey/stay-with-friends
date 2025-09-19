@@ -240,7 +240,7 @@ CREATE TABLE booking_requests (
 - Users cannot connect to themselves
 - Connections are directional but can be mutual
 - Users can block unwanted connections
-- Connected users have enhanced visibility of each other's listings
+- Connected users have enhanced visibility of each other's hosts
 - Relationship type helps provide context for the connection and can be used for filtering or organization
 
 **Valid Status Values**:
@@ -366,7 +366,7 @@ Invitation
 1. User A sends connection request to User B (via email)
 2. Connection entity created with "pending" status
 3. User B accepts/declines the connection
-4. If accepted, both users can see each other's listings
+4. If accepted, both users can see each other's hosts
 
 ### 5. Invitation Flow
 1. Existing user sends invitation to friend via email
@@ -375,7 +375,7 @@ Invitation
 4. Friend clicks link and registers new account
 5. Upon successful registration, invitation status updates to "accepted"
 6. Automatic Connection is created between inviter and new user
-7. New user gains access to inviter's listings and vice versa
+7. New user gains access to inviter's hosts and vice versa
 
 ---
 
@@ -388,7 +388,7 @@ Invitation
 - Guest count cannot exceed host capacity
 
 ### Privacy & Security
-- Users only see listings from connected friends
+- Users only see hosts from connected friends
 - Personal information is protected
 - Email verification required for full platform access
 

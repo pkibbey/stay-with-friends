@@ -1,6 +1,7 @@
 // Core Host interface with all possible fields
 export interface Host {
   id: string
+  title: string
   name: string
   email?: string
   location?: string
