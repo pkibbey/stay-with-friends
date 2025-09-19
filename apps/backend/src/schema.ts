@@ -87,12 +87,9 @@ export const typeDefs = `#graphql
   }
 
   type Query {
-    hello: String
     hosts: [Host!]!
     searchHosts(query: String!): [Host!]!
     host(id: ID!): Host
-    # Listing aliases for hosts (for frontend compatibility)
-    listings: [Host!]!
     searchListings(query: String!): [Host!]!
     searchListingsAdvanced(
       query: String
@@ -315,7 +312,6 @@ const validateStatus = (status: string, validStatuses: string[]): void => {
 
 export const resolvers = {
   Query: {
-    hello: () => 'Hello world!',
     hosts: () => getAllHosts.all(),
     searchHosts: (_: any, { query }: { query: string }) => {
       const searchTerm = `%${query}%`;
@@ -324,8 +320,6 @@ export const resolvers = {
     host: (_: any, { id }: { id: string }) => {
       return getHostById.get(id);
     },
-    // Listing aliases for hosts (for frontend compatibility)
-    listings: () => getAllHosts.all(),
     searchListings: (_: any, { query }: { query: string }) => {
       const searchTerm = `%${query}%`;
       return searchHosts.all(searchTerm, searchTerm);

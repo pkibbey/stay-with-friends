@@ -294,14 +294,20 @@ export function MapComponent({
         olMapRef.current.dispose()
         olMapRef.current = null
       }
-      if (popupRef.current && popupRef.current.parentNode) {
+      if (popupRef.current) {
         try {
-          document.body.removeChild(popupRef.current)
+          // Check if the element still has a parent before attempting to remove
+          if (popupRef.current.parentNode === document.body) {
+            document.body.removeChild(popupRef.current)
+          }
         } catch (error) {
           // Element might already be removed, ignore the error
           console.warn('Popup element already removed:', error)
         }
         popupRef.current = null
+      }
+      if (popupOverlayRef.current) {
+        popupOverlayRef.current = null
       }
     }
   }, [])

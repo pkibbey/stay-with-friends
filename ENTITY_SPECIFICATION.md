@@ -54,7 +54,7 @@ CREATE TABLE users (
 
 ---
 
-### 2. Host Entity (Property/Listing)
+### 2. Host Entity (Host Property/Listing)
 
 **Purpose**: Represents a property or accommodation that a user offers to friends for stays.
 

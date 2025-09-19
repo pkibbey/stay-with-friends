@@ -9,39 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Map, List, Filter } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
-
-interface Listing {
-  id: string
-  title: string
-  description: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  latitude?: number
-  longitude?: number
-  maxGuests: number
-  bedrooms: number
-  bathrooms: number
-  amenities: string[]
-  houseRules: string
-  checkInTime: string
-  checkOutTime: string
-  photos: string[]
-  availabilities: Array<{
-    id: string
-    startDate: string
-    endDate: string
-    status: string
-    notes?: string
-  }>
-  user: {
-    id: string
-    name: string
-    email: string
-  }
-}
+import { HostProfileData } from '@/types'
 
 interface SearchFiltersState {
   query: string
@@ -58,7 +26,7 @@ function SearchPage() {
   const searchParams = useSearchParams()
   
   // Search state
-  const [listings, setListings] = useState<Listing[]>([])
+  const [listings, setListings] = useState<HostProfileData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')

@@ -27,21 +27,21 @@ interface SearchResultsProps {
   filters: SearchFiltersState
 }
 
-function ListingCard({ listing, filters }: { listing: HostProfileData; filters: SearchFiltersState }) {
+function ResultCard({ result, filters }: { result: HostProfileData; filters: SearchFiltersState }) {
   const [showCalendar, setShowCalendar] = React.useState(false)
   
-  // Check if listing is available for selected dates
+  // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
     if (!filters.startDate || !filters.endDate) return true
 
     const startDate = parseLocalDate(filters.startDate)
     const endDate = parseLocalDate(filters.endDate)
 
-    if (!listing.availabilities || listing.availabilities.length === 0) {
+    if (!result.availabilities || result.availabilities.length === 0) {
       return false
     }
 
-    return listing.availabilities.some(availability => {
+    return result.availabilities.some(availability => {
       if (availability.status !== 'available') return false
 
       const availStart = parseLocalDate(availability.startDate)
@@ -49,9 +49,9 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
 
       return startDate >= availStart && endDate <= availEnd
     })
-  }, [listing.availabilities, filters.startDate, filters.endDate])
+  }, [result.availabilities, filters.startDate, filters.endDate])
 
-  const availableNow = listing.availabilities?.some(availability => {
+  const availableNow = result.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
     const today = new Date()
     const start = parseLocalDate(availability.startDate)
@@ -62,13 +62,13 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video bg-gray-200 relative">
-        {listing.photos.length > 0 ? (
+        {result.photos.length > 0 ? (
           <Image
             unoptimized
             width={400}
             height={300}
-            src={listing.photos[0]}
-            alt={listing.title}
+            src={result.photos[0]}
+            alt={result.title}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -91,10 +91,10 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
         </div>
 
         {/* Photo count */}
-        {listing.photos.length > 1 && (
+        {result.photos.length > 1 && (
           <div className="absolute top-3 right-3">
             <Badge variant="outline" className="bg-white/90 text-gray-700">
-              +{listing.photos.length - 1} photos
+              +{result.photos.length - 1} photos
             </Badge>
           </div>
         )}
@@ -103,9 +103,9 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg line-clamp-2">{listing.title}</CardTitle>
+            <CardTitle className="text-lg line-clamp-2">{result.title}</CardTitle>
             <CardDescription className="line-clamp-2 mt-1">
-              {listing.description}
+              {result.description}
             </CardDescription>
           </div>
         </div>
@@ -116,25 +116,25 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center">
             <MapPin className="w-4 h-4 mr-1" />
-            {listing.city}, {listing.state}
+            {result.city}, {result.state}
           </div>
           <div className="flex items-center">
             <Users className="w-4 h-4 mr-1" />
-            {listing.maxGuests} guests
+            {result.maxGuests} guests
           </div>
         </div>
 
         {/* Amenities */}
-        {listing.amenities.length > 0 && (
+        {result.amenities.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {listing.amenities.slice(0, 4).map((amenity) => (
+            {result.amenities.slice(0, 4).map((amenity) => (
               <Badge key={amenity} variant="outline" className="text-xs">
                 {amenity}
               </Badge>
             ))}
-            {listing.amenities.length > 4 && (
+            {result.amenities.length > 4 && (
               <Badge variant="outline" className="text-xs">
-                +{listing.amenities.length - 4} more
+                +{result.amenities.length - 4} more
               </Badge>
             )}
           </div>
@@ -151,7 +151,7 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
             <Calendar className="w-4 h-4 mr-2" />
             {showCalendar ? 'Hide' : 'Show'} Calendar
           </Button>
-          <Link href={`/host/${listing.id}`} className="flex-1">
+          <Link href={`/host/${result.id}`} className="flex-1">
             <Button size="sm" className="w-full">
               <Eye className="w-4 h-4 mr-2" />
               View Details
@@ -165,7 +165,7 @@ function ListingCard({ listing, filters }: { listing: HostProfileData; filters: 
             <AvailabilityCalendar
               selectedDate={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
               onSelect={() => {}} // Read-only for search results
-              availabilities={listing.availabilities}
+              availabilities={result.availabilities}
             />
           </div>
         )}
@@ -206,7 +206,7 @@ export function SearchResults({ listings, isLoading, filters }: SearchResultsPro
       <Card className="text-center py-12">
         <CardContent>
           <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No listings found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
           <p className="text-gray-600 mb-6">
             Try adjusting your search criteria or filters to find more results.
           </p>
@@ -230,12 +230,12 @@ export function SearchResults({ listings, isLoading, filters }: SearchResultsPro
         )}
       </div>
 
-      {/* Listings grid */}
+      {/* Results grid */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {listings.map((listing) => (
-          <ListingCard 
-            key={listing.id} 
-            listing={listing} 
+        {listings.map((result) => (
+          <ResultCard 
+            key={result.id} 
+            result={result} 
             filters={filters}
           />
         ))}

@@ -166,8 +166,8 @@ export async function GET(request: NextRequest) {
       variables = { userId }
     } else {
       query = `
-        query AllListings {
-          listings {
+        query AllHosts {
+          hosts {
             id
             title
             description
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await graphqlRequest(query, variables)
-    const listings = data.searchListingsAdvanced || data.searchListings || data.userListings || data.listings
+    const listings = data.searchListingsAdvanced || data.searchListings || data.userListings || data.hosts
 
     return NextResponse.json({ listings })
   } catch (error: any) {
