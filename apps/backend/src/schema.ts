@@ -233,19 +233,21 @@ export const typeDefs = `#graphql
 import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
 
 // Validation functions
-const validateEmail = (email: string): void => {
+export const validateEmail = (email: string): void => {
   if (!email || typeof email !== 'string') {
     throw new Error('Email is required');
   }
   if (email.length < 5 || email.length > 255) {
     throw new Error('Email must be between 5 and 255 characters');
   }
-  if (!email.includes('@') || !email.includes('.')) {
+  // More robust email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
     throw new Error('Email must be a valid email address');
   }
 };
 
-const validateName = (name: string): void => {
+export const validateName = (name: string): void => {
   if (!name || typeof name !== 'string') {
     throw new Error('Name is required');
   }
@@ -254,7 +256,7 @@ const validateName = (name: string): void => {
   }
 };
 
-const validateOptionalText = (text: string | undefined, fieldName: string, maxLength: number): void => {
+export const validateOptionalText = (text: string | undefined, fieldName: string, maxLength: number): void => {
   if (text !== undefined && text !== null) {
     if (typeof text !== 'string') {
       throw new Error(`${fieldName} must be a string`);
