@@ -1,0 +1,323 @@
+"use client"
+
+import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Home, CheckCircle } from "lucide-react"
+import Link from "next/link"
+
+interface Invitation {
+  id: string
+  inviterId: string
+  inviteeEmail: string
+  inviteeName?: string
+  message?: string
+  token: string
+  status: string
+  expiresAt: string
+  createdAt: string
+  inviter: {
+    id: string
+    name?: string
+    email: string
+  }
+}
+
+export default function AcceptInvitationPage() {
+  const params = useParams()
+  const router = useRouter()
+  const token = params.token as string
+
+  const [invitation, setInvitation] = useState<Invitation | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [accepting, setAccepting] = useState(false)
+  const [accepted, setAccepted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [userData, setUserData] = useState({
+    name: '',
+    image: ''
+  })
+
+  useEffect(() => {
+    if (!token) return
+
+    const fetchInvitation = async () => {
+      try {
+        const response = await fetch('http://localhost:4000/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `
+              query GetInvitation($token: String!) {
+                invitation(token: $token) {
+                  id
+                  inviterId
+                  inviteeEmail
+                  inviteeName
+                  message
+                  token
+                  status
+                  expiresAt
+                  createdAt
+                  inviter {
+                    id
+                    name
+                    email
+                  }
+                }
+              }
+            `,
+            variables: { token },
+          }),
+        })
+
+        const data = await response.json()
+        if (data.data?.invitation) {
+          setInvitation(data.data.invitation)
+          // Pre-fill name if available
+          if (data.data.invitation.inviteeName) {
+            setUserData(prev => ({ ...prev, name: data.data.invitation.inviteeName }))
+          }
+        } else {
+          setError('Invalid invitation token')
+        }
+      } catch (err) {
+        console.error('Error fetching invitation:', err)
+        setError('Failed to load invitation')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchInvitation()
+  }, [token])
+
+  const handleAcceptInvitation = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!invitation) return
+
+    setAccepting(true)
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            mutation AcceptInvitation($token: String!, $userData: AcceptInvitationInput!) {
+              acceptInvitation(token: $token, userData: $userData) {
+                id
+                email
+                name
+                emailVerified
+                createdAt
+              }
+            }
+          `,
+          variables: {
+            token,
+            userData: {
+              name: userData.name || undefined,
+              image: userData.image || undefined
+            }
+          },
+        }),
+      })
+
+      const data = await response.json()
+      if (data.data?.acceptInvitation) {
+        setAccepted(true)
+        // Redirect to sign in after a delay
+        setTimeout(() => {
+          router.push('/auth/signin')
+        }, 3000)
+      } else {
+        console.error('GraphQL error:', data.errors)
+        setError('Failed to accept invitation: ' + (data.errors?.[0]?.message || 'Unknown error'))
+      }
+    } catch (err) {
+      console.error('Error accepting invitation:', err)
+      setError('Failed to accept invitation')
+    } finally {
+      setAccepting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Loading invitation...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Home className="w-8 h-8 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-2">
+                Invitation Error
+              </h2>
+              <p className="text-red-700 dark:text-red-300 mb-6">
+                {error}
+              </p>
+              <Link href="/">
+                <Button variant="outline">
+                  Go to Homepage
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (accepted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-2">
+                Welcome to Stay With Friends!
+              </h2>
+              <p className="text-green-700 dark:text-green-300 mb-6">
+                Your account has been created and you&apos;re now connected with {invitation?.inviter.name || invitation?.inviter.email}.
+                You&apos;ll be redirected to sign in shortly.
+              </p>
+              <Link href="/auth/signin">
+                <Button>
+                  Sign In Now
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!invitation) return null
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tighter">
+              <span className="text-yellow-500 dark:text-yellow-500">Join</span> <span className="text-gray-900 dark:text-white">Stay</span>
+              <span className="text-blue-500 dark:text-blue-300">With</span>
+              <span className="text-blue-600 dark:text-blue-400">Friends</span>
+            </h1>
+
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
+              <p className="text-green-800 dark:text-green-200 text-sm">
+                <strong>{invitation.inviter.name || invitation.inviter.email}</strong> has invited you to join Stay With Friends!
+              </p>
+            </div>
+
+            {invitation.message && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+                <p className="text-blue-800 dark:text-blue-200 text-sm italic">
+                  &ldquo;{invitation.message}&rdquo;
+                </p>
+              </div>
+            )}
+
+            <Badge variant="outline" className="text-sm">
+              Invitation for: {invitation.inviteeEmail}
+            </Badge>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Accept Invitation & Create Account
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Create your account to connect with {invitation.inviter.name || invitation.inviter.email} and start sharing homes with friends.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAcceptInvitation} className="space-y-6">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={invitation.inviteeEmail}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">This email was used for your invitation</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="name">Your Name</Label>
+                  <Input
+                    id="name"
+                    value={userData.name}
+                    onChange={(e) => setUserData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="image">Profile Image URL (Optional)</Label>
+                  <Input
+                    id="image"
+                    value={userData.image}
+                    onChange={(e) => setUserData(prev => ({ ...prev, image: e.target.value }))}
+                    placeholder="https://example.com/your-photo.jpg"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={accepting}
+                >
+                  {accepting ? 'Creating Account...' : 'Accept Invitation & Join'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <div className="mt-8 text-center">
+            <Link href="/">
+              <Button variant="ghost">
+                Back to Homepage
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

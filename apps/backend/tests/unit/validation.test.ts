@@ -206,16 +206,16 @@ describe('Validation Functions', () => {
 
   describe('validateStatus', () => {
     it('should accept valid statuses', () => {
-      const validStatuses = ['pending', 'approved', 'declined'];
+      const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
       expect(() => validateStatus('pending', validStatuses)).not.toThrow();
       expect(() => validateStatus('approved', validStatuses)).not.toThrow();
       expect(() => validateStatus('', validStatuses)).not.toThrow(); // Empty string is allowed
     });
 
     it('should reject invalid statuses', () => {
-      const validStatuses = ['pending', 'approved', 'declined'];
+      const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
       expect(() => validateStatus('invalid', validStatuses))
-        .toThrow('Status must be one of: pending, approved, declined');
+        .toThrow('Status must be one of: pending, approved, declined, cancelled');
     });
   });
 });

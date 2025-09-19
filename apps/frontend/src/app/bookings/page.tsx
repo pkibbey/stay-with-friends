@@ -55,7 +55,6 @@ export default function BookingsPage() {
   const { data: session, status } = useSession()
   const [myRequests, setMyRequests] = useState<BookingRequest[]>([])
   const [incomingRequests, setIncomingRequests] = useState<BookingRequest[]>([])
-  console.log('incomingRequests: ', incomingRequests);
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -64,10 +63,6 @@ export default function BookingsPage() {
   const fetchBookingRequests = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
-    console.log('userId: ', userId);
-    console.log('Fetching booking requests for userId:', userId)
-    console.log('Full session object:', session)
-    console.log('Session status:', status)
     if (!userId) {
       console.log('No userId found, skipping fetch')
       setLoading(false)
@@ -117,9 +112,7 @@ export default function BookingsPage() {
         }),
       })
       
-      console.log('My requests response status:', myRequestsResponse.status)
       const myRequestsData = await myRequestsResponse.json()
-      console.log('My requests data:', myRequestsData)
       
       if (myRequestsData.errors) {
         console.error('GraphQL errors in my requests:', myRequestsData.errors)
@@ -181,10 +174,9 @@ export default function BookingsPage() {
     } finally {
       setLoading(false)
     }
-  }, [session, status])
+  }, [session])
 
   useEffect(() => {
-    console.log('Session state changed:', session, 'Status:', status)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
     
@@ -291,17 +283,6 @@ export default function BookingsPage() {
   return (
     <PageLayout title="Booking Requests" subtitle="Manage your stay requests and hosting">
       <div className="space-y-6">
-        {/* Debug info - remove this later */}
-        <Card className="bg-gray-50 border-dashed">
-          <CardContent className="py-2">
-            <small className="text-gray-600">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              Debug: Session status: {status}, User ID: {(session?.user as any)?.id || 'none'}, 
-              Loading: {loading.toString()}, Error: {error || 'none'}
-            </small>
-          </CardContent>
-        </Card>
-        
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="my-requests">
@@ -341,6 +322,13 @@ export default function BookingsPage() {
               onClick={() => setStatusFilter('declined')}
             >
               Declined
+            </Button>
+            <Button
+              variant={statusFilter === 'cancelled' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('cancelled')}
+            >
+              Cancelled
             </Button>
           </div>
 

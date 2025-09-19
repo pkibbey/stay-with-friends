@@ -159,7 +159,7 @@ export const typeDefs = `#graphql
       responseMessage: String
     ): BookingRequest!
     checkEmailExists(email: String!): Boolean!
-    sendInvitationEmail(email: String!, invitationUrl: String!): Boolean!
+    sendInvitationEmail(email: String!, invitationUrl: String!): String!
     updateHost(id: ID!, input: UpdateHostInput!): Host!
     deleteHost(id: ID!): Boolean!
     createUser(email: String!, name: String, image: String): User!
@@ -573,9 +573,11 @@ export const resolvers = {
         throw new Error('Invitation URL is required');
       }
       // In a real implementation, you'd integrate with an email service like SendGrid, Mailgun, etc.
-      // For now, we'll just log the invitation and return success
+      // For now, we'll just log the invitation and return the URL for testing
       
-      return true;
+      console.log(`Invitation email would be sent to ${email} with URL: ${invitationUrl}`);
+      
+      return invitationUrl;
     },
     updateHost: (_: any, { id, input }: { id: string, input: any }) => {
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
@@ -813,7 +815,7 @@ export const resolvers = {
     updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }) => {
       // Validate required fields
       validatePositiveInteger(parseInt(connectionId), 'Connection ID');
-      validateStatus(status, ['pending', 'accepted', 'declined']);
+      validateStatus(status, ['pending', 'accepted', 'declined', 'cancelled']);
 
       const result = updateConnectionStatus.run(status, connectionId);
       // Return the updated connection
@@ -860,7 +862,7 @@ export const resolvers = {
         expiresAt.toISOString()
       );
 
-      return {
+      const invitation = {
         id: result.lastInsertRowid,
         inviterId,
         inviteeEmail,
@@ -871,6 +873,12 @@ export const resolvers = {
         expiresAt: expiresAt.toISOString(),
         createdAt: new Date().toISOString(),
       };
+
+      // Send invitation email
+      const invitationUrl = `http://localhost:3000/invite/${token}`;
+      const emailResult = resolvers.Mutation.sendInvitationEmail(null, { email: inviteeEmail, invitationUrl });
+
+      return invitation;
     },
     acceptInvitation: (_: any, { token, userData }: { token: string, userData: any }) => {
       // Validate token
