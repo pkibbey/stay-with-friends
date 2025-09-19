@@ -53,7 +53,6 @@ function Home() {
                 id
                 name
                 location
-                availability
                 description
               }
             }

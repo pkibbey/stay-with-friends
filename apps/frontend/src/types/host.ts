@@ -5,7 +5,6 @@ export interface Host {
   name: string
   email?: string
   location?: string
-  availability?: string
   description?: string
   address?: string
   city?: string
@@ -76,7 +75,6 @@ export interface HostSummary {
   id: string
   name: string
   location?: string
-  availability?: string
   description?: string
 }
 

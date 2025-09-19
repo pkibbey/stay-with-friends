@@ -36,7 +36,6 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
                 id
                 name
                 location
-                availability
                 description
               }
             }

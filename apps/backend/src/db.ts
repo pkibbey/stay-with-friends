@@ -36,7 +36,6 @@ db.exec(`
     name TEXT NOT NULL CHECK(length(name) >= 1 AND length(name) <= 255),
     email TEXT UNIQUE CHECK(email IS NULL OR (email LIKE '%@%' AND length(email) >= 5)),
     location TEXT CHECK(location IS NULL OR length(location) <= 255),
-    availability TEXT CHECK(availability IS NULL OR length(availability) <= 500),
     description TEXT CHECK(description IS NULL OR length(description) <= 2000),
     address TEXT CHECK(address IS NULL OR length(address) <= 255),
     city TEXT CHECK(city IS NULL OR length(city) <= 100),
@@ -305,8 +304,8 @@ export const searchHosts = db.prepare(`
   WHERE name LIKE ? OR location LIKE ?
 `);
 export const insertHost = db.prepare(`
-  INSERT INTO hosts (user_id, name, email, location, availability, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO hosts (user_id, name, email, location, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 export const getHostAvailabilities = db.prepare(`

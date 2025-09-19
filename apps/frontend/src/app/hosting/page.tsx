@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { AvailabilityManager } from '@/components/AvailabilityManager'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2 } from 'lucide-react'
 
 interface Availability {
   id: string
@@ -22,10 +22,93 @@ interface Availability {
   notes?: string
 }
 
+interface HostData {
+  id: string
+  name: string
+  title: string
+  location: string
+  description: string
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  country?: string
+  latitude?: number
+  longitude?: number
+  amenities: string[]
+  houseRules?: string
+  checkInTime?: string
+  checkOutTime?: string
+  maxGuests: number
+  bedrooms: number
+  bathrooms: number
+  photos: string[]
+  availabilities: Availability[]
+}
+
 export default function ManageHostingPage() {
   const { data: session } = useSession()
   const [showAddForm, setShowAddForm] = useState(false)
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+  const [hostings, setHostings] = useState<HostData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingHostId, setEditingHostId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Partial<HostData>>({})
+  const [saving, setSaving] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchHostings = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query GetHosts {
+              hosts {
+                id
+                name
+                title
+                location
+                description
+                address
+                city
+                state
+                zipCode
+                country
+                latitude
+                longitude
+                amenities
+                houseRules
+                checkInTime
+                checkOutTime
+                maxGuests
+                bedrooms
+                bathrooms
+                photos
+                availabilities {
+                  id
+                  startDate
+                  endDate
+                  status
+                  notes
+                }
+              }
+            }
+          `,
+        }),
+      })
+      const data = await response.json()
+      if (data.data?.hosts) {
+        setHostings(data.data.hosts)
+      }
+    } catch (error) {
+      console.error('Error fetching hostings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const fetchPendingRequestsCount = async () => {
@@ -55,38 +138,9 @@ export default function ManageHostingPage() {
 
     if (session?.user) {
       fetchPendingRequestsCount()
+      fetchHostings()
     }
   }, [session?.user])
-
-  // Mock data - in real app this would come from your backend
-  const [hostings, setHostings] = useState([
-    {
-      id: 1,
-      title: "Cozy Downtown Apartment",
-      description: "Beautiful 2-bedroom apartment in the heart of the city with amazing views",
-      location: "San Francisco, CA",
-      maxGuests: 4,
-      bedrooms: 2,
-      bathrooms: 1,
-      checkInTime: "3:00 PM",
-      checkOutTime: "11:00 AM",
-      amenities: ["WiFi", "Kitchen", "Washer/Dryer", "Parking"],
-      houseRules: "No smoking, quiet hours after 10pm",
-      photos: []
-    }
-  ])
-
-  // Mock availabilities data
-  const [availabilities, setAvailabilities] = useState<Availability[]>([
-    {
-      id: '1',
-      hostId: '1',
-      startDate: '2025-12-15',
-      endDate: '2025-12-20',
-      status: 'available',
-      notes: 'Holiday break'
-    }
-  ])
 
   const [newHosting, setNewHosting] = useState({
     title: '',
@@ -102,11 +156,13 @@ export default function ManageHostingPage() {
   })
 
   const handleAddHosting = () => {
-    const hosting = {
-      id: Date.now(),
+    const hosting: HostData = {
+      id: Date.now().toString(),
+      name: newHosting.title,
       ...newHosting,
       amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
-      photos: []
+      photos: [],
+      availabilities: []
     }
     setHostings([...hostings, hosting])
     setNewHosting({
@@ -124,24 +180,191 @@ export default function ManageHostingPage() {
     setShowAddForm(false)
   }
 
-  const handleAddAvailability = (hostId: number) => (startDate: string, endDate: string, notes?: string) => {
-    const newAvailability: Availability = {
-      id: Date.now().toString(),
-      hostId: hostId.toString(),
-      startDate,
-      endDate,
-      status: 'available',
-      notes
+  const handleAddAvailability = (hostId: string) => async (startDate: string, endDate: string, notes?: string) => {
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation CreateAvailability($hostId: ID!, $startDate: String!, $endDate: String!, $notes: String) {
+              createAvailability(hostId: $hostId, startDate: $startDate, endDate: $endDate, notes: $notes) {
+                id
+                hostId
+                startDate
+                endDate
+                status
+                notes
+              }
+            }
+          `,
+          variables: { hostId, startDate, endDate, notes },
+        }),
+      })
+      const data = await response.json()
+      if (data.data?.createAvailability) {
+        // Refresh the hostings data to include the new availability
+        await fetchHostings()
+      }
+    } catch (error) {
+      console.error('Error adding availability:', error)
     }
-    setAvailabilities([...availabilities, newAvailability])
   }
 
-  const handleRemoveAvailability = (id: string) => {
-    setAvailabilities(availabilities.filter(a => a.id !== id))
+  const handleRemoveAvailability = async (id: string) => {
+    try {
+      // You'll need to implement a deleteAvailability mutation in your backend
+      console.log('Remove availability:', id)
+      // For now, refresh the data
+      await fetchHostings()
+    } catch (error) {
+      console.error('Error removing availability:', error)
+    }
   }
 
-  const getHostAvailabilities = (hostId: number) => {
-    return availabilities.filter(a => a.hostId === hostId.toString())
+  const getHostAvailabilities = (hostId: string) => {
+    const host = hostings.find(h => h.id === hostId)
+    return host?.availabilities || []
+  }
+
+  const startEdit = (hosting: HostData) => {
+    setEditingHostId(hosting.id)
+    setEditForm({
+      ...hosting,
+      amenities: hosting.amenities // Keep as array for editing
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingHostId(null)
+    setEditForm({})
+  }
+
+  const saveEdit = async () => {
+    if (!editForm.id) return
+
+    setSaving(true)
+    try {
+      // Build the input object with only defined values
+      const input: Partial<Omit<HostData, 'id' | 'title' | 'availabilities'>> = {}
+      
+      if (editForm.name !== undefined) input.name = editForm.name || editForm.title
+      if (editForm.location !== undefined) input.location = editForm.location
+      if (editForm.description !== undefined) input.description = editForm.description
+      if (editForm.address !== undefined) input.address = editForm.address
+      if (editForm.city !== undefined) input.city = editForm.city
+      if (editForm.state !== undefined) input.state = editForm.state
+      if (editForm.zipCode !== undefined) input.zipCode = editForm.zipCode
+      if (editForm.country !== undefined) input.country = editForm.country
+      if (editForm.latitude !== undefined && editForm.latitude !== null) input.latitude = editForm.latitude
+      if (editForm.longitude !== undefined && editForm.longitude !== null) input.longitude = editForm.longitude
+      if (editForm.amenities !== undefined) input.amenities = editForm.amenities
+      if (editForm.houseRules !== undefined) input.houseRules = editForm.houseRules
+      if (editForm.checkInTime !== undefined) input.checkInTime = editForm.checkInTime
+      if (editForm.checkOutTime !== undefined) input.checkOutTime = editForm.checkOutTime
+      if (editForm.maxGuests !== undefined) input.maxGuests = editForm.maxGuests
+      if (editForm.bedrooms !== undefined) input.bedrooms = editForm.bedrooms
+      if (editForm.bathrooms !== undefined) input.bathrooms = editForm.bathrooms
+      if (editForm.photos !== undefined) input.photos = editForm.photos
+
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation UpdateHost($id: ID!, $input: UpdateHostInput!) {
+              updateHost(id: $id, input: $input) {
+                id
+                name
+                title
+                location
+                description
+                address
+                city
+                state
+                zipCode
+                country
+                latitude
+                longitude
+                amenities
+                houseRules
+                checkInTime
+                checkOutTime
+                maxGuests
+                bedrooms
+                bathrooms
+                photos
+              }
+            }
+          `,
+          variables: {
+            id: editForm.id,
+            input
+          },
+        }),
+      })
+
+      const data = await response.json()
+      if (data.data?.updateHost) {
+        // Refresh the hostings data to get the latest updates
+        await fetchHostings()
+        setEditingHostId(null)
+        setEditForm({})
+      } else {
+        console.error('Failed to update host:', data.errors)
+        alert('Failed to save changes')
+      }
+    } catch (error) {
+      console.error('Error saving host:', error)
+      alert('Failed to save changes')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateEditForm = (field: keyof HostData, value: string | number | string[]) => {
+    setEditForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleDeleteHost = async (hostId: string) => {
+    setDeleting(true)
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation DeleteHost($id: ID!) {
+              deleteHost(id: $id)
+            }
+          `,
+          variables: { id: hostId },
+        }),
+      })
+
+      const data = await response.json()
+      if (data.data?.deleteHost) {
+        // Remove the host from local state
+        setHostings(hostings.filter(h => h.id !== hostId))
+        setDeleteConfirmId(null)
+      } else {
+        console.error('Failed to delete host:', data.errors)
+        alert('Failed to delete host')
+      }
+    } catch (error) {
+      console.error('Error deleting host:', error)
+      alert('Failed to delete host')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const confirmDelete = (hostId: string) => {
+    setDeleteConfirmId(hostId)
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirmId(null)
   }
 
   if (!session) {
@@ -333,7 +556,13 @@ export default function ManageHostingPage() {
       )}
 
       <div className="grid gap-6">
-        {hostings.length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p>Loading your hosting properties...</p>
+            </CardContent>
+          </Card>
+        ) : hostings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <h3 className="text-lg font-semibold mb-2">No hosting properties yet</h3>
@@ -349,68 +578,220 @@ export default function ManageHostingPage() {
             <Card key={hosting.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {hosting.title}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-1 mt-1">
-                      <MapPin className="w-4 h-4" />
-                      {hosting.location}
-                    </CardDescription>
+                  <div className="flex-1">
+                    {editingHostId === hosting.id ? (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor={`edit-title-${hosting.id}`}>Title</Label>
+                          <Input
+                            id={`edit-title-${hosting.id}`}
+                            value={editForm.title || ''}
+                            onChange={(e) => updateEditForm('title', e.target.value)}
+                            placeholder="Property title"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`edit-location-${hosting.id}`}>Location</Label>
+                          <Input
+                            id={`edit-location-${hosting.id}`}
+                            value={editForm.location || ''}
+                            onChange={(e) => updateEditForm('location', e.target.value)}
+                            placeholder="Location"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {hosting.title || hosting.name}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-1 mt-1">
+                          <MapPin className="w-4 h-4" />
+                          {hosting.location}
+                        </CardDescription>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    {editingHostId === hosting.id ? (
+                      <>
+                        <Button 
+                          onClick={saveEdit} 
+                          disabled={saving}
+                          size="sm"
+                        >
+                          {saving ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={cancelEdit}
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => startEdit(hosting)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => confirmDelete(hosting.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">{hosting.description}</p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="w-4 h-4" />
-                    {hosting.maxGuests} guests
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Bed className="w-4 h-4" />
-                    {hosting.bedrooms} bedrooms
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Bath className="w-4 h-4" />
-                    {hosting.bathrooms} bathrooms
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    {hosting.checkInTime} - {hosting.checkOutTime}
-                  </div>
-                </div>
+                {editingHostId === hosting.id ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor={`edit-description-${hosting.id}`}>Description</Label>
+                      <Textarea
+                        id={`edit-description-${hosting.id}`}
+                        value={editForm.description || ''}
+                        onChange={(e) => updateEditForm('description', e.target.value)}
+                        placeholder="Describe your space..."
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label htmlFor={`edit-maxGuests-${hosting.id}`}>Max Guests</Label>
+                        <Input
+                          id={`edit-maxGuests-${hosting.id}`}
+                          type="number"
+                          value={editForm.maxGuests || 1}
+                          onChange={(e) => updateEditForm('maxGuests', parseInt(e.target.value))}
+                          min="1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`edit-bedrooms-${hosting.id}`}>Bedrooms</Label>
+                        <Input
+                          id={`edit-bedrooms-${hosting.id}`}
+                          type="number"
+                          value={editForm.bedrooms || 1}
+                          onChange={(e) => updateEditForm('bedrooms', parseInt(e.target.value))}
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`edit-bathrooms-${hosting.id}`}>Bathrooms</Label>
+                        <Input
+                          id={`edit-bathrooms-${hosting.id}`}
+                          type="number"
+                          value={editForm.bathrooms || 1}
+                          onChange={(e) => updateEditForm('bathrooms', parseInt(e.target.value))}
+                          min="1"
+                        />
+                      </div>
+                    </div>
 
-                {hosting.amenities.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="font-semibold mb-2">Amenities</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {hosting.amenities.map((amenity, index) => (
-                        <Badge key={index} variant="secondary">
-                          {amenity}
-                        </Badge>
-                      ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor={`edit-checkInTime-${hosting.id}`}>Check-in Time</Label>
+                        <Input
+                          id={`edit-checkInTime-${hosting.id}`}
+                          value={editForm.checkInTime || ''}
+                          onChange={(e) => updateEditForm('checkInTime', e.target.value)}
+                          placeholder="e.g., 3:00 PM"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`edit-checkOutTime-${hosting.id}`}>Check-out Time</Label>
+                        <Input
+                          id={`edit-checkOutTime-${hosting.id}`}
+                          value={editForm.checkOutTime || ''}
+                          onChange={(e) => updateEditForm('checkOutTime', e.target.value)}
+                          placeholder="e.g., 11:00 AM"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`edit-amenities-${hosting.id}`}>Amenities (comma-separated)</Label>
+                      <Input
+                        id={`edit-amenities-${hosting.id}`}
+                        value={Array.isArray(editForm.amenities) ? editForm.amenities.join(', ') : ''}
+                        onChange={(e) => updateEditForm('amenities', e.target.value.split(',').map(a => a.trim()).filter(a => a))}
+                        placeholder="e.g., WiFi, Kitchen, Parking"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`edit-houseRules-${hosting.id}`}>House Rules</Label>
+                      <Textarea
+                        id={`edit-houseRules-${hosting.id}`}
+                        value={editForm.houseRules || ''}
+                        onChange={(e) => updateEditForm('houseRules', e.target.value)}
+                        placeholder="e.g., No smoking, quiet hours after 10pm"
+                        rows={2}
+                      />
                     </div>
                   </div>
-                )}
+                ) : (
+                  <>
+                    <p className="text-gray-600 mb-4">{hosting.description}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Users className="w-4 h-4" />
+                        {hosting.maxGuests} guests
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Bed className="w-4 h-4" />
+                        {hosting.bedrooms} bedrooms
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Bath className="w-4 h-4" />
+                        {hosting.bathrooms} bathrooms
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        {hosting.checkInTime} - {hosting.checkOutTime}
+                      </div>
+                    </div>
 
-                {hosting.houseRules && (
-                  <div className="mb-4">
-                    <h4 className="font-semibold mb-2">House Rules</h4>
-                    <p className="text-sm text-gray-600">{hosting.houseRules}</p>
-                  </div>
+                    {hosting.amenities && hosting.amenities.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2">Amenities</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {hosting.amenities.map((amenity: string, index: number) => (
+                            <Badge key={index} variant="secondary">
+                              {amenity}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hosting.houseRules && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2">House Rules</h4>
+                        <p className="text-sm text-gray-600">{hosting.houseRules}</p>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="border-t pt-4">
                   <h4 className="font-semibold mb-3">Manage Availability</h4>
                   <AvailabilityManager 
-                    availabilities={getHostAvailabilities(hosting.id)}
+                    availabilities={hosting.availabilities || getHostAvailabilities(hosting.id)}
                     onAddAvailability={handleAddAvailability(hosting.id)}
                     onRemoveAvailability={handleRemoveAvailability}
                   />
@@ -420,6 +801,34 @@ export default function ManageHostingPage() {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Hosting Property</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete this hosting property? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={cancelDelete}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteHost(deleteConfirmId)}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   )
 }

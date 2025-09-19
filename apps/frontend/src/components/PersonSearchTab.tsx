@@ -10,7 +10,6 @@ interface Host {
   id: string
   name: string
   location?: string
-  availability?: string
   description?: string
 }
 
@@ -43,7 +42,6 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
                 id
                 name
                 location
-                availability
                 description
               }
             }

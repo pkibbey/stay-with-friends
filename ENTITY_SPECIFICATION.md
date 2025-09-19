@@ -63,7 +63,6 @@ CREATE TABLE users (
 - `name` (string, required): Title/name of the property (e.g., "Cozy Downtown Apartment")
 - `email` (string, optional): Contact email for the host (may differ from user email)
 - `location` (string, optional): General location description
-- `availability` (string, optional): General availability description
 - `description` (string, optional): Detailed description of the property
 - `address` (string, optional): Street address
 - `city` (string, optional): City name
@@ -103,7 +102,6 @@ CREATE TABLE hosts (
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   location TEXT,
-  availability TEXT,
   description TEXT,
   address TEXT,
   city TEXT,

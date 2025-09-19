@@ -27,15 +27,17 @@ export default function Connections() {
   const [loading, setLoading] = useState(false)
 
   const fetchConnections = useCallback(async () => {
-    if (!session?.user?.email) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (session?.user as any)?.id
+    if (!userId) return
     try {
       const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query GetConnections($email: String!) {
-              connections(email: $email) {
+            query GetConnections($userId: ID!) {
+              connections(userId: $userId) {
                 id
                 connectedUser {
                   id
@@ -47,7 +49,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { email: session.user.email },
+          variables: { userId },
         }),
       })
       const data = await response.json()
@@ -58,15 +60,17 @@ export default function Connections() {
   }, [session])
 
   const fetchRequests = useCallback(async () => {
-    if (!session?.user?.email) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (session?.user as any)?.id
+    if (!userId) return
     try {
       const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query GetConnectionRequests($email: String!) {
-              connectionRequests(email: $email) {
+            query GetConnectionRequests($userId: ID!) {
+              connectionRequests(userId: $userId) {
                 id
                 connectedUser {
                   id
@@ -78,7 +82,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { email: session.user.email },
+          variables: { userId },
         }),
       })
       const data = await response.json()
@@ -89,14 +93,17 @@ export default function Connections() {
   }, [session])
 
   useEffect(() => {
-    if (session?.user?.email) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((session?.user as any)?.id) {
       fetchConnections()
       fetchRequests()
     }
   }, [session, fetchConnections, fetchRequests])
 
   const handleAddConnection = async () => {
-    if (!session?.user?.email || !newConnectionEmail) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (session?.user as any)?.id
+    if (!userId || !newConnectionEmail) return
     setLoading(true)
     try {
       const response = await fetch('http://localhost:4000/graphql', {
@@ -110,7 +117,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { email: session.user.email, connectedUserEmail: newConnectionEmail },
+          variables: { userId, connectedUserEmail: newConnectionEmail },
         }),
       })
       const data = await response.json()

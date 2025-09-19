@@ -11,18 +11,6 @@ import { PageLayout } from '@/components/PageLayout'
 import { Calendar, MapPin, Users, MessageSquare, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 
-// Extend the session type to include id
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string
-      name?: string | null
-      email?: string | null
-      image?: string | null
-    }
-  }
-}
-
 interface BookingRequest {
   id: string
   hostId: string
@@ -68,16 +56,25 @@ export default function BookingsPage() {
   const [myRequests, setMyRequests] = useState<BookingRequest[]>([])
   const [incomingRequests, setIncomingRequests] = useState<BookingRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('my-requests')
 
   const fetchBookingRequests = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
-    if (!userId) return
+    console.log('Fetching booking requests for userId:', userId)
+    if (!userId) {
+      console.log('No userId found, skipping fetch')
+      setLoading(false)
+      return
+    }
     
     setLoading(true)
+    setError(null)
     try {
+      console.log('Making GraphQL request for booking requests...')
+      
       // Fetch requests made by this user (as guest)
       const myRequestsResponse = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
@@ -115,7 +112,15 @@ export default function BookingsPage() {
           variables: { requesterId: userId },
         }),
       })
+      
+      console.log('My requests response status:', myRequestsResponse.status)
       const myRequestsData = await myRequestsResponse.json()
+      console.log('My requests data:', myRequestsData)
+      
+      if (myRequestsData.errors) {
+        console.error('GraphQL errors in my requests:', myRequestsData.errors)
+      }
+      
       setMyRequests(myRequestsData.data?.bookingRequestsByRequester || [])
 
       // Fetch requests for hosts owned by this user
@@ -155,21 +160,36 @@ export default function BookingsPage() {
           variables: { userId },
         }),
       })
+      
+      console.log('Incoming requests response status:', incomingRequestsResponse.status)
       const incomingRequestsData = await incomingRequestsResponse.json()
+      console.log('Incoming requests data:', incomingRequestsData)
+      
+      if (incomingRequestsData.errors) {
+        console.error('GraphQL errors in incoming requests:', incomingRequestsData.errors)
+      }
+      
       setIncomingRequests(incomingRequestsData.data?.bookingRequestsByHostUser || [])
     } catch (error) {
       console.error('Error fetching booking requests:', error)
+      setError(`Failed to load booking requests: ${error}`)
     } finally {
       setLoading(false)
     }
   }, [session?.user])
 
   useEffect(() => {
+    console.log('Session state changed:', session, 'Status:', status)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((session?.user as any)?.id) {
+    const userId = (session?.user as any)?.id
+    
+    if (userId) {
       fetchBookingRequests()
+    } else if (status !== 'loading') {
+      // If we're not loading and have no userId, stop loading
+      setLoading(false)
     }
-  }, [fetchBookingRequests, session?.user])
+  }, [fetchBookingRequests, session, status])
 
   const handleStatusUpdate = async (requestId: string, status: string, responseMessage?: string) => {
     try {
@@ -216,6 +236,34 @@ export default function BookingsPage() {
     )
   }
 
+  if (error) {
+    return (
+      <PageLayout title="Booking Requests" showHeader={false}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-red-600">Error Loading Bookings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={() => {
+                setError(null)
+                setLoading(true)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const userId = (session?.user as any)?.id
+                if (userId) {
+                  fetchBookingRequests()
+                }
+              }}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
+    )
+  }
+
   if (!session) {
     return (
       <PageLayout title="Booking Requests" showHeader={false}>
@@ -238,6 +286,17 @@ export default function BookingsPage() {
   return (
     <PageLayout title="Booking Requests" subtitle="Manage your stay requests and hosting">
       <div className="space-y-6">
+        {/* Debug info - remove this later */}
+        <Card className="bg-gray-50 border-dashed">
+          <CardContent className="py-2">
+            <small className="text-gray-600">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              Debug: Session status: {status}, User ID: {(session?.user as any)?.id || 'none'}, 
+              Loading: {loading.toString()}, Error: {error || 'none'}
+            </small>
+          </CardContent>
+        </Card>
+        
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="my-requests">

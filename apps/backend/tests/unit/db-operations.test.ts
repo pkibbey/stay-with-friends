@@ -63,11 +63,11 @@ describe('Database Operations', () => {
       
       const insertHost = db.prepare(`
         INSERT INTO hosts (
-          user_id, name, email, location, availability, description,
+          user_id, name, email, location, description,
           address, city, state, zip_code, country, latitude, longitude,
           amenities, house_rules, check_in_time, check_out_time,
           max_guests, bedrooms, bathrooms, photos
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertHost.run(

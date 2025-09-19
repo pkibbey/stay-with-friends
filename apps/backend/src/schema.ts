@@ -138,8 +138,6 @@ export const typeDefs = `#graphql
       bathrooms: Int
       photos: [String!]
     ): Host!
-    # Listing alias for createHost
-    createListing(input: CreateListingInput!): Host!
     createAvailability(
       hostId: ID!
       startDate: String!
@@ -449,46 +447,9 @@ export const resolvers = {
         throw error;
       }
     },
-    createListing: (_: any, { input }: { input: any }) => {
-      try {
-        const result = insertHost.run(
-          null, // user_id
-          input.title, // Use title as name
-          null, // email - will be set from context if available
-          null, // location
-          null, // availability
-          input.description,
-          input.address,
-          input.city,
-          input.state,
-          input.zipCode,
-          input.country,
-          input.latitude,
-          input.longitude,
-          input.amenities ? JSON.stringify(input.amenities) : null,
-          input.houseRules,
-          input.checkInTime,
-          input.checkOutTime,
-          input.maxGuests,
-          input.bedrooms,
-          input.bathrooms,
-          input.photos ? JSON.stringify(input.photos) : null
-        );
-        return {
-          id: result.lastInsertRowid,
-          name: input.title,
-          ...input,
-        };
-      } catch (error: any) {
-        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          throw new Error('A host with this email already exists');
-        }
-        throw error;
-      }
-    },
     createAvailability: (_: any, args: any) => {
       // Validate required fields
-      validatePositiveInteger(args.hostId, 'Host ID');
+      validatePositiveInteger(parseInt(args.hostId), 'Host ID');
       validateDateRange(args.startDate, args.endDate);
       
       // Validate optional fields
@@ -498,22 +459,25 @@ export const resolvers = {
       validateOptionalText(args.notes, 'Notes', 500);
 
       const result = insertAvailability.run(
-        args.hostId,
+        parseInt(args.hostId),
         args.startDate,
         args.endDate,
         args.status || 'available',
         args.notes
       );
       return {
-        id: result.lastInsertRowid,
-        hostId: args.hostId,
-        ...args,
+        id: result.lastInsertRowid.toString(),
+        host_id: parseInt(args.hostId),
+        start_date: args.startDate,
+        end_date: args.endDate,
+        status: args.status || 'available',
+        notes: args.notes || null,
       };
     },
     createBookingRequest: (_: any, args: any) => {
       // Validate required fields
-      validatePositiveInteger(args.hostId, 'Host ID');
-      validatePositiveInteger(args.requesterId, 'Requester ID');
+      validatePositiveInteger(parseInt(args.hostId), 'Host ID');
+      validatePositiveInteger(parseInt(args.requesterId), 'Requester ID');
       validateDateRange(args.startDate, args.endDate);
       validatePositiveInteger(args.guests, 'Guests count', 50);
       

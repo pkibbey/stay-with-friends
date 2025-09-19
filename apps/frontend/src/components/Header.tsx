@@ -64,7 +64,6 @@ export function Header() {
               </Link>
               <Link href="/bookings" className="text-gray-600 hover:text-gray-900 relative">
                 <div className="flex items-center gap-1">
-                  <Bell className="w-4 h-4" />
                   Bookings
                   {pendingRequestsCount > 0 && (
                     <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[1.2rem] h-5">

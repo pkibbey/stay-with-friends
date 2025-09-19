@@ -76,7 +76,6 @@ export default function HostDetailPage() {
                 id
                 name
                 location
-                availability
                 description
                 address
                 city
