@@ -15,7 +15,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from 'next/link'
 import * as React from "react"
 import { parseDateFromUrl, formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
-import type { Host, Availability } from '@/types'
+import type { Host } from '@/types'
 
 export default function HostDetailPage() {
   const params = useParams()

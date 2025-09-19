@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
-import { MapPin, Users, Calendar, Home, Star, Eye } from 'lucide-react'
+import { MapPin, Users, Calendar, Home, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-import { Host, HostProfileData } from '@/types'
+import { HostProfileData } from '@/types'
 
 interface SearchFiltersState {
   query: string

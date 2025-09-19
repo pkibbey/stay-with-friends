@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,23 +26,16 @@ export default function Connections() {
   const [newConnectionEmail, setNewConnectionEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchConnections()
-      fetchRequests()
-    }
-  }, [session])
-
-  const fetchConnections = async () => {
-    if (!session?.user?.id) return
+  const fetchConnections = useCallback(async () => {
+    if (!session?.user?.email) return
     try {
       const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query GetConnections($userId: ID!) {
-              connections(userId: $userId) {
+            query GetConnections($email: String!) {
+              connections(email: $email) {
                 id
                 connectedUser {
                   id
@@ -54,7 +47,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { userId: session.user.id },
+          variables: { email: session.user.email },
         }),
       })
       const data = await response.json()
@@ -62,18 +55,18 @@ export default function Connections() {
     } catch (error) {
       console.error('Error fetching connections:', error)
     }
-  }
+  }, [session])
 
-  const fetchRequests = async () => {
-    if (!session?.user?.id) return
+  const fetchRequests = useCallback(async () => {
+    if (!session?.user?.email) return
     try {
       const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query GetConnectionRequests($userId: ID!) {
-              connectionRequests(userId: $userId) {
+            query GetConnectionRequests($email: String!) {
+              connectionRequests(email: $email) {
                 id
                 connectedUser {
                   id
@@ -85,7 +78,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { userId: session.user.id },
+          variables: { email: session.user.email },
         }),
       })
       const data = await response.json()
@@ -93,10 +86,17 @@ export default function Connections() {
     } catch (error) {
       console.error('Error fetching requests:', error)
     }
-  }
+  }, [session])
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchConnections()
+      fetchRequests()
+    }
+  }, [session, fetchConnections, fetchRequests])
 
   const handleAddConnection = async () => {
-    if (!session?.user?.id || !newConnectionEmail) return
+    if (!session?.user?.email || !newConnectionEmail) return
     setLoading(true)
     try {
       const response = await fetch('http://localhost:4000/graphql', {
@@ -110,7 +110,7 @@ export default function Connections() {
               }
             }
           `,
-          variables: { userId: session.user.id, connectedUserEmail: newConnectionEmail },
+          variables: { email: session.user.email, connectedUserEmail: newConnectionEmail },
         }),
       })
       const data = await response.json()
