@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
 // This is a simple GraphQL client function
@@ -50,7 +50,6 @@ export async function GET(
           checkInTime
           checkOutTime
           photos
-          isActive
           createdAt
           updatedAt
           availabilities {
@@ -143,7 +142,6 @@ export async function PUT(
           checkInTime
           checkOutTime
           photos
-          isActive
           createdAt
           updatedAt
         }

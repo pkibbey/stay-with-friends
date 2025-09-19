@@ -5,7 +5,6 @@ export const typeDefs = `#graphql
     title: String! # Alias for name to match frontend expectations
     email: String
     location: String
-    relationship: String
     availability: String
     description: String
     address: String
@@ -24,9 +23,9 @@ export const typeDefs = `#graphql
     bathrooms: Int
     photos: [String!]
     availabilities: [Availability!]!
-    isActive: Boolean!
     createdAt: String!
     updatedAt: String!
+    userId: ID!
     user: User!
   }
 
@@ -43,8 +42,7 @@ export const typeDefs = `#graphql
   type BookingRequest {
     id: ID!
     hostId: ID!
-    requesterName: String!
-    requesterEmail: String!
+    requesterId: ID!
     startDate: String!
     endDate: String!
     guests: Int!
@@ -52,6 +50,7 @@ export const typeDefs = `#graphql
     status: String!
     createdAt: String!
     host: Host!
+    requester: User!
   }
 
   type User {
@@ -67,9 +66,24 @@ export const typeDefs = `#graphql
     id: ID!
     userId: ID!
     connectedUserId: ID!
+    relationship: String
     status: String!
     createdAt: String!
     connectedUser: User!
+  }
+
+  type Invitation {
+    id: ID!
+    inviterId: ID!
+    inviteeEmail: String!
+    inviteeName: String
+    message: String
+    token: String!
+    status: String!
+    expiresAt: String!
+    acceptedAt: String
+    createdAt: String!
+    inviter: User!
   }
 
   type Query {
@@ -97,14 +111,16 @@ export const typeDefs = `#graphql
     user(email: String!): User
     connections(userId: ID!): [Connection!]!
     connectionRequests(userId: ID!): [Connection!]!
+    invitation(token: String!): Invitation
+    invitations(inviterId: ID!): [Invitation!]!
   }
 
   type Mutation {
     createHost(
+      userId: ID
       name: String!
       email: String!
       location: String
-      relationship: String
       availability: String
       description: String
       address: String
@@ -134,8 +150,7 @@ export const typeDefs = `#graphql
     ): Availability!
     createBookingRequest(
       hostId: ID!
-      requesterName: String!
-      requesterEmail: String!
+      requesterId: ID!
       startDate: String!
       endDate: String!
       guests: Int!
@@ -148,14 +163,16 @@ export const typeDefs = `#graphql
     deleteHost(id: ID!): Boolean!
     createUser(email: String!, name: String, image: String): User!
     updateUser(id: ID!, name: String, image: String): User!
-    createConnection(userId: ID!, connectedUserEmail: String!): Connection!
+    createConnection(userId: ID!, connectedUserEmail: String!, relationship: String): Connection!
     updateConnectionStatus(connectionId: ID!, status: String!): Connection!
+    createInvitation(inviterId: ID!, inviteeEmail: String!, inviteeName: String, message: String): Invitation!
+    acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
+    cancelInvitation(invitationId: ID!): Boolean!
   }
 
   input CreatePlaceInput {
     name: String!
     location: String
-    relationship: String
     availability: String
     description: String
     email: String!
@@ -184,7 +201,6 @@ export const typeDefs = `#graphql
   input UpdateHostInput {
     name: String
     location: String
-    relationship: String
     availability: String
     description: String
     address: String
@@ -212,9 +228,90 @@ export const typeDefs = `#graphql
     status: String
     notes: String
   }
+
+  input AcceptInvitationInput {
+    name: String
+    image: String
+  }
 `;
 
-import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus } from './db';
+import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
+
+// Validation functions
+const validateEmail = (email: string): void => {
+  if (!email || typeof email !== 'string') {
+    throw new Error('Email is required');
+  }
+  if (email.length < 5 || email.length > 255) {
+    throw new Error('Email must be between 5 and 255 characters');
+  }
+  if (!email.includes('@') || !email.includes('.')) {
+    throw new Error('Email must be a valid email address');
+  }
+};
+
+const validateName = (name: string): void => {
+  if (!name || typeof name !== 'string') {
+    throw new Error('Name is required');
+  }
+  if (name.trim().length < 1 || name.length > 255) {
+    throw new Error('Name must be between 1 and 255 characters');
+  }
+};
+
+const validateOptionalText = (text: string | undefined, fieldName: string, maxLength: number): void => {
+  if (text !== undefined && text !== null) {
+    if (typeof text !== 'string') {
+      throw new Error(`${fieldName} must be a string`);
+    }
+    if (text.length > maxLength) {
+      throw new Error(`${fieldName} must be no more than ${maxLength} characters`);
+    }
+  }
+};
+
+const validateCoordinates = (lat: number | undefined, lng: number | undefined): void => {
+  if (lat !== undefined && (typeof lat !== 'number' || lat < -90 || lat > 90)) {
+    throw new Error('Latitude must be between -90 and 90');
+  }
+  if (lng !== undefined && (typeof lng !== 'number' || lng < -180 || lng > 180)) {
+    throw new Error('Longitude must be between -180 and 180');
+  }
+};
+
+const validatePositiveInteger = (value: number | undefined, fieldName: string, max?: number): void => {
+  if (value !== undefined && value !== null) {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+      throw new Error(`${fieldName} must be a positive integer`);
+    }
+    if (max && value > max) {
+      throw new Error(`${fieldName} must be no more than ${max}`);
+    }
+  }
+};
+
+const validateDateRange = (startDate: string, endDate: string): void => {
+  if (!startDate || !endDate) {
+    throw new Error('Start date and end date are required');
+  }
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('Invalid date format');
+  }
+  
+  if (start > end) {
+    throw new Error('Start date must be before or equal to end date');
+  }
+};
+
+const validateStatus = (status: string, validStatuses: string[]): void => {
+  if (status && !validStatuses.includes(status)) {
+    throw new Error(`Status must be one of: ${validStatuses.join(', ')}`);
+  }
+};
 
 export const resolvers = {
   Query: {
@@ -222,7 +319,7 @@ export const resolvers = {
     hosts: () => getAllHosts.all(),
     searchHosts: (_: any, { query }: { query: string }) => {
       const searchTerm = `%${query}%`;
-      return searchHosts.all(searchTerm, searchTerm, searchTerm);
+      return searchHosts.all(searchTerm, searchTerm);
     },
     host: (_: any, { id }: { id: string }) => {
       return getHostById.get(id);
@@ -231,13 +328,13 @@ export const resolvers = {
     listings: () => getAllHosts.all(),
     searchListings: (_: any, { query }: { query: string }) => {
       const searchTerm = `%${query}%`;
-      return searchHosts.all(searchTerm, searchTerm, searchTerm);
+      return searchHosts.all(searchTerm, searchTerm);
     },
     searchListingsAdvanced: (_: any, args: any) => {
       // For now, use the basic search - can be enhanced later
       if (args.query) {
         const searchTerm = `%${args.query}%`;
-        return searchHosts.all(searchTerm, searchTerm, searchTerm);
+        return searchHosts.all(searchTerm, searchTerm);
       }
       // If no query, return all hosts
       return getAllHosts.all();
@@ -269,15 +366,52 @@ export const resolvers = {
     connectionRequests: (_: any, { userId }: { userId: string }) => {
       return getConnectionRequests.all(userId);
     },
+    invitation: (_: any, { token }: { token: string }) => {
+      return getInvitationByToken.get(token);
+    },
+    invitations: (_: any, { inviterId }: { inviterId: string }) => {
+      return getInvitationsByInviter.all(inviterId);
+    },
   },
   Mutation: {
     createHost: (_: any, args: any) => {
       try {
+        // Validate required fields
+        validateName(args.name);
+        if (args.email) validateEmail(args.email);
+        
+        // Validate optional text fields
+        validateOptionalText(args.location, 'Location', 255);
+        validateOptionalText(args.availability, 'Availability', 500);
+        validateOptionalText(args.description, 'Description', 2000);
+        validateOptionalText(args.address, 'Address', 255);
+        validateOptionalText(args.city, 'City', 100);
+        validateOptionalText(args.state, 'State', 100);
+        validateOptionalText(args.zipCode, 'Zip code', 20);
+        validateOptionalText(args.country, 'Country', 100);
+        validateOptionalText(args.houseRules, 'House rules', 2000);
+        
+        // Validate coordinates
+        validateCoordinates(args.latitude, args.longitude);
+        
+        // Validate numbers
+        validatePositiveInteger(args.maxGuests, 'Max guests', 50);
+        validatePositiveInteger(args.bedrooms, 'Bedrooms', 20);
+        validatePositiveInteger(args.bathrooms, 'Bathrooms', 20);
+        
+        // Validate arrays
+        if (args.amenities && !Array.isArray(args.amenities)) {
+          throw new Error('Amenities must be an array');
+        }
+        if (args.photos && !Array.isArray(args.photos)) {
+          throw new Error('Photos must be an array');
+        }
+
         const result = insertHost.run(
+          args.userId || null, // user_id - should be provided by authentication context
           args.name,
           args.email,
           args.location,
-          args.relationship,
           args.availability,
           args.description,
           args.address,
@@ -299,6 +433,8 @@ export const resolvers = {
         return {
           id: result.lastInsertRowid,
           ...args,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -310,10 +446,10 @@ export const resolvers = {
     createListing: (_: any, { input }: { input: any }) => {
       try {
         const result = insertHost.run(
+          null, // user_id
           input.title, // Use title as name
           null, // email - will be set from context if available
           null, // location
-          null, // relationship
           null, // availability
           input.description,
           input.address,
@@ -345,6 +481,16 @@ export const resolvers = {
       }
     },
     createAvailability: (_: any, args: any) => {
+      // Validate required fields
+      validatePositiveInteger(args.hostId, 'Host ID');
+      validateDateRange(args.startDate, args.endDate);
+      
+      // Validate optional fields
+      if (args.status) {
+        validateStatus(args.status, ['available', 'unavailable', 'booked']);
+      }
+      validateOptionalText(args.notes, 'Notes', 500);
+
       const result = insertAvailability.run(
         args.hostId,
         args.startDate,
@@ -359,10 +505,18 @@ export const resolvers = {
       };
     },
     createBookingRequest: (_: any, args: any) => {
+      // Validate required fields
+      validatePositiveInteger(args.hostId, 'Host ID');
+      validatePositiveInteger(args.requesterId, 'Requester ID');
+      validateDateRange(args.startDate, args.endDate);
+      validatePositiveInteger(args.guests, 'Guests count', 50);
+      
+      // Validate optional fields
+      validateOptionalText(args.message, 'Message', 1000);
+
       const result = insertBookingRequest.run(
         args.hostId,
-        args.requesterName,
-        args.requesterEmail,
+        args.requesterId,
         args.startDate,
         args.endDate,
         args.guests,
@@ -377,10 +531,15 @@ export const resolvers = {
       };
     },
     checkEmailExists: (_: any, { email }: { email: string }) => {
+      validateEmail(email);
       const host = getHostByEmail.get(email);
       return !!host;
     },
     sendInvitationEmail: (_: any, { email, invitationUrl }: { email: string, invitationUrl: string }) => {
+      validateEmail(email);
+      if (!invitationUrl || typeof invitationUrl !== 'string') {
+        throw new Error('Invitation URL is required');
+      }
       // In a real implementation, you'd integrate with an email service like SendGrid, Mailgun, etc.
       // For now, we'll just log the invitation and return success
       console.log(`Sending invitation email to ${email} with URL: ${invitationUrl}`);
@@ -388,10 +547,10 @@ export const resolvers = {
     },
     createPlace: (_: any, { input }: { input: any }) => {
       const result = insertHost.run(
+        null, // user_id
         input.name,
         input.email,
         input.location,
-        input.relationship,
         input.availability,
         input.description,
         null, // address
@@ -419,6 +578,55 @@ export const resolvers = {
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
 
       try {
+        // Validate fields if provided
+        if (input.name !== undefined) validateName(input.name);
+        if (input.email !== undefined) validateEmail(input.email);
+        
+        // Validate optional text fields if provided
+        if (input.location !== undefined) validateOptionalText(input.location, 'Location', 255);
+        if (input.availability !== undefined) validateOptionalText(input.availability, 'Availability', 500);
+        if (input.description !== undefined) validateOptionalText(input.description, 'Description', 2000);
+        if (input.address !== undefined) validateOptionalText(input.address, 'Address', 255);
+        if (input.city !== undefined) validateOptionalText(input.city, 'City', 100);
+        if (input.state !== undefined) validateOptionalText(input.state, 'State', 100);
+        if (input.zipCode !== undefined) validateOptionalText(input.zipCode, 'Zip code', 20);
+        if (input.country !== undefined) validateOptionalText(input.country, 'Country', 100);
+        if (input.houseRules !== undefined) validateOptionalText(input.houseRules, 'House rules', 2000);
+        
+        // Validate coordinates if provided
+        if (input.latitude !== undefined || input.longitude !== undefined) {
+          validateCoordinates(input.latitude, input.longitude);
+        }
+        
+        // Validate numbers if provided
+        if (input.maxGuests !== undefined) validatePositiveInteger(input.maxGuests, 'Max guests', 50);
+        if (input.bedrooms !== undefined) validatePositiveInteger(input.bedrooms, 'Bedrooms', 20);
+        if (input.bathrooms !== undefined) validatePositiveInteger(input.bathrooms, 'Bathrooms', 20);
+        
+        // Validate arrays if provided
+        if (input.amenities !== undefined && !Array.isArray(input.amenities)) {
+          throw new Error('Amenities must be an array');
+        }
+        if (input.photos !== undefined && !Array.isArray(input.photos)) {
+          throw new Error('Photos must be an array');
+        }
+        
+        // Validate availabilities if provided
+        if (input.availabilities !== undefined) {
+          if (!Array.isArray(input.availabilities)) {
+            throw new Error('Availabilities must be an array');
+          }
+          for (const availability of input.availabilities) {
+            validateDateRange(availability.startDate, availability.endDate);
+            if (availability.status) {
+              validateStatus(availability.status, ['available', 'unavailable', 'booked']);
+            }
+            if (availability.notes !== undefined) {
+              validateOptionalText(availability.notes, 'Availability notes', 500);
+            }
+          }
+        }
+
         // Build dynamic update query based on provided fields
         const updates = []
         const values = []
@@ -430,10 +638,6 @@ export const resolvers = {
         if (input.location !== undefined) {
           updates.push('location = ?')
           values.push(input.location)
-        }
-        if (input.relationship !== undefined) {
-          updates.push('relationship = ?')
-          values.push(input.relationship)
         }
         if (input.availability !== undefined) {
           updates.push('availability = ?')
@@ -585,22 +789,34 @@ export const resolvers = {
       updateUser.run(name, image, id);
       return getUserById.get(id);
     },
-    createConnection: (_: any, { userId, connectedUserEmail }: { userId: string, connectedUserEmail: string }) => {
+    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }) => {
+      // Validate required fields
+      validatePositiveInteger(parseInt(userId), 'User ID');
+      validateEmail(connectedUserEmail);
+      
+      // Validate optional relationship field
+      validateOptionalText(relationship, 'Relationship', 50);
+
       const connectedUser = getUserByEmail.get(connectedUserEmail) as any;
       if (!connectedUser) {
         throw new Error('User with this email not found');
       }
       
-      const result = insertConnection.run(userId, connectedUser.id, 'pending');
+      const result = insertConnection.run(userId, connectedUser.id, relationship, 'pending');
       return {
         id: result.lastInsertRowid,
         userId,
         connectedUserId: connectedUser.id,
+        relationship,
         status: 'pending',
         createdAt: new Date().toISOString(),
       };
     },
     updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }) => {
+      // Validate required fields
+      validatePositiveInteger(parseInt(connectionId), 'Connection ID');
+      validateStatus(status, ['pending', 'accepted', 'declined']);
+
       const result = updateConnectionStatus.run(status, connectionId);
       // Return the updated connection
       const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
@@ -608,14 +824,128 @@ export const resolvers = {
       db.close();
       return connection;
     },
+    createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: { inviterId: string, inviteeEmail: string, inviteeName?: string, message?: string }) => {
+      // Validate required fields
+      validatePositiveInteger(parseInt(inviterId), 'Inviter ID');
+      validateEmail(inviteeEmail);
+      
+      // Validate optional fields
+      validateOptionalText(inviteeName, 'Invitee name', 100);
+      validateOptionalText(message, 'Invitation message', 500);
+
+      // Check if user is already registered
+      const existingUser = getUserByEmail.get(inviteeEmail);
+      if (existingUser) {
+        throw new Error('User is already registered on the platform');
+      }
+
+      // Check for existing pending invitation
+      const existingInvitation = getInvitationByEmail.get(inviteeEmail);
+      if (existingInvitation) {
+        throw new Error('Invitation already sent to this email');
+      }
+
+      // Generate unique token
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+
+      // Set expiration to 30 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      const result = insertInvitation.run(
+        inviterId,
+        inviteeEmail,
+        inviteeName,
+        message,
+        token,
+        expiresAt.toISOString()
+      );
+
+      return {
+        id: result.lastInsertRowid,
+        inviterId,
+        inviteeEmail,
+        inviteeName,
+        message,
+        token,
+        status: 'pending',
+        expiresAt: expiresAt.toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    },
+    acceptInvitation: (_: any, { token, userData }: { token: string, userData: any }) => {
+      // Validate token
+      if (!token || typeof token !== 'string') {
+        throw new Error('Invalid token format');
+      }
+      
+      // Validate userData
+      if (userData.name) validateName(userData.name);
+      validateOptionalText(userData.image, 'Image URL', 255);
+
+      const invitation = getInvitationByToken.get(token) as any;
+      if (!invitation) {
+        throw new Error('Invalid invitation token');
+      }
+
+      if (invitation.status !== 'pending') {
+        throw new Error('Invitation has already been used or cancelled');
+      }
+
+      if (new Date(invitation.expires_at) < new Date()) {
+        throw new Error('Invitation has expired');
+      }
+
+      // Check if user already exists
+      const existingUser = getUserByEmail.get(invitation.invitee_email);
+      if (existingUser) {
+        throw new Error('User is already registered');
+      }
+
+      // Create new user
+      const userResult = insertUser.run(
+        invitation.invitee_email,
+        userData.name || invitation.invitee_name,
+        new Date().toISOString(), // email_verified
+        userData.image
+      );
+
+      // Update invitation status
+      updateInvitationStatus.run('accepted', new Date().toISOString(), invitation.id);
+
+      // Create automatic connection between inviter and new user
+      insertConnection.run(invitation.inviter_id, userResult.lastInsertRowid, 'friend', 'accepted');
+      insertConnection.run(userResult.lastInsertRowid, invitation.inviter_id, 'friend', 'accepted');
+
+      return {
+        id: userResult.lastInsertRowid,
+        email: invitation.invitee_email,
+        name: userData.name || invitation.invitee_name,
+        image: userData.image,
+        emailVerified: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    },
+    cancelInvitation: (_: any, { invitationId }: { invitationId: string }) => {
+      // Validate required field
+      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
+
+      const result = updateInvitationStatus.run('cancelled', null, invitationId);
+      return result.changes > 0;
+    },
   },
   Host: {
     title: (parent: any) => parent.name, // Alias name as title for frontend compatibility
-    isActive: () => true, // Default to active for all hosts
-    createdAt: () => new Date().toISOString(), // Default timestamp
-    updatedAt: () => new Date().toISOString(), // Default timestamp
+    createdAt: (parent: any) => parent.created_at || new Date().toISOString(),
+    updatedAt: (parent: any) => parent.updated_at || new Date().toISOString(),
     user: (parent: any) => {
-      // Try to find user by email, or create a default user object
+      // If user_id exists, get the user
+      if (parent.user_id) {
+        const user = getUserById.get(parent.user_id);
+        if (user) return user;
+      }
+      // Fallback: try to find user by email, or create a default user object
       if (parent.email) {
         const user = getUserByEmail.get(parent.email);
         if (user) return user;
@@ -624,12 +954,14 @@ export const resolvers = {
       return {
         id: '1',
         name: parent.name,
-        email: parent.email || 'unknown@example.com'
+        email: parent.email || 'unknown@example.com',
+        createdAt: new Date().toISOString(),
       };
     },
     availabilities: (parent: any) => {
       return getHostAvailabilities.all(parent.id);
     },
+    userId: (parent: any) => parent.user_id,
     zipCode: (parent: any) => parent.zip_code,
     houseRules: (parent: any) => parent.house_rules,
     checkInTime: (parent: any) => parent.check_in_time,
@@ -651,8 +983,10 @@ export const resolvers = {
       return getHostById.get(parent.host_id);
     },
     hostId: (parent: any) => parent.host_id,
-    requesterName: (parent: any) => parent.requester_name,
-    requesterEmail: (parent: any) => parent.requester_email,
+    requesterId: (parent: any) => parent.requester_id,
+    requester: (parent: any) => {
+      return getUserById.get(parent.requester_id);
+    },
     startDate: (parent: any) => parent.start_date,
     endDate: (parent: any) => parent.end_date,
     createdAt: (parent: any) => parent.created_at,
@@ -666,5 +1000,18 @@ export const resolvers = {
       return getUserById.get(parent.connected_user_id);
     },
     createdAt: (parent: any) => parent.created_at,
+    userId: (parent: any) => parent.user_id,
+    connectedUserId: (parent: any) => parent.connected_user_id,
+  },
+  Invitation: {
+    inviterId: (parent: any) => parent.inviter_id,
+    inviteeEmail: (parent: any) => parent.invitee_email,
+    inviteeName: (parent: any) => parent.invitee_name,
+    expiresAt: (parent: any) => parent.expires_at,
+    acceptedAt: (parent: any) => parent.accepted_at,
+    createdAt: (parent: any) => parent.created_at,
+    inviter: (parent: any) => {
+      return getUserById.get(parent.inviter_id);
+    },
   },
 };

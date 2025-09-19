@@ -120,7 +120,6 @@ function Home() {
                 id
                 name
                 location
-                relationship
                 availability
                 description
               }
@@ -194,7 +193,6 @@ function Home() {
                   id
                   name
                   location
-                  relationship
                   description
                 }
               }
@@ -266,7 +264,6 @@ function Home() {
                   id
                   name
                   location
-                  relationship
                   description
                 }
               }

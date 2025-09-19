@@ -50,7 +50,6 @@ export function HostProfileForm({
     name: '',
     email: '',
     location: '',
-    relationship: '',
     description: '',
     address: '',
     city: '',
@@ -160,16 +159,6 @@ export function HostProfileForm({
                   className={errors.email ? 'border-red-500' : ''}
                 />
                 {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="relationship">How we know each other</Label>
-                <Input
-                  id="relationship"
-                  value={formData.relationship || ''}
-                  onChange={(e) => updateField('relationship', e.target.value)}
-                  placeholder="e.g., College friends, work colleagues, family..."
-                />
               </div>
 
               <div>

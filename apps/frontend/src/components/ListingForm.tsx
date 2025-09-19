@@ -9,31 +9,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Home, MapPin, Users, Clock, Shield, Camera } from "lucide-react"
 import Image from 'next/image'
-
-export interface ListingFormData {
-  id?: string
-  title: string
-  description: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  latitude?: number
-  longitude?: number
-  maxGuests?: number
-  bedrooms?: number
-  bathrooms?: number
-  amenities: string[]
-  houseRules: string
-  checkInTime: string
-  checkOutTime: string
-  photos: string[]
-}
+import { HostProfileData } from '@/types'
 
 interface ListingFormProps {
-  initialData?: Partial<ListingFormData>
-  onSubmit: (data: ListingFormData) => Promise<void>
+  initialData?: Partial<HostProfileData>
+  onSubmit: (data: HostProfileData) => Promise<void>
   onCancel?: () => void
   isLoading?: boolean
   submitLabel?: string
@@ -67,7 +47,10 @@ export function ListingForm({
   isLoading = false,
   submitLabel = 'Create Listing'
 }: ListingFormProps) {
-  const [formData, setFormData] = useState<ListingFormData>({
+  const [formData, setFormData] = useState<HostProfileData>({
+    name: '',
+    email: '',
+    location: '',
     title: '',
     description: '',
     address: '',
@@ -124,7 +107,7 @@ export function ListingForm({
     await onSubmit(formData)
   }
 
-  const updateField = (field: keyof ListingFormData, value: string | number | boolean | string[]) => {
+  const updateField = (field: keyof HostProfileData, value: string | number | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {

@@ -44,7 +44,6 @@ function InvitePageContent() {
                 location
                 description
                 availability
-                relationship
               }
             }
           `,

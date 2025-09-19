@@ -1,4 +1,6 @@
-import NextAuth from 'next-auth'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import NextAuth from 'next-auth/next'
 import EmailProvider from 'next-auth/providers/email'
 import { createTransport } from 'nodemailer'
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
@@ -57,7 +59,7 @@ export const authOptions = {
     verifyRequest: '/auth/verify-request',
   },
   callbacks: {
-    async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
+    async signIn({ user, account }: { user: any; account: any; profile?: any }) {
       // Create user in our database if not exists
       if (account?.provider === 'email' && user.email) {
         try {
@@ -111,6 +113,3 @@ export const authOptions = {
 }
 
 export default NextAuth(authOptions)
-
-// Export for server-side usage
-export { getServerSession } from 'next-auth'

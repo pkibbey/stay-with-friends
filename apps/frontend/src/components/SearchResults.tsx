@@ -9,40 +9,7 @@ import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
 import { MapPin, Users, Calendar, Home, Star, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-
-interface Listing {
-  id: string
-  title: string
-  description: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  latitude?: number
-  longitude?: number
-  maxGuests: number
-  bedrooms: number
-  bathrooms: number
-  amenities: string[]
-  houseRules: string
-  checkInTime: string
-  checkOutTime: string
-  photos: string[]
-  isActive: boolean
-  availabilities?: Array<{
-    id: string
-    startDate: string
-    endDate: string
-    status: string
-    notes?: string
-  }>
-  user?: {
-    id: string
-    name: string
-    email: string
-  }
-}
+import { HostProfileData } from '@/types'
 
 interface SearchFiltersState {
   query: string
@@ -55,12 +22,12 @@ interface SearchFiltersState {
 }
 
 interface SearchResultsProps {
-  listings: Listing[]
+  listings: HostProfileData[]
   isLoading: boolean
   filters: SearchFiltersState
 }
 
-function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFiltersState }) {
+function ListingCard({ listing, filters }: { listing: HostProfileData; filters: SearchFiltersState }) {
   const [showCalendar, setShowCalendar] = React.useState(false)
   
   // Check if listing is available for selected dates
@@ -157,25 +124,6 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
           </div>
         </div>
 
-        {/* Host info */}
-        {listing.user && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-blue-600">
-                  {listing.user.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm font-medium">{listing.user.name}</p>
-                <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-yellow-500" />
-                  <span className="text-xs text-gray-500">Trusted host</span>
-                </div>
-              </div>
-            </div>
-          </div>)}
-
         {/* Amenities */}
         {listing.amenities.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -203,7 +151,7 @@ function ListingCard({ listing, filters }: { listing: Listing; filters: SearchFi
             <Calendar className="w-4 h-4 mr-2" />
             {showCalendar ? 'Hide' : 'Show'} Calendar
           </Button>
-          <Link href={`/listings/${listing.id}`} className="flex-1">
+          <Link href={`/host/${listing.id}`} className="flex-1">
             <Button size="sm" className="w-full">
               <Eye className="w-4 h-4 mr-2" />
               View Details

@@ -33,6 +33,7 @@ The platform operates on several key principles:
 - One-to-Many with `Host` (user can create multiple hosting properties)
 - One-to-Many with `Connection` (user can have multiple friend connections)
 - One-to-Many with `BookingRequest` (user can make multiple booking requests)
+- One-to-Many with `Invitation` (user can send multiple invitations)
 
 **Business Rules**:
 - Email must be unique across the platform
@@ -79,7 +80,6 @@ CREATE TABLE users (
 - `bedrooms` (number, optional): Number of bedrooms
 - `bathrooms` (number, optional): Number of bathrooms
 - `photos` (string[], optional): Array of photo URLs
-- `isActive` (boolean, required): Whether the hosting is currently active
 - `createdAt` (string, required): When the hosting was created
 - `updatedAt` (string, required): When the hosting was last updated
 
@@ -99,6 +99,7 @@ CREATE TABLE users (
 ```sql
 CREATE TABLE hosts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   location TEXT,
@@ -118,7 +119,10 @@ CREATE TABLE hosts (
   max_guests INTEGER,
   bedrooms INTEGER,
   bathrooms INTEGER,
-  photos TEXT -- JSON array stored as text
+  photos TEXT, -- JSON array stored as text
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 )
 ```
 
@@ -261,12 +265,58 @@ CREATE TABLE connections (
 
 ---
 
+### 6. Invitation Entity
+
+**Purpose**: Represents invitations sent by existing users to invite friends to join the platform.
+
+**Properties**:
+- `id` (string): Unique identifier for the invitation
+- `inviterId` (string, required): ID of the user sending the invitation
+- `inviteeEmail` (string, required): Email address of the person being invited
+- `token` (string, required): Unique token for the invitation link
+- `status` (string, required): Current status of the invitation
+- `acceptedAt` (string, optional): When the invitation was accepted
+- `createdAt` (string, required): When the invitation was sent
+
+**Relationships**:
+- Many-to-One with `User` (invitation is sent by a user)
+- May link to `User` (if invitation is accepted and user registers)
+
+**Business Rules**:
+- Invitee email must be unique per active invitation (no duplicate pending invitations)
+- Users cannot invite existing registered users
+- Accepted invitations automatically create a Connection between inviter and new user
+- Tokens must be cryptographically secure and unique
+
+**Valid Status Values**:
+- `pending`: Invitation sent but not yet accepted
+- `accepted`: Invitation accepted and user registered
+- `cancelled`: Invitation was cancelled by the inviter
+
+**Database Schema**:
+```sql
+CREATE TABLE invitations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inviter_id INTEGER NOT NULL,
+  invitee_email TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  status TEXT DEFAULT 'pending',
+  accepted_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inviter_id) REFERENCES users (id),
+  UNIQUE(inviter_id, invitee_email, status) WHERE status = 'pending'
+)
+```
+
+---
+
 ## Entity Relationships Diagram
 
 ```
 User
 ├── hosts (1:N) → Host
 ├── connections (1:N) → Connection
+├── invitations (1:N) → Invitation
 └── booking_requests (1:N) → BookingRequest
 
 Host
@@ -284,6 +334,9 @@ BookingRequest
 Connection
 ├── user (N:1) → User
 └── connected_user (N:1) → User
+
+Invitation
+└── inviter (N:1) → User
 ```
 
 ---
@@ -314,6 +367,15 @@ Connection
 2. Connection entity created with "pending" status
 3. User B accepts/declines the connection
 4. If accepted, both users can see each other's listings
+
+### 5. Invitation Flow
+1. Existing user sends invitation to friend via email
+2. Invitation entity created with unique token and "pending" status
+3. Friend receives email with invitation link containing token
+4. Friend clicks link and registers new account
+5. Upon successful registration, invitation status updates to "accepted"
+6. Automatic Connection is created between inviter and new user
+7. New user gains access to inviter's listings and vice versa
 
 ---
 

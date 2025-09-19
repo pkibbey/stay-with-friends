@@ -38,7 +38,7 @@ export function AvailabilityCard({ availability, linkHref, iconColor = "purple" 
           <div>
             <h4 className="font-medium">{availability.host.name}</h4>
             <p className="text-sm text-gray-600">
-              {availability.host.relationship} • {availability.host.location}
+              {availability.host.location}
             </p>
           </div>
         </div>

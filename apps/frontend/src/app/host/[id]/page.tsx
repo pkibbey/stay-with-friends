@@ -76,7 +76,6 @@ export default function HostDetailPage() {
                 id
                 name
                 location
-                relationship
                 availability
                 description
                 address

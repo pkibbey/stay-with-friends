@@ -5,5 +5,5 @@ export * from './host'
 export type PartialHost = Partial<Host>
 export type HostWithAvailabilities = Host & { availabilities: Availability[] }
 
-import type { Host, Availability, HostProfileData, HostSummary, BookingRequest, User, Connection } from './host'
-export type { Host, Availability, HostProfileData, HostSummary, BookingRequest, User, Connection }
+import type { Host, Availability, HostProfileData, HostSummary, BookingRequest, User, Connection, Invitation } from './host'
+export type { Host, Availability, HostProfileData, HostSummary, BookingRequest, User, Connection, Invitation }

@@ -4,7 +4,6 @@ export interface Host {
   name: string
   email?: string
   location?: string
-  relationship?: string
   availability?: string
   description?: string
   address?: string
@@ -23,6 +22,9 @@ export interface Host {
   bathrooms?: number
   photos?: string[]
   availabilities?: Availability[]
+  createdAt?: string
+  updatedAt?: string
+  user?: User
 }
 
 // Availability interface
@@ -42,7 +44,6 @@ export interface HostProfileData {
   name: string
   email: string
   location: string
-  relationship?: string
   description: string
   address: string
   city: string
@@ -51,6 +52,14 @@ export interface HostProfileData {
   country: string
   latitude?: number
   longitude?: number
+  title: string
+  availabilities?: Array<{
+    id: string
+    startDate: string
+    endDate: string
+    status: string
+    notes?: string
+  }>
   amenities: string[]
   houseRules: string
   checkInTime: string
@@ -66,7 +75,6 @@ export interface HostSummary {
   id: string
   name: string
   location?: string
-  relationship?: string
   availability?: string
   description?: string
 }
@@ -75,8 +83,7 @@ export interface HostSummary {
 export interface BookingRequest {
   id: string
   hostId: string
-  requesterName: string
-  requesterEmail: string
+  requesterId: string
   startDate: string
   endDate: string
   guests: number
@@ -84,6 +91,7 @@ export interface BookingRequest {
   status: string
   createdAt: string
   host?: Host
+  requester?: User
 }
 
 // User interface for authentication and connections
@@ -101,7 +109,22 @@ export interface Connection {
   id: string
   userId: string
   connectedUserId: string
+  relationship?: string
   status: string
   createdAt: string
   connectedUser?: User
+}
+
+// Invitation interface for user invitations
+export interface Invitation {
+  id: string
+  inviterId: string
+  inviteeEmail: string
+  inviteeName?: string
+  message?: string
+  token: string
+  status: string
+  expiresAt: string
+  acceptedAt?: string
+  createdAt: string
 }

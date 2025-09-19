@@ -29,7 +29,6 @@ interface Listing {
   checkInTime: string
   checkOutTime: string
   photos: string[]
-  isActive: boolean
   availabilities: Array<{
     id: string
     startDate: string

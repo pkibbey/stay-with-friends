@@ -40,8 +40,7 @@ export default function ManageHostingPage() {
       checkOutTime: "11:00 AM",
       amenities: ["WiFi", "Kitchen", "Washer/Dryer", "Parking"],
       houseRules: "No smoking, quiet hours after 10pm",
-      photos: [],
-      isActive: true
+      photos: []
     }
   ])
 
@@ -75,8 +74,7 @@ export default function ManageHostingPage() {
       id: Date.now(),
       ...newHosting,
       amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
-      photos: [],
-      isActive: true
+      photos: []
     }
     setHostings([...hostings, hosting])
     setNewHosting({
@@ -92,12 +90,6 @@ export default function ManageHostingPage() {
       houseRules: ''
     })
     setShowAddForm(false)
-  }
-
-  const toggleHostingStatus = (id: number) => {
-    setHostings(hostings.map(h => 
-      h.id === id ? { ...h, isActive: !h.isActive } : h
-    ))
   }
 
   const handleAddAvailability = (hostId: number) => (startDate: string, endDate: string, notes?: string) => {
@@ -291,15 +283,12 @@ export default function ManageHostingPage() {
           </Card>
         ) : (
           hostings.map((hosting) => (
-            <Card key={hosting.id} className={!hosting.isActive ? 'opacity-60' : ''}>
+            <Card key={hosting.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       {hosting.title}
-                      <Badge variant={hosting.isActive ? 'default' : 'secondary'}>
-                        {hosting.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
                     </CardTitle>
                     <CardDescription className="flex items-center gap-1 mt-1">
                       <MapPin className="w-4 h-4" />
@@ -309,13 +298,6 @@ export default function ManageHostingPage() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm">
                       <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => toggleHostingStatus(hosting.id)}
-                    >
-                      {hosting.isActive ? 'Deactivate' : 'Activate'}
                     </Button>
                   </div>
                 </div>

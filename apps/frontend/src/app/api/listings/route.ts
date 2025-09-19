@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
 // This is a simple GraphQL client function
@@ -77,7 +79,6 @@ export async function GET(request: NextRequest) {
             checkInTime
             checkOutTime
             photos
-            isActive
             createdAt
             updatedAt
             availabilities {
@@ -119,7 +120,6 @@ export async function GET(request: NextRequest) {
             bathrooms
             photos
             amenities
-            isActive
             availabilities {
               id
               startDate
@@ -158,7 +158,6 @@ export async function GET(request: NextRequest) {
             checkInTime
             checkOutTime
             photos
-            isActive
             createdAt
             updatedAt
           }
@@ -179,7 +178,6 @@ export async function GET(request: NextRequest) {
             bathrooms
             photos
             amenities
-            isActive
           }
         }
       `
@@ -249,7 +247,6 @@ export async function POST(request: NextRequest) {
           checkInTime
           checkOutTime
           photos
-          isActive
           createdAt
           updatedAt
         }

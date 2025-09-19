@@ -13,30 +13,7 @@ import { Style, Icon, Text, Fill, Stroke } from 'ol/style'
 import Overlay from 'ol/Overlay'
 import { MapPin } from 'lucide-react'
 import 'ol/ol.css'
-
-interface Listing {
-  id: string
-  title: string
-  description: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  latitude?: number
-  longitude?: number
-  maxGuests: number
-  bedrooms: number
-  bathrooms: number
-  amenities: string[]
-  photos: string[]
-  isActive: boolean
-  user: {
-    id: string
-    name: string
-    email: string
-  }
-}
+import { HostProfileData } from '@/types'
 
 interface MapComponentProps {
   // Single location props (backward compatibility)
@@ -48,7 +25,7 @@ interface MapComponentProps {
   location?: string
   className?: string
   // Multiple listings for search results
-  listings?: Listing[]
+  listings?: HostProfileData[]
   isLoading?: boolean
 }
 
@@ -138,7 +115,7 @@ export function MapComponent({
     }
   }, [])
 
-  const addListingsToMap = useCallback(async (listings: Listing[], map: Map) => {
+  const addListingsToMap = useCallback(async (listings: HostProfileData[], map: Map) => {
     if (listings.length === 0) return
 
     // Remove existing markers
@@ -242,7 +219,7 @@ export function MapComponent({
       const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature)
       
       if (feature && feature.get('listing')) {
-        const listing = feature.get('listing') as Listing
+        const listing = feature.get('listing') as HostProfileData
         const coordinates = (feature.getGeometry() as Point).getCoordinates()
         
         if (popupRef.current && popupOverlayRef.current) {
@@ -257,9 +234,9 @@ export function MapComponent({
                 <span class="text-xs text-gray-500">${listing.maxGuests} guests</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">
-                Host: ${listing.user.name}
+                Host: ${listing.name}
               </div>
-              <a href="/listings/${listing.id}" class="text-xs text-blue-600 hover:text-blue-800">
+              <a href="/host/${listing.id}" class="text-xs text-blue-600 hover:text-blue-800">
                 View Details →
               </a>
             </div>

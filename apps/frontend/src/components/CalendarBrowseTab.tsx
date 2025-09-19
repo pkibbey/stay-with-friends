@@ -139,7 +139,7 @@ export function CalendarBrowseTab({
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{host.name}</h4>
                         <p className="text-xs text-gray-600 truncate">
-                          {host.relationship} • {host.location}
+                          {host.location}
                         </p>
                       </div>
                     </div>

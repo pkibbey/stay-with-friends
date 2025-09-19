@@ -10,7 +10,6 @@ interface Host {
   id: string
   name: string
   location?: string
-  relationship?: string
   availability?: string
   description?: string
 }
@@ -44,7 +43,6 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
                 id
                 name
                 location
-                relationship
                 availability
                 description
               }
@@ -107,7 +105,7 @@ export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProp
                         <div>
                           <h3 className="font-semibold">{host.name}</h3>
                           <p className="text-sm text-gray-600">
-                            {host.relationship} • {host.location}
+                            {host.location}
                           </p>
                         </div>
                       </div>
