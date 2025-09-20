@@ -3,7 +3,6 @@ export const typeDefs = `#graphql
   type Host {
     id: ID!
     name: String!
-    title: String! # Alias for name to match frontend expectations
     email: String
     location: String
     description: String
@@ -174,7 +173,7 @@ export const typeDefs = `#graphql
   }
 
   input CreateListingInput {
-    title: String!
+    name: String!
     description: String!
     address: String!
     city: String!
@@ -1003,7 +1002,7 @@ export const resolvers = {
     },
   },
   Host: {
-    title: (parent: any) => parent.name, // Alias name as title for frontend compatibility
+    name: (parent: any) => parent.name,
     createdAt: (parent: any) => parent.created_at || new Date().toISOString(),
     updatedAt: (parent: any) => parent.updated_at || new Date().toISOString(),
     user: (parent: any) => {

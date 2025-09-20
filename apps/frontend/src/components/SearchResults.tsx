@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Users, Home, Eye } from 'lucide-react'
+import { MapPin, Users, Home, Eye, Bed, Bath, User } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
 import { HostProfileData, SearchFiltersState } from '@/types'
@@ -55,7 +55,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
             width={400}
             height={300}
             src={result.photos[0]}
-            alt={result.title || ''}
+            alt={result.name}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -90,7 +90,13 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg line-clamp-2">{result.title}</CardTitle>
+            <CardTitle className="text-lg line-clamp-2">{result.name}</CardTitle>
+            {result.user?.name && (
+              <p className="text-sm text-gray-600 flex items-center mt-1">
+                <User className="w-3 h-3 mr-1" />
+                Hosted by {result.user.name}
+              </p>
+            )}
             <CardDescription className="line-clamp-2 mt-1">
               {result.description}
             </CardDescription>
@@ -100,15 +106,43 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
 
       <CardContent className="space-y-4">
         {/* Location and basic info */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center">
-            <MapPin className="w-4 h-4 mr-1" />
-            {result.city}, {result.state}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+            <div className="flex items-center">
+              <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+              <span className="truncate">
+                {result.address ? 
+                  `${result.address}, ${result.city}, ${result.state}` : 
+                  `${result.city}, ${result.state}`
+                }
+              </span>
+            </div>
+            <div className="flex items-center">
+              <Users className="w-4 h-4 mr-1" />
+              {result.maxGuests} guests
+            </div>
+            {result.bedrooms && (
+              <div className="flex items-center">
+                <Bed className="w-4 h-4 mr-1" />
+                {result.bedrooms} bedroom{result.bedrooms !== 1 ? 's' : ''}
+              </div>
+            )}
+            {result.bathrooms && (
+              <div className="flex items-center">
+                <Bath className="w-4 h-4 mr-1" />
+                {result.bathrooms} bathroom{result.bathrooms !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
-          <div className="flex items-center">
-            <Users className="w-4 h-4 mr-1" />
-            {result.maxGuests} guests
-          </div>
+          
+          {/* Check-in/out times if available */}
+          {(result.checkInTime || result.checkOutTime) && (
+            <div className="text-xs text-gray-500">
+              {result.checkInTime && `Check-in: ${result.checkInTime}`}
+              {result.checkInTime && result.checkOutTime && ' • '}
+              {result.checkOutTime && `Check-out: ${result.checkOutTime}`}
+            </div>
+          )}
         </div>
 
         {/* Amenities */}

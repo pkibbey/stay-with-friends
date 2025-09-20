@@ -226,14 +226,14 @@ export function MapComponent({
           popupRef.current.innerHTML = `
             <div class="max-w-sm">
               <div class="mb-2">
-                <h3 class="font-semibold text-sm line-clamp-2">${host.title}</h3>
+                <h3 class="font-semibold text-sm line-clamp-2">${host.name}</h3>
                 <p class="text-xs text-gray-600">${host.city}, ${host.state}</p>
               </div>
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500">${host.maxGuests} guests</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">
-                Host: ${host.name}
+                Host: ${host.description || 'No description available'}
               </div>
               <a href="/host/${host.id}" class="text-xs text-blue-600 hover:text-blue-800">
                 View Details →

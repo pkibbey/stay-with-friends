@@ -13,7 +13,6 @@ export interface Host {
   id: number;
   user_id?: number;
   name: string;
-  title?: string;
   email?: string;
   location?: string;
   description?: string;

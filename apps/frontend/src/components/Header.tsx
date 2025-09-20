@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { TextLogo } from './TextLogo'
 
 export function Header() {
   const { data: session, status } = useSession()
@@ -45,7 +46,7 @@ export function Header() {
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between h-16">
         <Link href="/" className="text-xl font-bold">
-          StayWithFriends
+          <TextLogo className="text-xs md:text-xl" />
         </Link>
         <nav className="flex items-center gap-4">
           {status === 'loading' ? (

@@ -51,7 +51,6 @@ export function ListingForm({
     name: '',
     email: '',
     location: '',
-    title: '',
     description: '',
     address: '',
     city: '',
@@ -74,8 +73,8 @@ export function ListingForm({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.title?.trim()) {
-      newErrors.title = 'Title is required'
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Name is required'
     }
     if (!formData.description?.trim()) {
       newErrors.description = 'Description is required'
@@ -146,15 +145,15 @@ export function ListingForm({
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <Label htmlFor="title">Listing Title *</Label>
+                <Label htmlFor="name">Listing Name *</Label>
                 <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => updateField('title', e.target.value)}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => updateField('name', e.target.value)}
                   placeholder="e.g., Cozy downtown apartment with great view"
-                  className={errors.title ? 'border-red-500' : ''}
+                  className={errors.name ? 'border-red-500' : ''}
                 />
-                {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
+                {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
               </div>
               
               <div className="md:col-span-2">

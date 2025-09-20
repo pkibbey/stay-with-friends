@@ -89,7 +89,7 @@ function SearchPage() {
               guests: $guests
             ) {
               id
-              title
+              name
               description
               address
               city
@@ -138,7 +138,7 @@ function SearchPage() {
           query GetAllHosts {
             hosts {
               id
-              title
+              name
               description
               address
               city

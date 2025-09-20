@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS hosts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
   name TEXT NOT NULL,
-  title TEXT,
   email TEXT UNIQUE,
   location TEXT,
   description TEXT,

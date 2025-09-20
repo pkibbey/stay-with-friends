@@ -13,7 +13,6 @@ type Host {
   id: ID!
   user_id: Int
   name: String!
-  title: String
   email: String
   location: String
   description: String

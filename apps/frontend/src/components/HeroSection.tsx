@@ -8,7 +8,7 @@ export function HeroSection() {
   return (
     <section className="container mx-auto px-4 py-16 text-center">
       <div className="max-w-4xl mx-auto">
-        <TextLogo />
+        <TextLogo className="text-4xl md:text-6xl mb-6" />
         <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
           Find the perfect place to stay with people you know. Like AirBNB, but only for your trusted network.
         </p>

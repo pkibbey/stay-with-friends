@@ -60,7 +60,7 @@ CREATE TABLE users (
 
 **Properties**:
 - `id` (string): Unique identifier for the hosting property
-- `name` (string, required): Title/name of the property (e.g., "Cozy Downtown Apartment")
+- `name` (string, required): name of the property (e.g., "Cozy Downtown Apartment")
 - `email` (string, optional): Contact email for the host (may differ from user email)
 - `location` (string, optional): General location description
 - `description` (string, optional): Detailed description of the property

@@ -48,7 +48,6 @@ export function HostProfileForm({
 }: HostProfileFormProps) {
   const [formData, setFormData] = useState<HostProfileData>({
     name: '',
-    title: '',
     email: '',
     location: '',
     description: '',

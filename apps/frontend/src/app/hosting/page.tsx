@@ -13,7 +13,7 @@ import { AvailabilityManager } from '@/components/AvailabilityManager'
 import { FileUpload } from '@/components/ui/file-upload'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2, Navigation } from 'lucide-react'
 import { HostWithAvailabilities, User } from '@/types'
 
 // Use the generated types
@@ -30,6 +30,8 @@ export default function ManageHostingPage() {
   const [saving, setSaving] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodingEdit, setGeocodingEdit] = useState(false)
 
   const fetchHostings = useCallback(async () => {
     try {
@@ -42,7 +44,6 @@ export default function ManageHostingPage() {
               hosts {
                 id
                 name
-                title
                 location
                 description
                 address
@@ -126,9 +127,17 @@ export default function ManageHostingPage() {
   }, [fetchHostings, session?.user])
 
   const [newHosting, setNewHosting] = useState({
-    title: '',
+    name: '',
     description: '',
     location: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    latitude: '',
+    longitude: '',
     maxGuests: 2,
     bedrooms: 1,
     bathrooms: 1,
@@ -141,17 +150,40 @@ export default function ManageHostingPage() {
   const handleAddHosting = () => {
     const hosting: HostData = {
       id: Date.now().toString(),
-      name: newHosting.title,
-      ...newHosting,
+      name: newHosting.name,
+      description: newHosting.description,
+      location: newHosting.location,
+      email: newHosting.email,
+      address: newHosting.address,
+      city: newHosting.city,
+      state: newHosting.state,
+      zipCode: newHosting.zipCode,
+      country: newHosting.country,
+      latitude: newHosting.latitude ? parseFloat(newHosting.latitude) : undefined,
+      longitude: newHosting.longitude ? parseFloat(newHosting.longitude) : undefined,
+      maxGuests: newHosting.maxGuests,
+      bedrooms: newHosting.bedrooms,
+      bathrooms: newHosting.bathrooms,
+      checkInTime: newHosting.checkInTime,
+      checkOutTime: newHosting.checkOutTime,
       amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
+      houseRules: newHosting.houseRules,
       photos: [],
       availabilities: []
     }
     setHostings([...hostings, hosting])
     setNewHosting({
-      title: '',
+      name: '',
       description: '',
       location: '',
+      email: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: '',
+      latitude: '',
+      longitude: '',
       maxGuests: 2,
       bedrooms: 1,
       bathrooms: 1,
@@ -229,9 +261,10 @@ export default function ManageHostingPage() {
     setSaving(true)
     try {
       // Build the input object with only defined values
-      const input: Partial<Omit<HostData, 'id' | 'title' | 'availabilities'>> = {}
+      const input: Partial<Omit<HostData, 'id' | 'availabilities'>> = {}
       
-      if (editForm.name !== undefined) input.name = editForm.name || editForm.title
+      if (editForm.name !== undefined) input.name = editForm.name
+      if (editForm.email !== undefined) input.email = editForm.email
       if (editForm.location !== undefined) input.location = editForm.location
       if (editForm.description !== undefined) input.description = editForm.description
       if (editForm.address !== undefined) input.address = editForm.address
@@ -259,7 +292,7 @@ export default function ManageHostingPage() {
               updateHost(id: $id, input: $input) {
                 id
                 name
-                title
+                email
                 location
                 description
                 address
@@ -341,8 +374,60 @@ export default function ManageHostingPage() {
     }
   }
 
-  const updateEditForm = (field: keyof HostData, value: string | number | string[]) => {
+  const updateEditForm = (field: keyof HostData, value: string | number | string[] | undefined) => {
     setEditForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Geocoding function to get coordinates from address
+  const geocodeAddress = async (address: string, city: string, state: string, country: string, isEditForm = false) => {
+    if (!address && !city) {
+      return
+    }
+
+    const setLoadingState = isEditForm ? setGeocodingEdit : setGeocoding
+    setLoadingState(true)
+
+    try {
+      // Construct full address for geocoding
+      const fullAddress = [address, city, state, country].filter(Boolean).join(', ')
+      
+      // Using OpenStreetMap Nominatim API for geocoding (free alternative to Google)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=${country ? country.toLowerCase().slice(0, 2) : ''}`
+      )
+      
+      if (!response.ok) {
+        throw new Error('Geocoding service unavailable')
+      }
+
+      const data = await response.json()
+      
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat)
+        const lng = parseFloat(data[0].lon)
+        
+        if (isEditForm) {
+          updateEditForm('latitude', lat)
+          updateEditForm('longitude', lng)
+        } else {
+          setNewHosting(prev => ({
+            ...prev,
+            latitude: lat.toString(),
+            longitude: lng.toString()
+          }))
+        }
+        
+        // Success feedback
+        console.log(`Coordinates found: ${lat.toFixed(6)}, ${lng.toFixed(6)}`)
+      } else {
+        // No results found
+        console.warn('No coordinates found for this address')
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+    } finally {
+      setLoadingState(false)
+    }
   }
 
   const handleDeleteHost = async (hostId: string) => {
@@ -457,21 +542,22 @@ export default function ManageHostingPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
-                  id="title"
-                  value={newHosting.title}
-                  onChange={(e) => setNewHosting({...newHosting, title: e.target.value})}
+                  id="name"
+                  value={newHosting.name}
+                  onChange={(e) => setNewHosting({...newHosting, name: e.target.value})}
                   placeholder="e.g., Cozy Downtown Apartment"
                 />
               </div>
               <div>
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="email">Host Email</Label>
                 <Input
-                  id="location"
-                  value={newHosting.location}
-                  onChange={(e) => setNewHosting({...newHosting, location: e.target.value})}
-                  placeholder="e.g., San Francisco, CA"
+                  id="email"
+                  type="email"
+                  value={newHosting.email}
+                  onChange={(e) => setNewHosting({...newHosting, email: e.target.value})}
+                  placeholder="your.email@example.com"
                 />
               </div>
             </div>
@@ -485,6 +571,110 @@ export default function ManageHostingPage() {
                 placeholder="Describe your space..."
                 rows={3}
               />
+            </div>
+
+            {/* Address Section */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Address Information</h4>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="address">Street Address</Label>
+                  <Input
+                    id="address"
+                    value={newHosting.address}
+                    onChange={(e) => setNewHosting({...newHosting, address: e.target.value})}
+                    placeholder="e.g., 123 Main Street, Apt 4B"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={newHosting.city}
+                      onChange={(e) => setNewHosting({...newHosting, city: e.target.value})}
+                      placeholder="San Francisco"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State/Province</Label>
+                    <Input
+                      id="state"
+                      value={newHosting.state}
+                      onChange={(e) => setNewHosting({...newHosting, state: e.target.value})}
+                      placeholder="CA"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zipCode">ZIP/Postal Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={newHosting.zipCode}
+                      onChange={(e) => setNewHosting({...newHosting, zipCode: e.target.value})}
+                      placeholder="94102"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={newHosting.country}
+                      onChange={(e) => setNewHosting({...newHosting, country: e.target.value})}
+                      placeholder="United States"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="latitude">Latitude (optional)</Label>
+                    <Input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      value={newHosting.latitude}
+                      onChange={(e) => setNewHosting({...newHosting, latitude: e.target.value})}
+                      placeholder="37.7749"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="longitude">Longitude (optional)</Label>
+                    <Input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      value={newHosting.longitude}
+                      onChange={(e) => setNewHosting({...newHosting, longitude: e.target.value})}
+                      placeholder="-122.4194"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => geocodeAddress(newHosting.address, newHosting.city, newHosting.state, newHosting.country)}
+                    disabled={geocoding || (!newHosting.address && !newHosting.city)}
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    {geocoding ? 'Finding Coordinates...' : 'Get Coordinates from Address'}
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    Automatically find latitude and longitude from your address
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="location">General Location Description</Label>
+                  <Input
+                    id="location"
+                    value={newHosting.location}
+                    onChange={(e) => setNewHosting({...newHosting, location: e.target.value})}
+                    placeholder="e.g., Downtown San Francisco, Near Golden Gate Park"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -563,7 +753,7 @@ export default function ManageHostingPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddHosting} disabled={!newHosting.title || !newHosting.location}>
+              <Button onClick={handleAddHosting} disabled={!newHosting.name || (!newHosting.location && !newHosting.city)}>
                 Add Hosting
               </Button>
               <Button variant="outline" onClick={() => setShowAddForm(false)}>
@@ -596,38 +786,155 @@ export default function ManageHostingPage() {
           hostings.map((hosting) => (
             <Card key={hosting.id}>
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-2">
                   <div className="flex-1">
                     {editingHostId === hosting.id ? (
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor={`edit-title-${hosting.id}`}>Title</Label>
+                          <Label htmlFor={`edit-name-${hosting.id}`}>Name</Label>
                           <Input
-                            id={`edit-title-${hosting.id}`}
-                            value={editForm.title || ''}
-                            onChange={(e) => updateEditForm('title', e.target.value)}
-                            placeholder="Property title"
+                            id={`edit-name-${hosting.id}`}
+                            value={editForm.name || ''}
+                            onChange={(e) => updateEditForm('name', e.target.value)}
+                            placeholder="Property name"
                           />
                         </div>
                         <div>
-                          <Label htmlFor={`edit-location-${hosting.id}`}>Location</Label>
+                          <Label htmlFor={`edit-email-${hosting.id}`}>Host Email</Label>
+                          <Input
+                            id={`edit-email-${hosting.id}`}
+                            type="email"
+                            value={editForm.email || ''}
+                            onChange={(e) => updateEditForm('email', e.target.value)}
+                            placeholder="your.email@example.com"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`edit-location-${hosting.id}`}>General Location Description</Label>
                           <Input
                             id={`edit-location-${hosting.id}`}
                             value={editForm.location || ''}
                             onChange={(e) => updateEditForm('location', e.target.value)}
-                            placeholder="Location"
+                            placeholder="e.g., Downtown San Francisco, Near Golden Gate Park"
                           />
+                        </div>
+                        
+                        {/* Address Section */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-gray-900">Address Information</h4>
+                          <div>
+                            <Label htmlFor={`edit-address-${hosting.id}`}>Street Address</Label>
+                            <Input
+                              id={`edit-address-${hosting.id}`}
+                              value={editForm.address || ''}
+                              onChange={(e) => updateEditForm('address', e.target.value)}
+                              placeholder="e.g., 123 Main Street, Apt 4B"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label htmlFor={`edit-city-${hosting.id}`}>City</Label>
+                              <Input
+                                id={`edit-city-${hosting.id}`}
+                                value={editForm.city || ''}
+                                onChange={(e) => updateEditForm('city', e.target.value)}
+                                placeholder="San Francisco"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`edit-state-${hosting.id}`}>State/Province</Label>
+                              <Input
+                                id={`edit-state-${hosting.id}`}
+                                value={editForm.state || ''}
+                                onChange={(e) => updateEditForm('state', e.target.value)}
+                                placeholder="CA"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`edit-zipCode-${hosting.id}`}>ZIP/Postal Code</Label>
+                              <Input
+                                id={`edit-zipCode-${hosting.id}`}
+                                value={editForm.zipCode || ''}
+                                onChange={(e) => updateEditForm('zipCode', e.target.value)}
+                                placeholder="94102"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <Label htmlFor={`edit-country-${hosting.id}`}>Country</Label>
+                              <Input
+                                id={`edit-country-${hosting.id}`}
+                                value={editForm.country || ''}
+                                onChange={(e) => updateEditForm('country', e.target.value)}
+                                placeholder="United States"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`edit-latitude-${hosting.id}`}>Latitude (optional)</Label>
+                              <Input
+                                id={`edit-latitude-${hosting.id}`}
+                                type="number"
+                                step="any"
+                                value={editForm.latitude || ''}
+                                onChange={(e) => updateEditForm('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                placeholder="37.7749"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                            </div>
+                            <div>
+                              <Label htmlFor={`edit-longitude-${hosting.id}`}>Longitude (optional)</Label>
+                              <Input
+                                id={`edit-longitude-${hosting.id}`}
+                                type="number"
+                                step="any"
+                                value={editForm.longitude || ''}
+                                onChange={(e) => updateEditForm('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                placeholder="-122.4194"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => geocodeAddress(
+                                editForm.address || '',
+                                editForm.city || '',
+                                editForm.state || '',
+                                editForm.country || '',
+                                true
+                              )}
+                              disabled={geocodingEdit || (!editForm.address && !editForm.city)}
+                            >
+                              <Navigation className="w-4 h-4 mr-2" />
+                              {geocodingEdit ? 'Finding Coordinates...' : 'Get Coordinates from Address'}
+                            </Button>
+                            <p className="text-xs text-gray-500">
+                              Automatically find latitude and longitude from your address
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ) : (
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          {hosting.title || hosting.name}
+                          {hosting.name}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <MapPin className="w-4 h-4" />
-                          {hosting.location}
+                          {hosting.address ? 
+                            `${hosting.address}, ${hosting.city}, ${hosting.state}` :
+                            hosting.location || `${hosting.city}, ${hosting.state}`
+                          }
                         </CardDescription>
+                        {hosting.email && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Contact: {hosting.email}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -790,6 +1097,25 @@ export default function ManageHostingPage() {
                 ) : (
                   <>
                     <p className="text-gray-600 mb-4">{hosting.description}</p>
+                    
+                    {/* Address Information */}
+                    {(hosting.address || hosting.city || hosting.state || hosting.zipCode || hosting.country) && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2">Address</h4>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          {hosting.address && <p>{hosting.address}</p>}
+                          <p>
+                            {[hosting.city, hosting.state, hosting.zipCode].filter(Boolean).join(', ')}
+                            {hosting.country && `, ${hosting.country}`}
+                          </p>
+                          {(hosting.latitude && hosting.longitude) && (
+                            <p className="text-xs text-gray-500">
+                              Coordinates: {hosting.latitude}, {hosting.longitude}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">

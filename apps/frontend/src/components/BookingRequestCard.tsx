@@ -69,7 +69,7 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-4 gap-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="font-semibold text-lg">

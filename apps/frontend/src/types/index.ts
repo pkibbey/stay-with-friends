@@ -33,6 +33,7 @@ export interface HostProfileData extends Omit<Host, 'id' | 'createdAt' | 'update
     status: string;
     notes?: string;
   }>;
+  user?: User;
 }
 
 // For search results and simplified displays
