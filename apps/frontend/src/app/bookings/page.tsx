@@ -10,31 +10,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { PageLayout } from '@/components/PageLayout'
 import { Calendar, MapPin, Users, MessageSquare, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
+import { BookingRequest, Host, User } from '@/types'
 
-interface BookingRequest {
-  id: string
-  hostId: string
-  requesterId: string
-  startDate: string
-  endDate: string
-  guests: number
-  message?: string
-  status: 'pending' | 'approved' | 'declined' | 'cancelled'
-  responseMessage?: string
-  respondedAt?: string
-  createdAt: string
-  host: {
-    id: string
-    name: string
-    location?: string
-    email?: string
-  }
-  requester: {
-    id: string
-    email: string
-    name?: string
-    image?: string
-  }
+// Extended type for component-specific data (includes nested data from GraphQL)
+interface BookingRequestWithRelations extends BookingRequest {
+  host?: Host
+  requester?: User
 }
 
 const statusColors = {
@@ -42,19 +23,21 @@ const statusColors = {
   approved: 'bg-green-100 text-green-800 border-green-200',
   declined: 'bg-red-100 text-red-800 border-red-200',
   cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
-}
+} as const
+
+type StatusKey = keyof typeof statusColors
 
 const statusIcons = {
   pending: Clock,
   approved: CheckCircle,
   declined: XCircle,
   cancelled: XCircle,
-}
+} as const
 
 export default function BookingsPage() {
   const { data: session, status } = useSession()
-  const [myRequests, setMyRequests] = useState<BookingRequest[]>([])
-  const [incomingRequests, setIncomingRequests] = useState<BookingRequest[]>([])
+  const [myRequests, setMyRequests] = useState<BookingRequestWithRelations[]>([])
+  const [incomingRequests, setIncomingRequests] = useState<BookingRequestWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -389,7 +372,7 @@ export default function BookingsPage() {
 }
 
 interface BookingRequestCardProps {
-  request: BookingRequest
+  request: BookingRequestWithRelations
   type: 'guest' | 'host'
   onStatusUpdate: (requestId: string, status: string, responseMessage?: string) => void
 }
@@ -399,7 +382,9 @@ function BookingRequestCard({ request, type, onStatusUpdate }: BookingRequestCar
   const [showResponseForm, setShowResponseForm] = useState(false)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
 
-  const StatusIcon = statusIcons[request.status]
+  const StatusIcon = request.status && request.status in statusIcons 
+    ? statusIcons[request.status as StatusKey] 
+    : Clock
   
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'MMM d, yyyy')
@@ -436,15 +421,23 @@ function BookingRequestCard({ request, type, onStatusUpdate }: BookingRequestCar
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="font-semibold text-lg">
-                {type === 'guest' ? request.host.name : request.requester.name || request.requester.email}
+                {type === 'guest' 
+                  ? request.host?.name || 'Unknown Host'
+                  : request.requester?.name || request.requester?.email || 'Unknown User'
+                }
               </h3>
-              <Badge className={`${statusColors[request.status]} border`}>
+              <Badge className={`${request.status && request.status in statusColors 
+                ? statusColors[request.status as StatusKey] 
+                : statusColors.pending} border`}>
                 <StatusIcon className="w-3 h-3 mr-1" />
-                {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                {request.status 
+                  ? request.status.charAt(0).toUpperCase() + request.status.slice(1)
+                  : 'Pending'
+                }
               </Badge>
             </div>
             
-            {type === 'guest' && request.host.location && (
+            {type === 'guest' && request.host?.location && (
               <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
                 <MapPin className="w-4 h-4" />
                 {request.host.location}
@@ -453,7 +446,9 @@ function BookingRequestCard({ request, type, onStatusUpdate }: BookingRequestCar
           </div>
           
           <div className="text-right text-sm text-gray-500">
-            <div>Requested {format(new Date(request.createdAt), 'MMM d, yyyy')}</div>
+            {request.createdAt && (
+              <div>Requested {format(new Date(request.createdAt), 'MMM d, yyyy')}</div>
+            )}
             {request.respondedAt && (
               <div>Responded {format(new Date(request.respondedAt), 'MMM d, yyyy')}</div>
             )}

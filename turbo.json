@@ -15,6 +15,20 @@
       ]
     },
     "lint": {},
+    "test": {
+      "dependsOn": [
+        "^test"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!.env.local"
+      ]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:coverage": {},
     "dev": {
       "cache": false,
       "persistent": true

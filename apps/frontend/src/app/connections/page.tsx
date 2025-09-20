@@ -7,31 +7,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
+import { Connection, Invitation, User } from '@/types'
 
-interface Connection {
-  id: string
-  connectedUser: {
-    id: string
-    email: string
-    name?: string
-    image?: string
-  }
-  status: string
-}
-
-interface Invitation {
-  id: string
-  inviteeEmail: string
-  inviteeName?: string
-  message?: string
-  status: string
-  createdAt: string
+// Extended types for component-specific data (includes nested user data from GraphQL)
+interface ConnectionWithUser extends Connection {
+  connectedUser: User
 }
 
 export default function Connections() {
   const { data: session, status } = useSession()
-  const [connections, setConnections] = useState<Connection[]>([])
-  const [requests, setRequests] = useState<Connection[]>([])
+  const [connections, setConnections] = useState<ConnectionWithUser[]>([])
+  const [requests, setRequests] = useState<ConnectionWithUser[]>([])
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [newConnectionEmail, setNewConnectionEmail] = useState('')
   const [newInvitationEmail, setNewInvitationEmail] = useState('')

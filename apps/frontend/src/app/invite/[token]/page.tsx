@@ -10,22 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Home, CheckCircle } from "lucide-react"
 import Link from "next/link"
+import { Invitation, User } from "@/types"
 
-interface Invitation {
-  id: string
-  inviterId: string
-  inviteeEmail: string
-  inviteeName?: string
-  message?: string
-  token: string
-  status: string
-  expiresAt: string
-  createdAt: string
-  inviter: {
-    id: string
-    name?: string
-    email: string
-  }
+// Extended type for component-specific data (includes nested inviter data from GraphQL)
+interface InvitationWithUser extends Invitation {
+  inviterUser: User
 }
 
 export default function AcceptInvitationPage() {
@@ -33,7 +22,7 @@ export default function AcceptInvitationPage() {
   const router = useRouter()
   const token = params.token as string
 
-  const [invitation, setInvitation] = useState<Invitation | null>(null)
+  const [invitation, setInvitation] = useState<InvitationWithUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
@@ -207,7 +196,7 @@ export default function AcceptInvitationPage() {
                 Welcome to Stay With Friends!
               </h2>
               <p className="text-green-700 dark:text-green-300 mb-6">
-                Your account has been created and you&apos;re now connected with {invitation?.inviter.name || invitation?.inviter.email}.
+                Your account has been created and you&apos;re now connected with {invitation?.inviterUser.name || invitation?.inviterUser.email}.
                 You&apos;ll be redirected to sign in shortly.
               </p>
               <Link href="/auth/signin">
@@ -237,7 +226,7 @@ export default function AcceptInvitationPage() {
 
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
               <p className="text-green-800 dark:text-green-200 text-sm">
-                <strong>{invitation.inviter.name || invitation.inviter.email}</strong> has invited you to join Stay With Friends!
+                <strong>{invitation.inviterUser.name || invitation.inviterUser.email}</strong> has invited you to join Stay With Friends!
               </p>
             </div>
 
@@ -261,7 +250,7 @@ export default function AcceptInvitationPage() {
                 Accept Invitation & Create Account
               </CardTitle>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Create your account to connect with {invitation.inviter.name || invitation.inviter.email} and start sharing homes with friends.
+                Create your account to connect with {invitation.inviterUser.name || invitation.inviterUser.email} and start sharing homes with friends.
               </p>
             </CardHeader>
             <CardContent>

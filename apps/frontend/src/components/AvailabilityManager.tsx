@@ -5,15 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react"
 import { parseLocalDate } from '@/lib/date-utils'
 import { useState } from 'react'
-
-interface Availability {
-  id: string
-  hostId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-}
+import { Availability } from '@/types'
 
 interface AvailabilityManagerProps {
   availabilities: Availability[]

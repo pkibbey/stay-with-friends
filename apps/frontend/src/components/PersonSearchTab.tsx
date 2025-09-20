@@ -5,13 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Users } from "lucide-react"
 import Link from 'next/link'
 import { useState, useEffect } from "react"
-
-interface Host {
-  id: string
-  name: string
-  location?: string
-  description?: string
-}
+import { HostSummary } from "@/types"
 
 interface HostSearchTabProps {
   searchQuery: string
@@ -19,7 +13,7 @@ interface HostSearchTabProps {
 }
 
 export function HostSearchTab({ searchQuery, setSearchQuery }: HostSearchTabProps) {
-  const [searchResults, setSearchResults] = useState<Host[]>([])
+  const [searchResults, setSearchResults] = useState<HostSummary[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
   const searchHosts = async (query: string) => {
