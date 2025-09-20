@@ -48,40 +48,54 @@ export function Header() {
         <Link href="/" className="text-xl font-bold">
           <TextLogo className="text-xs md:text-xl" />
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-6">
           {status === 'loading' ? (
             <div>Loading...</div>
           ) : session ? (
             <>
-              <Link href="/search" className="text-gray-600 hover:text-gray-900">
-                Search
-              </Link>
-              <Link href="/profile" className="text-gray-600 hover:text-gray-900">
-                Profile
-              </Link>
-              <Link href="/connections" className="text-gray-600 hover:text-gray-900">
-                Connections
-              </Link>
-              <Link href="/bookings" className="text-gray-600 hover:text-gray-900 relative">
-                <div className="flex items-center gap-1">
-                  Bookings
-                  {pendingRequestsCount > 0 && (
-                    <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[1.2rem] h-5">
-                      {pendingRequestsCount}
-                    </Badge>
-                  )}
-                </div>
-              </Link>
-              <Link href="/hosting" className="text-gray-600 hover:text-gray-900">
-                Hosting
-              </Link>
+              {/* Common/Public Navigation */}
+              <div className="flex items-center gap-4">
+                <Link href="/search" className="text-gray-600 hover:text-gray-900 font-medium">
+                  Search
+                </Link>
+              </div>
+              
+              {/* Visual separator */}
+              <div className="h-6 w-px bg-gray-300"></div>
+              
+              {/* Personal/Account Navigation */}
+              <div className="flex items-center gap-4">
+                <Link href="/settings/profile" className="text-gray-600 hover:text-gray-900">
+                  Profile
+                </Link>
+                <Link href="/settings/connections" className="text-gray-600 hover:text-gray-900">
+                  Connections
+                </Link>
+                <Link href="/settings/bookings" className="text-gray-600 hover:text-gray-900 relative">
+                  <div className="flex items-center gap-1">
+                    Bookings
+                    {pendingRequestsCount > 0 && (
+                      <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[1.2rem] h-5">
+                        {pendingRequestsCount}
+                      </Badge>
+                    )}
+                  </div>
+                </Link>
+                <Link href="/settings/hosting" className="text-gray-600 hover:text-gray-900">
+                  Hosting
+                </Link>
+              </div>
+              
+              {/* Another separator before account actions */}
+              <div className="h-6 w-px bg-gray-300"></div>
+              
               <Button variant="outline" className='cursor-pointer' onClick={() => signOut()}>
                 Sign Out
               </Button>
             </>
           ) : (
             <>
-              <Link href="/search" className="text-gray-600 hover:text-gray-900">
+              <Link href="/search" className="text-gray-600 hover:text-gray-900 font-medium">
                 Search
               </Link>
               <Button onClick={() => signIn()}>

@@ -17,8 +17,6 @@ We want to restrict the user by the number of properties they can offer. Not the
 
 Allow one of the media to be selected as the highlighted media.
 
-Arrange all the menu items to be grouped into logical sets, like personal items (profile, host, etc) and public items (search, home)
-
 Add the ability to cancel sent invitations, and hide accepted ones by default.
 
 Allow removal of verified connections.
