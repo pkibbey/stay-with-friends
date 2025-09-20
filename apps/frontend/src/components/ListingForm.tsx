@@ -49,7 +49,6 @@ export function ListingForm({
 }: ListingFormProps) {
   const [formData, setFormData] = useState<HostProfileData>({
     name: '',
-    email: '',
     location: '',
     description: '',
     address: '',

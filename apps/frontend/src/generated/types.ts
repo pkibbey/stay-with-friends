@@ -14,7 +14,6 @@ export interface Host {
   id: string;
   userId?: string;
   name: string;
-  email?: string;
   location?: string;
   description?: string;
   address?: string;

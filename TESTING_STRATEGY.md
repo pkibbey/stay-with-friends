@@ -91,7 +91,7 @@ describe('Host Operations', () => {
     const mutation = `
       mutation CreateHost($input: CreateHostInput!) {
         createHost(input: $input) {
-          id name email location
+          id name location
         }
       }
     `;
@@ -111,7 +111,6 @@ describe('Host Operations', () => {
 
 **Setup**:
 - Create fresh database for each test
-- Seed with minimal required data
 - Clean up after each test
 
 **Constraints Testing**:

@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3';
-import { join } from 'path';
-import { readFileSync } from 'fs';
+// Path/fs imports intentionally omitted in test helpers
 
 // Global test database instance
 let testDb: Database.Database;
@@ -9,16 +8,10 @@ export const setupTestDatabase = (): Database.Database => {
   // Create a new in-memory database for each test
   testDb = new Database(':memory:');
   
-  // Read and execute the schema
-  const schemaPath = join(__dirname, '..', 'src', 'db-schema.sql');
-  try {
-    const schema = readFileSync(schemaPath, 'utf8');
-    testDb.exec(schema);
-  } catch (error) {
-    // If schema file doesn't exist, create tables manually
-    testDb.exec(`
+  // Create tables manually with current schema
+  testDb.exec(`
       CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         name TEXT,
         email_verified DATETIME,
@@ -28,7 +21,7 @@ export const setupTestDatabase = (): Database.Database => {
 
       CREATE TABLE hosts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        user_id TEXT,
         name TEXT NOT NULL,
         email TEXT UNIQUE,
         location TEXT,
@@ -66,7 +59,7 @@ export const setupTestDatabase = (): Database.Database => {
       CREATE TABLE booking_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         host_id INTEGER NOT NULL,
-        requester_id INTEGER NOT NULL,
+        requester_id TEXT NOT NULL,
         start_date TEXT NOT NULL,
         end_date TEXT NOT NULL,
         guests INTEGER NOT NULL,
@@ -79,8 +72,8 @@ export const setupTestDatabase = (): Database.Database => {
 
       CREATE TABLE connections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        connected_user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        connected_user_id TEXT NOT NULL,
         relationship TEXT,
         status TEXT DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -91,7 +84,7 @@ export const setupTestDatabase = (): Database.Database => {
 
       CREATE TABLE invitations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        inviter_id INTEGER NOT NULL,
+        inviter_id TEXT NOT NULL,
         invitee_email TEXT NOT NULL,
         invitee_name TEXT,
         message TEXT,
@@ -103,8 +96,7 @@ export const setupTestDatabase = (): Database.Database => {
         FOREIGN KEY (inviter_id) REFERENCES users (id)
       );
     `);
-  }
-  
+
   return testDb;
 };
 
@@ -119,8 +111,9 @@ export const getTestDatabase = (): Database.Database => {
 };
 
 // Test data factories
-export const createTestUser = (overrides: any = {}) => {
+export const createTestUser = (overrides: Record<string, unknown> = {}) => {
   const defaultUser = {
+    id: 'test-user-1',
     email: 'test@example.com',
     name: 'Test User',
     email_verified: new Date().toISOString(),
@@ -129,9 +122,9 @@ export const createTestUser = (overrides: any = {}) => {
   return { ...defaultUser, ...overrides };
 };
 
-export const createTestHost = (overrides: any = {}) => {
+export const createTestHost = (overrides: Record<string, unknown> = {}) => {
   const defaultHost = {
-    user_id: 1,
+    user_id: 'test-user-1',
     name: 'Test Host',
     email: 'host@example.com',
     location: 'Test City',
@@ -155,7 +148,7 @@ export const createTestHost = (overrides: any = {}) => {
   return { ...defaultHost, ...overrides };
 };
 
-export const createTestAvailability = (overrides: any = {}) => {
+export const createTestAvailability = (overrides: Record<string, unknown> = {}) => {
   const defaultAvailability = {
     host_id: 1,
     start_date: '2025-12-01',
@@ -166,10 +159,10 @@ export const createTestAvailability = (overrides: any = {}) => {
   return { ...defaultAvailability, ...overrides };
 };
 
-export const createTestBookingRequest = (overrides: any = {}) => {
+export const createTestBookingRequest = (overrides: Record<string, unknown> = {}) => {
   const defaultBooking = {
     host_id: 1,
-    requester_id: 2,
+    requester_id: 'test-user-2',
     start_date: '2025-12-01',
     end_date: '2025-12-03',
     guests: 2,
@@ -179,19 +172,19 @@ export const createTestBookingRequest = (overrides: any = {}) => {
   return { ...defaultBooking, ...overrides };
 };
 
-export const createTestConnection = (overrides: any = {}) => {
+export const createTestConnection = (overrides: Record<string, unknown> = {}) => {
   const defaultConnection = {
-    user_id: 1,
-    connected_user_id: 2,
+    user_id: 'test-user-1',
+    connected_user_id: 'test-user-2',
     relationship: 'friend',
     status: 'accepted',
   };
   return { ...defaultConnection, ...overrides };
 };
 
-export const createTestInvitation = (overrides: any = {}) => {
+export const createTestInvitation = (overrides: Record<string, unknown> = {}) => {
   const defaultInvitation = {
-    inviter_id: 1,
+    inviter_id: 'test-user-1',
     invitee_email: 'invitee@example.com',
     invitee_name: 'Test Invitee',
     message: 'Join our platform!',

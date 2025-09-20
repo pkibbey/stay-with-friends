@@ -1,7 +1,7 @@
 # Generated GraphQL SDL - do not edit
 
 type User {
-  id: ID!
+  id: String!
   email: String!
   name: String
   email_verified: String
@@ -10,10 +10,9 @@ type User {
 }
 
 type Host {
-  id: ID!
-  user_id: Int
+  id: String!
+  user_id: String
   name: String!
-  email: String
   location: String
   description: String
   address: String
@@ -36,8 +35,8 @@ type Host {
 }
 
 type Availability {
-  id: ID!
-  host_id: Int!
+  id: String!
+  host_id: String!
   start_date: String!
   end_date: String!
   status: String
@@ -45,9 +44,9 @@ type Availability {
 }
 
 type BookingRequest {
-  id: ID!
-  host_id: Int!
-  requester_id: Int!
+  id: String!
+  host_id: String!
+  requester_id: String!
   start_date: String!
   end_date: String!
   guests: Int!
@@ -59,17 +58,17 @@ type BookingRequest {
 }
 
 type Connection {
-  id: ID!
-  user_id: Int!
-  connected_user_id: Int!
+  id: String!
+  user_id: String!
+  connected_user_id: String!
   relationship: String
   status: String
   created_at: String
 }
 
 type Invitation {
-  id: ID!
-  inviter_id: Int!
+  id: String!
+  inviter_id: String!
   invitee_email: String!
   invitee_name: String
   message: String

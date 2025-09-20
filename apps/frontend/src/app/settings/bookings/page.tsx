@@ -56,7 +56,6 @@ export default function BookingsPage() {
                   id
                   name
                   location
-                  email
                 }
                 requester {
                   id
@@ -102,7 +101,6 @@ export default function BookingsPage() {
                   id
                   name
                   location
-                  email
                 }
                 requester {
                   id

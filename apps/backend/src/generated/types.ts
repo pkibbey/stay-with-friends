@@ -1,7 +1,7 @@
 // Generated types - do not edit
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name?: string;
   email_verified?: string;
@@ -10,10 +10,9 @@ export interface User {
 }
 
 export interface Host {
-  id: number;
-  user_id?: number;
+  id: string;
+  user_id?: string;
   name: string;
-  email?: string;
   location?: string;
   description?: string;
   address?: string;
@@ -36,8 +35,8 @@ export interface Host {
 }
 
 export interface Availability {
-  id: number;
-  host_id: number;
+  id: string;
+  host_id: string;
   start_date: string;
   end_date: string;
   status?: string;
@@ -45,9 +44,9 @@ export interface Availability {
 }
 
 export interface BookingRequest {
-  id: number;
-  host_id: number;
-  requester_id: number;
+  id: string;
+  host_id: string;
+  requester_id: string;
   start_date: string;
   end_date: string;
   guests: number;
@@ -59,17 +58,17 @@ export interface BookingRequest {
 }
 
 export interface Connection {
-  id: number;
-  user_id: number;
-  connected_user_id: number;
+  id: string;
+  user_id: string;
+  connected_user_id: string;
   relationship?: string;
   status?: string;
   created_at?: string;
 }
 
 export interface Invitation {
-  id: number;
-  inviter_id: number;
+  id: string;
+  inviter_id: string;
   invitee_email: string;
   invitee_name?: string;
   message?: string;

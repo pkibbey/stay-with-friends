@@ -3,7 +3,6 @@ export const typeDefs = `#graphql
   type Host {
     id: ID!
     name: String!
-    email: String
     location: String
     description: String
     address: String
@@ -117,9 +116,8 @@ export const typeDefs = `#graphql
 
   type Mutation {
     createHost(
-      userId: ID
+      userId: ID!
       name: String!
-      email: String!
       location: String
       description: String
       address: String
@@ -170,6 +168,7 @@ export const typeDefs = `#graphql
     createInvitation(inviterId: ID!, inviteeEmail: String!, inviteeName: String, message: String): Invitation!
     acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
     cancelInvitation(invitationId: ID!): Boolean!
+    deleteInvitation(invitationId: ID!): Boolean!
   }
 
   input CreateListingInput {
@@ -211,7 +210,6 @@ export const typeDefs = `#graphql
     bedrooms: Int
     bathrooms: Int
     photos: [String!]
-    email: String
     availabilities: [AvailabilityInput!]
   }
 
@@ -228,9 +226,9 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers } from './db';
+import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers } from './db';
 // Use generated types from the single source-of-truth
-import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation } from './generated/types';
+import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation, Host, Availability, BookingRequest, User, Connection, Invitation } from './generated/types';
 import fs from 'fs';
 import path from 'path';
 import Crypto from 'crypto';
@@ -353,7 +351,7 @@ export const resolvers = {
       return row as GeneratedUser | undefined;
     },
     connections: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
-      return getConnections.all(userId) as GeneratedConnection[];
+      return getConnections.all(userId, userId, userId) as GeneratedConnection[];
     },
     connectionRequests: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
       return getConnectionRequests.all(userId) as GeneratedConnection[];
@@ -373,7 +371,7 @@ export const resolvers = {
     bookingRequestsByHostUser: (_: any, { userId }: { userId: string }) => {
       // Get all booking requests for hosts owned by this user
       const allHosts = getAllHosts.all();
-      const userHosts = allHosts.filter((host: any) => host.user_id === parseInt(userId));
+      const userHosts = allHosts.filter((host: any) => host.user_id === userId);
       const allRequests: any[] = [];
       
       for (const host of userHosts) {
@@ -394,7 +392,9 @@ export const resolvers = {
       try {
         // Validate required fields
         validateName(args.name);
-        if (args.email) validateEmail(args.email);
+        if (!args.userId) {
+          throw new Error('User ID is required');
+        }
         
         // Validate optional text fields
         validateOptionalText(args.location, 'Location', 255);
@@ -423,9 +423,8 @@ export const resolvers = {
         }
 
         const result = insertHost.run(
-          args.userId || null, // user_id - should be provided by authentication context
+          args.userId,
           args.name,
-          args.email,
           args.location,
           args.description,
           args.address,
@@ -446,13 +445,31 @@ export const resolvers = {
         );
         return {
           id: result.lastInsertRowid,
-          ...args,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as GeneratedHost;
+          user_id: args.userId,
+          name: args.name,
+          location: args.location,
+          description: args.description,
+          address: args.address,
+          city: args.city,
+          state: args.state,
+          zip_code: args.zipCode,
+          country: args.country,
+          latitude: args.latitude,
+          longitude: args.longitude,
+          amenities: args.amenities ? JSON.stringify(args.amenities) : null,
+          house_rules: args.houseRules,
+          check_in_time: args.checkInTime,
+          check_out_time: args.checkOutTime,
+          max_guests: args.maxGuests,
+          bedrooms: args.bedrooms,
+          bathrooms: args.bathrooms,
+          photos: args.photos ? JSON.stringify(args.photos) : null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any;
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          throw new Error('A host with this email already exists');
+          throw new Error('A host with this information already exists');
         }
         throw error;
       }
@@ -476,8 +493,8 @@ export const resolvers = {
         args.notes
       );
       return {
-        id: Number(result.lastInsertRowid),
-        host_id: parseInt(args.hostId),
+        id: String(result.lastInsertRowid),
+        host_id: args.hostId,
         start_date: args.startDate,
         end_date: args.endDate,
         status: args.status || 'available',
@@ -487,7 +504,9 @@ export const resolvers = {
     createBookingRequest: (_: any, args: any): GeneratedBookingRequest => {
       // Validate required fields
       validatePositiveInteger(parseInt(args.hostId), 'Host ID');
-      validatePositiveInteger(parseInt(args.requesterId), 'Requester ID');
+      if (!args.requesterId) {
+        throw new Error('Requester ID is required');
+      }
       validateDateRange(args.startDate, args.endDate);
       validatePositiveInteger(args.guests, 'Guests count', 50);
       
@@ -496,7 +515,7 @@ export const resolvers = {
 
       const result = insertBookingRequest.run(
         parseInt(args.hostId),
-        parseInt(args.requesterId),
+        args.requesterId,
         args.startDate,
         args.endDate,
         args.guests,
@@ -504,9 +523,9 @@ export const resolvers = {
         'pending'
       );
       return {
-        id: Number(result.lastInsertRowid),
-        host_id: parseInt(args.hostId),
-        requester_id: parseInt(args.requesterId),
+        id: String(result.lastInsertRowid),
+        host_id: args.hostId,
+        requester_id: args.requesterId,
         start_date: args.startDate,
         end_date: args.endDate,
         guests: args.guests,
@@ -574,8 +593,8 @@ export const resolvers = {
     },
     checkEmailExists: (_: any, { email }: { email: string }) => {
       validateEmail(email);
-      const host = getHostByEmail.get(email);
-      return !!host;
+      const user = getUserByEmail.get(email);
+      return !!user;
     },
     sendInvitationEmail: (_: any, { email, invitationUrl }: { email: string, invitationUrl: string }) => {
       validateEmail(email);
@@ -584,9 +603,7 @@ export const resolvers = {
       }
       // In a real implementation, you'd integrate with an email service like SendGrid, Mailgun, etc.
       // For now, we'll just log the invitation and return the URL for testing
-      
-      console.log(`Invitation email would be sent to ${email} with URL: ${invitationUrl}`);
-      
+            
       return invitationUrl;
     },
     updateHost: (_: any, { id, input }: { id: string, input: any }): GeneratedHost | undefined => {
@@ -595,7 +612,6 @@ export const resolvers = {
       try {
         // Validate fields if provided
         if (input.name !== undefined) validateName(input.name);
-        if (input.email !== undefined) validateEmail(input.email);
         
         // Validate optional text fields if provided
         if (input.location !== undefined) validateOptionalText(input.location, 'Location', 255);
@@ -717,7 +733,7 @@ export const resolvers = {
         // Delete files that were removed from the photos list (only local uploads)
         try {
           const existingHost: any = getHostById.get(id);
-          const existingPhotos = existingHost && existingHost.photos ? JSON.parse(existingHost.photos) : [];
+          const existingPhotos = existingHost && existingHost.photos ? JSON.parse(existingHost.photos || '[]') : [];
           const newPhotos = input.photos || [];
           const removed = existingPhotos.filter((p: string) => !newPhotos.includes(p));
           const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
@@ -743,10 +759,6 @@ export const resolvers = {
         updates.push('photos = ?')
         values.push(input.photos ? JSON.stringify(input.photos) : null)
       }
-      if (input.email !== undefined) {
-        updates.push('email = ?')
-        values.push(input.email)
-      }        
         if (updates.length === 0) {
           // No updates provided, return current host
           return getHostById.get(id) as GeneratedHost | undefined
@@ -812,9 +824,12 @@ export const resolvers = {
       }
     },
     createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }) => {
-      const result = insertUser.run(email, name, null, image);
+      // Generate a unique string ID for the new user
+      const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      insertUser.run(newUserId, email, name, null, image);
       const created: GeneratedUser = {
-        id: result.lastInsertRowid,
+        id: newUserId,
         email,
         name,
         image,
@@ -828,7 +843,9 @@ export const resolvers = {
     },
     createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }): GeneratedConnection => {
       // Validate required fields
-      validatePositiveInteger(parseInt(userId), 'User ID');
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
       validateEmail(connectedUserEmail);
       
       // Validate optional relationship field
@@ -842,12 +859,12 @@ export const resolvers = {
       const result = insertConnection.run(userId, connectedUser.id, relationship, 'pending');
       return {
         id: Number(result.lastInsertRowid),
-        user_id: parseInt(userId),
+        user_id: userId,
         connected_user_id: connectedUser.id,
         relationship,
         status: 'pending',
         created_at: new Date().toISOString(),
-      } as GeneratedConnection;
+      } as unknown as GeneratedConnection;
     },
     updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }): GeneratedConnection | undefined => {
       // Validate required fields
@@ -892,7 +909,9 @@ export const resolvers = {
     },
     createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: { inviterId: string, inviteeEmail: string, inviteeName?: string, message?: string }): GeneratedInvitation => {
       // Validate required fields
-      validatePositiveInteger(parseInt(inviterId), 'Inviter ID');
+      if (!inviterId) {
+        throw new Error('Inviter ID is required');
+      }
       validateEmail(inviteeEmail);
       
       // Validate optional fields
@@ -900,9 +919,38 @@ export const resolvers = {
       validateOptionalText(message, 'Invitation message', 500);
 
       // Check if user is already registered
-      const existingUser = getUserByEmail.get(inviteeEmail);
+      const existingUser = getUserByEmail.get(inviteeEmail) as any;
       if (existingUser) {
-        throw new Error('User is already registered on the platform');
+        // User already exists - create a connection request instead
+        
+        // Check if there's already a connection between these users
+        const existingConnection = getConnectionBetweenUsers.get(
+          inviterId, 
+          existingUser.id, 
+          existingUser.id, 
+          inviterId
+        );
+        
+        if (existingConnection) {
+          throw new Error('Users are already connected or have a pending connection');
+        }
+
+        // Create a connection request
+        const connectionResult = insertConnection.run(inviterId, existingUser.id, 'friend', 'pending');
+        
+        // Return a mock invitation-like response to maintain API compatibility
+        return {
+          id: String(connectionResult.lastInsertRowid),
+          // inviterId may be a user id string; preserve as string
+          inviter_id: inviterId,
+          invitee_email: inviteeEmail,
+          invitee_name: existingUser.name || inviteeName,
+          message: message || `Connection request sent to ${existingUser.name || inviteeEmail}`,
+          token: 'connection-request', // Mock token to indicate this was a connection request
+          status: 'connection-sent',
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          created_at: new Date().toISOString(),
+        } as GeneratedInvitation;
       }
 
       // Check for existing pending invitation
@@ -910,6 +958,7 @@ export const resolvers = {
       if (existingInvitation) {
         throw new Error('Invitation already sent to this email');
       }
+      
       // Generate unique token
       const token = Crypto.randomBytes(32).toString('hex');
       
@@ -917,7 +966,7 @@ export const resolvers = {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
-      const result = insertInvitation.run(
+      insertInvitation.run(
         inviterId,
         inviteeEmail,
         inviteeName,
@@ -927,8 +976,7 @@ export const resolvers = {
       );
 
       const invitation = {
-        id: Number(result.lastInsertRowid),
-        inviter_id: parseInt(inviterId),
+        inviter_id: String(inviterId),
         invitee_email: inviteeEmail,
         invitee_name: inviteeName,
         message,
@@ -940,8 +988,7 @@ export const resolvers = {
 
       // Send invitation email
       const invitationUrl = `http://localhost:3000/invite/${token}`;
-      const emailResult = resolvers.Mutation.sendInvitationEmail(null, { email: inviteeEmail, invitationUrl });
-      console.log('emailResult: ', emailResult);
+      resolvers.Mutation.sendInvitationEmail(null, { email: inviteeEmail, invitationUrl });
 
       return invitation;
     },
@@ -969,13 +1016,38 @@ export const resolvers = {
       }
 
       // Check if user already exists
-      const existingUser = getUserByEmail.get(invitation.invitee_email);
+      const existingUser = getUserByEmail.get(invitation.invitee_email) as any;
       if (existingUser) {
-        throw new Error('User is already registered');
+        // User already exists - create a connection request instead
+        
+        // Check if there's already a connection between these users
+        const existingConnection = getConnectionBetweenUsers.get(
+          invitation.inviter_id, 
+          existingUser.id, 
+          existingUser.id, 
+          invitation.inviter_id
+        );
+        
+        if (existingConnection) {
+          throw new Error('Users are already connected or have a pending connection');
+        }
+
+        // Create a connection request from inviter to existing user
+        insertConnection.run(invitation.inviter_id, existingUser.id, 'friend', 'pending');
+        
+        // Update invitation status to accepted (since it served its purpose)
+        updateInvitationStatus.run('accepted', new Date().toISOString(), invitation.id);
+        
+        // Return the existing user
+        return existingUser;
       }
 
-      // Create new user
-      const userResult = insertUser.run(
+      // Create new user (original logic)
+      // Generate a unique string ID for the new user
+      const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      insertUser.run(
+        newUserId,
         invitation.invitee_email,
         userData.name || invitation.invitee_name,
         new Date().toISOString(), // email_verified
@@ -986,11 +1058,11 @@ export const resolvers = {
       updateInvitationStatus.run('accepted', new Date().toISOString(), invitation.id);
 
       // Create automatic connection between inviter and new user
-      insertConnection.run(invitation.inviter_id, userResult.lastInsertRowid, 'friend', 'accepted');
-      insertConnection.run(userResult.lastInsertRowid, invitation.inviter_id, 'friend', 'accepted');
+      insertConnection.run(invitation.inviter_id, newUserId, 'friend', 'accepted');
+      insertConnection.run(newUserId, invitation.inviter_id, 'friend', 'accepted');
 
       // Return the DB row (snake_case) so field resolvers can map to GraphQL fields
-      const userRow = getUserById.get(userResult.lastInsertRowid);
+      const userRow = getUserById.get(newUserId);
       return userRow;
     },
     cancelInvitation: (_: any, { invitationId }: { invitationId: string }) => {
@@ -998,6 +1070,23 @@ export const resolvers = {
       validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
 
       const result = updateInvitationStatus.run('cancelled', null, invitationId);
+      return result.changes > 0;
+    },
+    deleteInvitation: (_: any, { invitationId }: { invitationId: string }) => {
+      // Validate required field
+      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
+
+      // Only allow deletion of pending invitations
+      const invitation = getInvitationById.get(invitationId);
+      if (!invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      if ((invitation as any).status !== 'pending' && (invitation as any).status !== 'cancelled') {
+        throw new Error('Only pending or cancelled invitations can be deleted');
+      }
+
+      const result = deleteInvitation.run(invitationId);
       return result.changes > 0;
     },
   },
@@ -1027,58 +1116,74 @@ export const resolvers = {
     availabilities: (parent: any) => {
       return getHostAvailabilities.all(parent.id);
     },
-    userId: (parent: any) => parent.user_id,
-    zipCode: (parent: any) => parent.zip_code,
-    houseRules: (parent: any) => parent.house_rules,
-    checkInTime: (parent: any) => parent.check_in_time,
-    checkOutTime: (parent: any) => parent.check_out_time,
-    maxGuests: (parent: any) => parent.max_guests,
-    amenities: (parent: any) => parent.amenities ? JSON.parse(parent.amenities) : [],
-    photos: (parent: any) => parent.photos ? JSON.parse(parent.photos) : [],
+    userId: (parent: Host) => parent.user_id,
+    zipCode: (parent: Host) => parent.zip_code,
+    houseRules: (parent: Host) => parent.house_rules,
+    checkInTime: (parent: Host) => parent.check_in_time,
+    checkOutTime: (parent: Host) => parent.check_out_time,
+    maxGuests: (parent: Host) => parent.max_guests,
+    amenities: (parent: Host) => {
+      if (!parent.amenities) return [];
+      if (Array.isArray(parent.amenities)) return parent.amenities;
+      try {
+        return JSON.parse(parent.amenities);
+      } catch {
+        return [];
+      }
+    },
+    photos: (parent: Host) => {
+      if (!parent.photos) return [];
+      if (Array.isArray(parent.photos)) return parent.photos;
+      try {
+        return JSON.parse(parent.photos);
+      } catch {
+        return [];
+      }
+    },
   },
   Availability: {
-    host: (parent: any) => {
+    host: (parent: Availability) => {
       return getHostById.get(parent.host_id);
     },
-    startDate: (parent: any) => parent.start_date,
-    endDate: (parent: any) => parent.end_date,
-    hostId: (parent: any) => parent.host_id,
+    startDate: (parent: Availability) => parent.start_date,
+    endDate: (parent: Availability) => parent.end_date,
+    hostId: (parent: Availability) => parent.host_id,
   },
   BookingRequest: {
-    host: (parent: any) => {
+    host: (parent: BookingRequest) => {
       return getHostById.get(parent.host_id);
     },
-    hostId: (parent: any) => parent.host_id,
-    requesterId: (parent: any) => parent.requester_id,
-    requester: (parent: any) => {
+    hostId: (parent: BookingRequest) => parent.host_id,
+    requesterId: (parent: BookingRequest) => parent.requester_id,
+    requester: (parent: BookingRequest) => {
       return getUserById.get(parent.requester_id);
     },
-    startDate: (parent: any) => parent.start_date,
-    endDate: (parent: any) => parent.end_date,
-    createdAt: (parent: any) => parent.created_at,
-    responseMessage: (parent: any) => parent.response_message,
-    respondedAt: (parent: any) => parent.responded_at,
+    startDate: (parent: BookingRequest) => parent.start_date,
+    endDate: (parent: BookingRequest) => parent.end_date,
+    createdAt: (parent: BookingRequest) => parent.created_at,
+    responseMessage: (parent: BookingRequest) => parent.response_message,
+    respondedAt: (parent: BookingRequest) => parent.responded_at,
   },
   User: {
-    emailVerified: (parent: any) => parent.email_verified,
-    createdAt: (parent: any) => parent.created_at,
+    emailVerified: (parent: User) => parent.email_verified,
+    createdAt: (parent: User) => parent.created_at,
   },
   Connection: {
-    connectedUser: (parent: any) => {
+    connectedUser: (parent: Connection) => {
       return getUserById.get(parent.connected_user_id);
     },
-    createdAt: (parent: any) => parent.created_at,
-    userId: (parent: any) => parent.user_id,
-    connectedUserId: (parent: any) => parent.connected_user_id,
+    createdAt: (parent: Connection) => parent.created_at,
+    userId: (parent: Connection) => parent.user_id,
+    connectedUserId: (parent: Connection) => parent.connected_user_id,
   },
   Invitation: {
-    inviterId: (parent: any) => parent.inviter_id,
-    inviteeEmail: (parent: any) => parent.invitee_email,
-    inviteeName: (parent: any) => parent.invitee_name,
-    expiresAt: (parent: any) => parent.expires_at,
-    acceptedAt: (parent: any) => parent.accepted_at,
-    createdAt: (parent: any) => parent.created_at,
-    inviter: (parent: any) => {
+    inviterId: (parent: Invitation) => parent.inviter_id,
+    inviteeEmail: (parent: Invitation) => parent.invitee_email,
+    inviteeName: (parent: Invitation) => parent.invitee_name,
+    expiresAt: (parent: Invitation) => parent.expires_at,
+    acceptedAt: (parent: Invitation) => parent.accepted_at,
+    createdAt: (parent: Invitation) => parent.created_at,
+    inviter: (parent: Invitation) => {
       return getUserById.get(parent.inviter_id);
     },
   },

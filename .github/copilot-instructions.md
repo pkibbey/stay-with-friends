@@ -8,7 +8,7 @@ These notes are tuned to help an AI assistant be productive in the "Stay With Fr
   - `apps/backend` — TypeScript Express + Apollo GraphQL server (port 4000 in dev). See `apps/backend/src/index.ts`, `apps/backend/src/schema.ts`, and `apps/backend/src/db.ts`.
 
 2) How the pieces communicate
-- Frontend fetches data from the backend GraphQL endpoint at http://localhost:4000/graphql. The backend also exposes a small REST surface at `/api/*` (example: `/api/hello`, `/api/seed`).
+- Frontend fetches data from the backend GraphQL endpoint at http://localhost:4000/graphql. The backend also exposes a small REST surface at `/api/*` (example: `/api/hello`).
 - Database is SQLite located at `apps/backend/database.db` (the backend code will create it on startup).
 
 3) Common developer commands (from each app's `package.json`)
@@ -27,7 +27,6 @@ migration helper)
 - DB layer: low-level SQLite access via `better-sqlite3` is in `apps/backend/src/db.ts`. Prepared statements are exported (e.g., `insertHost`, `getAllHosts`) and consumed directly by resolvers in `schema.ts`.
 - GraphQL schema & resolvers live together in `apps/backend/src/schema.ts`. Resolvers expect DB rows shaped with snake_case column names and map them to GraphQL types (e.g., `created_at` -> `createdAt`). Prefer using the exported prepared statements rather than writing raw SQL elsewhere.
 - Validation: Input validation functions are in `schema.ts` (e.g., `validateEmail`, `validateDateRange`). Use these helpers when adding new mutations or endpoints.
-- Seeding: `apps/backend/src/index.ts` contains a `seedDatabase()` function used at startup and via `POST /api/seed`.
 
 5) Tests and test organisation
 - Backend tests live under `apps/backend/tests/` with `unit/` and `integration/` subfolders. Jest config is in `apps/backend/package.json`.

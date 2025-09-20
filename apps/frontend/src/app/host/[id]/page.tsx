@@ -97,7 +97,6 @@ export default function HostDetailPage() {
                 bedrooms
                 bathrooms
                 photos
-                email
                 availabilities {
                   id
                   startDate

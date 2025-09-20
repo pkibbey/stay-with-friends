@@ -77,7 +77,6 @@ export default function Profile() {
       const data = await response.json()
       if (data.data?.updateUser) {
         setUser({ ...user, name: data.data.updateUser.name, image: data.data.updateUser.image })
-        alert('Profile updated successfully!')
       }
     } catch (error) {
       console.error('Error updating profile:', error)

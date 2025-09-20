@@ -66,19 +66,22 @@ describe('Invitation Flow Integration', () => {
           const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(invitation.invitee_email);
           if (existingUser) throw new Error('User is already registered');
 
-          const userResult = db.prepare('INSERT INTO users (email, name, email_verified, image) VALUES (?, ?, ?, ?)')
-            .run(invitation.invitee_email, userData.name || invitation.invitee_name, new Date().toISOString(), userData.image);
+          // Generate a unique string ID for the new user
+          const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+          db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)')
+            .run(newUserId, invitation.invitee_email, userData.name || invitation.invitee_name, new Date().toISOString(), userData.image);
 
           db.prepare('UPDATE invitations SET status = ?, accepted_at = ? WHERE id = ?').run('accepted', new Date().toISOString(), invitation.id);
 
           // Create reciprocal connections
           db.prepare('INSERT INTO connections (user_id, connected_user_id, relationship, status) VALUES (?, ?, ?, ?)')
-            .run(invitation.inviter_id, userResult.lastInsertRowid, 'friend', 'accepted');
+            .run(invitation.inviter_id, newUserId, 'friend', 'accepted');
           db.prepare('INSERT INTO connections (user_id, connected_user_id, relationship, status) VALUES (?, ?, ?, ?)')
-            .run(userResult.lastInsertRowid, invitation.inviter_id, 'friend', 'accepted');
+            .run(newUserId, invitation.inviter_id, 'friend', 'accepted');
 
           return {
-            id: userResult.lastInsertRowid,
+            id: newUserId,
             email: invitation.invitee_email,
             name: userData.name || invitation.invitee_name,
             image: userData.image,
@@ -111,9 +114,10 @@ describe('Invitation Flow Integration', () => {
     setupTestDatabase();
     const db = getTestDatabase();
 
-    // Create an inviter user
-    const user = createTestUser({ email: 'inviter@example.com', name: 'Inviter' });
-    db.prepare('INSERT INTO users (email, name) VALUES (?, ?)').run(user.email, user.name);
+    // Create an inviter user with explicit ID
+    const userId = 'test-inviter-1';
+    const user = createTestUser({ id: userId, email: 'inviter@example.com', name: 'Inviter' });
+    db.prepare('INSERT INTO users (id, email, name) VALUES (?, ?, ?)').run(user.id, user.email, user.name);
   });
 
   it('creates and accepts an invitation', async () => {
@@ -136,7 +140,7 @@ describe('Invitation Flow Integration', () => {
       .send({
         query: createMutation,
         variables: {
-          inviterId: 1,
+          inviterId: 'test-inviter-1',
           inviteeEmail: 'newuser@example.com',
           inviteeName: 'New User',
           message: 'Please join',

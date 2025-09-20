@@ -33,9 +33,8 @@ export function transformUser(backendUser: BackendUser): FrontendUser {
 export function transformHost(backendHost: BackendHost): FrontendHost {
   return {
     id: String(backendHost.id),
-    userId: backendHost.user_id ? String(backendHost.user_id) : undefined,
+    userId: backendHost.user_id,
     name: backendHost.name,
-    email: backendHost.email,
     location: backendHost.location,
     description: backendHost.description,
     address: backendHost.address,
@@ -88,8 +87,8 @@ export function transformBookingRequest(backendBookingRequest: BackendBookingReq
 export function transformConnection(backendConnection: BackendConnection): FrontendConnection {
   return {
     id: String(backendConnection.id),
-    userId: String(backendConnection.user_id),
-    connectedUserId: String(backendConnection.connected_user_id),
+    userId: backendConnection.user_id,
+    connectedUserId: backendConnection.connected_user_id,
     relationship: backendConnection.relationship,
     status: backendConnection.status,
     createdAt: backendConnection.created_at,
@@ -114,7 +113,8 @@ export function transformInvitation(backendInvitation: BackendInvitation): Front
 // Transform frontend camelCase data to backend snake_case data
 export function transformToBackendUser(frontendUser: Partial<FrontendUser>): Partial<BackendUser> {
   return {
-    id: frontendUser.id ? Number(frontendUser.id) : undefined,
+  // User IDs are strings (backend uses TEXT). Preserve string IDs.
+  id: frontendUser.id as unknown as string | undefined,
     email: frontendUser.email,
     name: frontendUser.name,
     email_verified: frontendUser.emailVerified,
@@ -125,10 +125,9 @@ export function transformToBackendUser(frontendUser: Partial<FrontendUser>): Par
 
 export function transformToBackendHost(frontendHost: Partial<FrontendHost>): Partial<BackendHost> {
   return {
-    id: frontendHost.id ? Number(frontendHost.id) : undefined,
-    user_id: frontendHost.userId ? Number(frontendHost.userId) : undefined,
+    id: frontendHost.id,
+    user_id: frontendHost.userId,
     name: frontendHost.name,
-    email: frontendHost.email,
     location: frontendHost.location,
     description: frontendHost.description,
     address: frontendHost.address,

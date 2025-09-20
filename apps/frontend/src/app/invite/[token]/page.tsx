@@ -21,6 +21,7 @@ export default function AcceptInvitationPage() {
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [wasExistingUser, setWasExistingUser] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [userData, setUserData] = useState({
@@ -119,6 +120,13 @@ export default function AcceptInvitationPage() {
 
       const data = await response.json()
       if (data.data?.acceptInvitation) {
+        const user = data.data.acceptInvitation
+        // Check if user was existing by looking at createdAt - if it's older than a few seconds, it was existing
+        const userCreatedAt = new Date(user.createdAt)
+        const now = new Date()
+        const wasExisting = (now.getTime() - userCreatedAt.getTime()) > 10000 // More than 10 seconds ago
+        
+        setWasExistingUser(wasExisting)
         setAccepted(true)
         // Redirect to sign in after a delay
         setTimeout(() => {
@@ -188,11 +196,13 @@ export default function AcceptInvitationPage() {
                 <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-2">
-                Welcome to Stay With Friends!
+                {wasExistingUser ? 'Connection Request Sent!' : 'Welcome to Stay With Friends!'}
               </h2>
               <p className="text-green-700 dark:text-green-300 mb-6">
-                Your account has been created and you&apos;re now connected with {invitation?.inviterUser.name || invitation?.inviterUser.email}.
-                You&apos;ll be redirected to sign in shortly.
+                {wasExistingUser 
+                  ? `A connection request has been sent to you from ${invitation?.inviterUser?.name || invitation?.inviterUser?.email}. Check your connections page after signing in to accept it.`
+                  : `Your account has been created and you're now connected with ${invitation?.inviterUser?.name || invitation?.inviterUser?.email}. You'll be redirected to sign in shortly.`
+                }
               </p>
               <Link href="/auth/signin">
                 <Button>
@@ -221,7 +231,7 @@ export default function AcceptInvitationPage() {
 
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
               <p className="text-green-800 dark:text-green-200 text-sm">
-                <strong>{invitation.inviterUser.name || invitation.inviterUser.email}</strong> has invited you to join Stay With Friends!
+                <strong>{invitation.inviterUser?.name || invitation.inviterUser?.email}</strong> has invited you to join Stay With Friends!
               </p>
             </div>
 
@@ -242,10 +252,10 @@ export default function AcceptInvitationPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                Accept Invitation & Create Account
+                Accept Invitation
               </CardTitle>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Create your account to connect with {invitation.inviterUser.name || invitation.inviterUser.email} and start sharing homes with friends.
+                Connect with {invitation.inviterUser?.name || invitation.inviterUser?.email} on Stay With Friends.
               </p>
             </CardHeader>
             <CardContent>
@@ -278,7 +288,7 @@ export default function AcceptInvitationPage() {
                   className="w-full"
                   disabled={accepting}
                 >
-                  {accepting ? 'Creating Account...' : 'Accept Invitation & Join'}
+                  {accepting ? 'Processing...' : 'Accept Invitation'}
                 </Button>
               </form>
             </CardContent>

@@ -15,7 +15,6 @@ export default function Connections() {
   const [connections, setConnections] = useState<ConnectionWithUser[]>([])
   const [requests, setRequests] = useState<ConnectionWithUser[]>([])
   const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [newConnectionEmail, setNewConnectionEmail] = useState('')
   const [newInvitationEmail, setNewInvitationEmail] = useState('')
   const [newInvitationName, setNewInvitationName] = useState('')
   const [newInvitationMessage, setNewInvitationMessage] = useState('')
@@ -128,40 +127,6 @@ export default function Connections() {
     }
   }, [session, fetchConnections, fetchRequests, fetchInvitations])
 
-  const handleAddConnection = async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userId = (session?.user as any)?.id
-    if (!userId || !newConnectionEmail) return
-    setLoading(true)
-    try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation CreateConnection($userId: ID!, $connectedUserEmail: String!) {
-              createConnection(userId: $userId, connectedUserEmail: $connectedUserEmail) {
-                id
-              }
-            }
-          `,
-          variables: { userId, connectedUserEmail: newConnectionEmail },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.createConnection) {
-        alert('Connection request sent!')
-        setNewConnectionEmail('')
-        fetchRequests()
-      }
-    } catch (error) {
-      console.error('Error creating connection:', error)
-      alert('Failed to send connection request')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleUpdateConnectionStatus = async (connectionId: string, status: string) => {
     try {
       const response = await fetch('http://localhost:4000/graphql', {
@@ -186,6 +151,66 @@ export default function Connections() {
       }
     } catch (error) {
       console.error('Error updating connection:', error)
+    }
+  }
+
+  const handleDeleteConnection = async (connectionId: string) => {
+    if (!confirm('Are you sure you want to remove this connection? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation DeleteConnection($connectionId: ID!) {
+              deleteConnection(connectionId: $connectionId)
+            }
+          `,
+          variables: { connectionId },
+        }),
+      })
+      const data = await response.json()
+      if (data.data?.deleteConnection) {
+        fetchConnections()
+      } else {
+        alert('Failed to remove connection')
+      }
+    } catch (error) {
+      console.error('Error deleting connection:', error)
+      alert('Failed to remove connection')
+    }
+  }
+
+  const handleDeleteInvitation = async (invitationId: string) => {
+    if (!confirm('Are you sure you want to delete this invitation? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation DeleteInvitation($invitationId: ID!) {
+              deleteInvitation(invitationId: $invitationId)
+            }
+          `,
+          variables: { invitationId },
+        }),
+      })
+      const data = await response.json()
+      if (data.data?.deleteInvitation) {
+        fetchInvitations()
+      } else {
+        alert('Failed to delete invitation')
+      }
+    } catch (error) {
+      console.error('Error deleting invitation:', error)
+      alert('Failed to delete invitation')
     }
   }
 
@@ -225,13 +250,25 @@ export default function Connections() {
       const data = await response.json()
       if (data.data?.createInvitation) {
         const invitation = data.data.createInvitation
-        const invitationUrl = `http://localhost:3000/invite/${invitation.token}`
-        setLastInvitationUrl(invitationUrl)
-        setNewInvitationEmail('')
-        setNewInvitationName('')
-        setNewInvitationMessage('')
-        fetchInvitations()
-        alert(`Invitation created! Share this link: ${invitationUrl}`)
+        
+        if (invitation.status === 'connection-sent') {
+          // Connection request was sent to existing user
+          alert('Connection request sent! The user is already registered, so a connection request has been sent instead.')
+          setNewInvitationEmail('')
+          setNewInvitationName('')
+          setNewInvitationMessage('')
+          // Refresh connections data since we may have sent a connection request
+          fetchConnections()
+          fetchRequests()
+        } else {
+          // Normal invitation created
+          const invitationUrl = `http://localhost:3000/invite/${invitation.token}`
+          setLastInvitationUrl(invitationUrl)
+          setNewInvitationEmail('')
+          setNewInvitationName('')
+          setNewInvitationMessage('')
+          fetchInvitations()
+        }
       } else {
         console.error('GraphQL error:', data.errors)
         alert('Failed to send invitation. ' + (data.errors?.[0]?.message || 'Unknown error'))
@@ -275,7 +312,7 @@ export default function Connections() {
           <Card>
             <CardHeader>
               <CardTitle>Invite Friends</CardTitle>
-              <CardDescription>Send invitations to friends to join the platform</CardDescription>
+              <CardDescription>Send invitations to friends to join the platform, or connection requests to existing users</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -287,15 +324,6 @@ export default function Connections() {
                     value={newInvitationEmail}
                     onChange={(e) => setNewInvitationEmail(e.target.value)}
                     placeholder="friend@example.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="invitation-name">Friend&apos;s Name (Optional)</Label>
-                  <Input
-                    id="invitation-name"
-                    value={newInvitationName}
-                    onChange={(e) => setNewInvitationName(e.target.value)}
-                    placeholder="John Doe"
                   />
                 </div>
                 <div>
@@ -328,33 +356,6 @@ export default function Connections() {
               </CardContent>
             </Card>
           )}
-
-          {/* Add Connection */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Connection</CardTitle>
-              <CardDescription>Send a connection request to another user</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newConnectionEmail}
-                    onChange={(e) => setNewConnectionEmail(e.target.value)}
-                    placeholder="friend@example.com"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddConnection} disabled={loading}>
-                    {loading ? 'Sending...' : 'Send Request'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Connection Requests */}
           <Card>
@@ -414,7 +415,7 @@ export default function Connections() {
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => handleUpdateConnectionStatus(connection.id, 'blocked')}
+                        onClick={() => handleDeleteConnection(connection.id)}
                         size="sm"
                       >
                         Remove
@@ -434,7 +435,7 @@ export default function Connections() {
             </CardHeader>
             <CardContent>
               {invitations.length === 0 ? (
-                <p className="text-gray-500">No invitations sent yet</p>
+                <p className="text-gray-500">No pending invitations</p>
               ) : (
                 <div className="space-y-4">
                   {invitations.map((invitation) => (
@@ -442,8 +443,38 @@ export default function Connections() {
                       <div>
                         <p className="font-medium">{invitation.inviteeName || invitation.inviteeEmail}</p>
                         <p className="text-sm text-gray-500">{invitation.inviteeEmail}</p>
-                        <p className="text-xs text-gray-400">Status: {invitation.status}</p>
+                        <p className={`text-xs font-medium ${
+                          invitation.status === 'pending' ? 'text-yellow-600' :
+                          invitation.status === 'accepted' ? 'text-green-600' :
+                          invitation.status === 'connection-sent' ? 'text-blue-600' :
+                          invitation.status === 'cancelled' ? 'text-gray-500' :
+                          'text-gray-400'
+                        }`}>
+                          Status: {
+                            invitation.status === 'connection-sent' ? 'Connection Request Sent' :
+                            invitation.status ? invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1) : 'Unknown'
+                          }
+                        </p>
                       </div>
+                      {(invitation.status === 'pending' || invitation.status === 'cancelled') && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDeleteInvitation(invitation.id)}
+                          size="sm"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                      {invitation.status === 'accepted' && (
+                        <span className="text-xs text-green-600 font-medium">
+                          ✓ User joined & connected
+                        </span>
+                      )}
+                      {invitation.status === 'connection-sent' && (
+                        <span className="text-xs text-blue-600 font-medium">
+                          ✓ Connection request sent to existing user
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

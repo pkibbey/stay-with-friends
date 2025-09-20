@@ -46,7 +46,7 @@ export interface HostSummary {
 
 // Extended type for component-specific data (includes nested inviter data from GraphQL)
 export interface InvitationWithUser extends Invitation {
-  inviterUser: User
+  inviterUser?: User
 }
 
 // Extended type for component-specific data (includes nested data from GraphQL)

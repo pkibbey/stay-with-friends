@@ -48,7 +48,6 @@ export function HostProfileForm({
 }: HostProfileFormProps) {
   const [formData, setFormData] = useState<HostProfileData>({
     name: '',
-    email: '',
     location: '',
     description: '',
     address: '',
@@ -74,9 +73,6 @@ export function HostProfileForm({
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required'
-    }
-    if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required'
     }
     if (!formData.description?.trim()) {
       newErrors.description = 'Please tell friends about yourself and your home'
@@ -146,19 +142,6 @@ export function HostProfileForm({
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  placeholder="john@example.com"
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
               </div>
 
               <div>

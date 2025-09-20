@@ -61,7 +61,6 @@ CREATE TABLE users (
 **Properties**:
 - `id` (string): Unique identifier for the hosting property
 - `name` (string, required): name of the property (e.g., "Cozy Downtown Apartment")
-- `email` (string, optional): Contact email for the host (may differ from user email)
 - `location` (string, optional): General location description
 - `description` (string, optional): Detailed description of the property
 - `address` (string, optional): Street address
@@ -100,7 +99,6 @@ CREATE TABLE hosts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
   name TEXT NOT NULL,
-  email TEXT UNIQUE,
   location TEXT,
   description TEXT,
   address TEXT,
@@ -381,7 +379,6 @@ Invitation
 
 ### Data Integrity
 - Email addresses must be unique across users
-- Host emails must be unique if provided
 - Date ranges must be valid (start ≤ end)
 - Guest count cannot exceed host capacity
 

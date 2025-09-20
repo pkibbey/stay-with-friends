@@ -19,7 +19,11 @@ Allow one of the media to be selected as the highlighted media.
 
 Add the ability to cancel sent invitations, and hide accepted ones by default.
 
-Allow removal of verified connections.
+Make sure the data updates when making a change to the data. Use something like swr, or similar for data invalidation?
+
+Check - there are two workflows for signing up - either through a recommended person who wanted to share with you, or through just the regular sign up approach - this should work just fine both ways.
+
+Replace alerts with a proper notification system.
 
 Make search filters work correctly
 
@@ -28,4 +32,3 @@ Make map view work correctly
 Improve the layout of the connections page by leaning on some shadcn layout blocks layouts
 
 All requests should have authentication checks on them
-

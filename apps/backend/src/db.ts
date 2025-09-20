@@ -5,17 +5,62 @@ import path from 'path';
 const dbPath = path.join(__dirname, '..', 'database.db');
 const db = new Database(dbPath);
 
-// Migrate hosts table to add missing fields
+// Migrate hosts table to add missing fields and fix user_id type
 try {
   const tableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
   const hasUserId = tableInfo.some((col: any) => col.name === 'user_id');
   const hasCreatedAt = tableInfo.some((col: any) => col.name === 'created_at');
   const hasUpdatedAt = tableInfo.some((col: any) => col.name === 'updated_at');
+  const userIdColumn = tableInfo.find((col: any) => col.name === 'user_id');
 
   if (!hasUserId) {
     console.log('Adding user_id field to hosts table...');
-    db.exec('ALTER TABLE hosts ADD COLUMN user_id INTEGER');
+    db.exec('ALTER TABLE hosts ADD COLUMN user_id TEXT');
     db.exec('ALTER TABLE hosts ADD FOREIGN KEY (user_id) REFERENCES users (id)');
+  } else if (userIdColumn && userIdColumn.type === 'INTEGER') {
+    console.log('Converting user_id from INTEGER to TEXT in hosts table...');
+    // Check if user_id_new already exists from a previous failed migration
+    const hasUserIdNew = tableInfo.some((col: any) => col.name === 'user_id_new');
+    
+    try {
+      // Drop the index first to avoid conflicts
+      db.exec('DROP INDEX IF EXISTS idx_hosts_user_id');
+      
+      if (!hasUserIdNew) {
+        // Create new column, copy data, drop old column, rename new column
+        db.exec('ALTER TABLE hosts ADD COLUMN user_id_new TEXT');
+      }
+      db.exec('UPDATE hosts SET user_id_new = CAST(user_id AS TEXT) WHERE user_id IS NOT NULL');
+      
+      // Check if old user_id column still exists before trying to drop it
+      const currentTableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
+      const stillHasOldUserId = currentTableInfo.some((col: any) => col.name === 'user_id' && col.type === 'INTEGER');
+      
+      if (stillHasOldUserId) {
+        db.exec('ALTER TABLE hosts DROP COLUMN user_id');
+      }
+      
+      // Check if we need to rename the new column
+      const finalTableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
+      const hasNewColumn = finalTableInfo.some((col: any) => col.name === 'user_id_new');
+      const hasUserIdColumn = finalTableInfo.some((col: any) => col.name === 'user_id');
+      
+      if (hasNewColumn && !hasUserIdColumn) {
+        db.exec('ALTER TABLE hosts RENAME COLUMN user_id_new TO user_id');
+      }
+      
+      // Recreate the index with the new TEXT column
+      db.exec('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)');
+      
+    } catch (dropError) {
+      console.error('Error during user_id column migration:', dropError);
+      // Try to recreate the index in case it was dropped but migration failed
+      try {
+        db.exec('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)');
+      } catch (indexError) {
+        console.error('Could not recreate user_id index:', indexError);
+      }
+    }
   }
   if (!hasCreatedAt) {
     console.log('Adding created_at field to hosts table...');
@@ -32,7 +77,7 @@ try {
 // Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     name TEXT,
     email_verified DATETIME,
@@ -42,7 +87,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS hosts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
+    user_id TEXT,
     name TEXT NOT NULL,
     email TEXT UNIQUE,
     location TEXT,
@@ -78,7 +123,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS booking_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     host_id INTEGER NOT NULL,
-    requester_id INTEGER NOT NULL,
+    requester_id TEXT NOT NULL,
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
     guests INTEGER NOT NULL,
@@ -91,8 +136,8 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS connections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    connected_user_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
+    connected_user_id TEXT NOT NULL,
     relationship TEXT,
     status TEXT DEFAULT pending,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -100,9 +145,8 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS invitations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    inviter_id INTEGER NOT NULL,
+    inviter_id TEXT NOT NULL,
     invitee_email TEXT NOT NULL,
-    invitee_name TEXT,
     message TEXT,
     token TEXT NOT NULL UNIQUE,
     status TEXT DEFAULT pending,
@@ -111,9 +155,6 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
-
-// Add database constraints and indexes for data integrity and performance
-console.log('Adding database constraints and indexes...');
 
 // Users table constraints and indexes
 try {
@@ -125,12 +166,14 @@ try {
 
 // Hosts table constraints and indexes
 try {
-  // Performance indexes
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)`);
+  // Performance indexes - user_id index is created in migration logic above if needed
   db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_location ON hosts(location)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_city_state ON hosts(city, state)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_created_at ON hosts(created_at)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_coordinates ON hosts(latitude, longitude)`);
+  
+  // Create user_id index only if migration didn't already handle it
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)`);
   
   // Email constraint (if not already unique)
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_hosts_email_unique ON hosts(email) WHERE email IS NOT NULL`);
@@ -183,19 +226,16 @@ try {
   console.log('Invitations indexes already exist or error:', error);
 }
 
-console.log('Database constraints and indexes setup completed.');
-
 // Prepare statements
 export const getAllHosts = db.prepare('SELECT * FROM hosts');
 export const getHostById = db.prepare('SELECT * FROM hosts WHERE id = ?');
-export const getHostByEmail = db.prepare('SELECT * FROM hosts WHERE email = ?');
 export const searchHosts = db.prepare(`
   SELECT * FROM hosts
   WHERE name LIKE ? OR location LIKE ?
 `);
 export const insertHost = db.prepare(`
-  INSERT INTO hosts (user_id, name, email, location, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO hosts (user_id, name, location, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 export const getHostAvailabilities = db.prepare(`
@@ -286,8 +326,8 @@ export const getAvailabilityDates = db.prepare(`
 export const getUserByEmail = db.prepare('SELECT * FROM users WHERE email = ?');
 export const getUserById = db.prepare('SELECT * FROM users WHERE id = ?');
 export const insertUser = db.prepare(`
-  INSERT INTO users (email, name, email_verified, image)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO users (id, email, name, email_verified, image)
+  VALUES (?, ?, ?, ?, ?)
 `);
 export const updateUser = db.prepare(`
   UPDATE users SET name = ?, image = ? WHERE id = ?
@@ -296,8 +336,13 @@ export const updateUser = db.prepare(`
 export const getConnections = db.prepare(`
   SELECT c.*, u.email, u.name, u.image
   FROM connections c
-  JOIN users u ON c.connected_user_id = u.id
-  WHERE c.user_id = ? AND c.status = 'accepted'
+  JOIN users u ON (
+    CASE 
+      WHEN c.user_id = ? THEN c.connected_user_id = u.id
+      ELSE c.user_id = u.id
+    END
+  )
+  WHERE (c.user_id = ? OR c.connected_user_id = ?) AND c.status = 'accepted'
 `);
 export const getConnectionById = db.prepare(`
   SELECT * FROM connections WHERE id = ?
@@ -305,8 +350,8 @@ export const getConnectionById = db.prepare(`
 export const getConnectionRequests = db.prepare(`
   SELECT c.*, u.email, u.name, u.image
   FROM connections c
-  JOIN users u ON c.connected_user_id = u.id
-  WHERE c.user_id = ? AND c.status = 'pending'
+  JOIN users u ON c.user_id = u.id
+  WHERE c.connected_user_id = ? AND c.status = 'pending'
 `);
 export const insertConnection = db.prepare(`
   INSERT INTO connections (user_id, connected_user_id, relationship, status)
@@ -334,8 +379,16 @@ export const getInvitationByToken = db.prepare(`
   SELECT * FROM invitations WHERE token = ?
 `);
 
+export const getInvitationById = db.prepare(`
+  SELECT * FROM invitations WHERE id = ?
+`);
+
 export const getInvitationsByInviter = db.prepare(`
   SELECT * FROM invitations WHERE inviter_id = ? ORDER BY created_at DESC
+`);
+
+export const getPendingInvitationsByInviter = db.prepare(`
+  SELECT * FROM invitations WHERE inviter_id = ? AND status != 'accepted' ORDER BY created_at DESC
 `);
 
 export const updateInvitationStatus = db.prepare(`
@@ -344,4 +397,16 @@ export const updateInvitationStatus = db.prepare(`
 
 export const getInvitationByEmail = db.prepare(`
   SELECT * FROM invitations WHERE invitee_email = ? AND status = 'pending'
+`);
+
+export const deleteInvitation = db.prepare(`
+  DELETE FROM invitations WHERE id = ?
+`);
+
+// Check if connection exists between two users (in either direction)
+export const getConnectionBetweenUsers = db.prepare(`
+  SELECT * FROM connections 
+  WHERE (user_id = ? AND connected_user_id = ?) 
+     OR (user_id = ? AND connected_user_id = ?)
+  LIMIT 1
 `);

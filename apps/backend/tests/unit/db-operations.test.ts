@@ -22,15 +22,16 @@ describe('Database Operations', () => {
     describe('User Operations', () => {
       it('should create a user with valid data', () => {
         const db = getTestDatabase();
-        const insertUser = db.prepare('INSERT INTO users (email, name, email_verified, image) VALUES (?, ?, ?, ?)');
+        const insertUser = db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)');
         
-        const result = insertUser.run('test@example.com', 'Test User', new Date().toISOString(), null);
+        const result = insertUser.run('test-user-1', 'test@example.com', 'Test User', new Date().toISOString(), null);
         
-        expect(result.lastInsertRowid).toBeDefined();
+        expect(result.changes).toBe(1);
         
         // Verify user was stored in database
-        const storedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid) as any;
+        const storedUser = db.prepare('SELECT * FROM users WHERE id = ?').get('test-user-1') as any;
         expect(storedUser).toMatchObject({
+          id: 'test-user-1',
           email: 'test@example.com',
           name: 'Test User'
         });
@@ -38,12 +39,12 @@ describe('Database Operations', () => {
 
       it('should enforce unique email constraint', () => {
         const db = getTestDatabase();
-        const insertUser = db.prepare('INSERT INTO users (email, name, email_verified, image) VALUES (?, ?, ?, ?)');
+        const insertUser = db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)');
         
-        insertUser.run('duplicate@example.com', 'User 1', new Date().toISOString(), null);
+        insertUser.run('user-1', 'duplicate@example.com', 'User 1', new Date().toISOString(), null);
         
         expect(() => {
-          insertUser.run('duplicate@example.com', 'User 2', new Date().toISOString(), null);
+          insertUser.run('user-2', 'duplicate@example.com', 'User 2', new Date().toISOString(), null);
         }).toThrow();
       });
     });  describe('Host Operations', () => {
@@ -52,9 +53,9 @@ describe('Database Operations', () => {
       const db = getTestDatabase();
       const userData = createTestUser();
       const insertUser = db.prepare(`
-        INSERT INTO users (email, name) VALUES (?, ?)
+        INSERT INTO users (id, email, name) VALUES (?, ?, ?)
       `);
-      insertUser.run(userData.email, userData.name);
+      insertUser.run(userData.id, userData.email, userData.name);
     });
 
     it('should create a host with all properties', () => {
@@ -63,17 +64,16 @@ describe('Database Operations', () => {
       
       const insertHost = db.prepare(`
         INSERT INTO hosts (
-          user_id, name, email, location, description,
+          user_id, name, location, description,
           address, city, state, zip_code, country, latitude, longitude,
           amenities, house_rules, check_in_time, check_out_time,
           max_guests, bedrooms, bathrooms, photos
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertHost.run(
         hostData.user_id,
         hostData.name,
-        hostData.email,
         hostData.location,
         hostData.description,
         hostData.address,
@@ -101,7 +101,6 @@ describe('Database Operations', () => {
       
       expect(host).toMatchObject({
         name: hostData.name,
-        email: hostData.email,
         latitude: hostData.latitude,
         longitude: hostData.longitude,
         max_guests: hostData.max_guests,
@@ -113,7 +112,7 @@ describe('Database Operations', () => {
 
     it('should enforce foreign key constraint for user_id', () => {
       const db = getTestDatabase();
-      const hostData = createTestHost({ user_id: 999 }); // Non-existent user
+      const hostData = createTestHost({ user_id: 'non-existent-user' }); // Non-existent user
       
       const insertHost = db.prepare(`
         INSERT INTO hosts (user_id, name, email) VALUES (?, ?, ?)
@@ -152,7 +151,7 @@ describe('Database Operations', () => {
       const hostResult = insertHost.run(hostData.user_id, hostData.name, hostData.email);
       
       // Verify host exists
-      let getHost = db.prepare('SELECT * FROM hosts WHERE id = ?');
+      const getHost = db.prepare('SELECT * FROM hosts WHERE id = ?');
       expect(getHost.get(hostResult.lastInsertRowid)).toBeTruthy();
       
       // Delete user
@@ -169,12 +168,12 @@ describe('Database Operations', () => {
       // Set up test user and host
       const db = getTestDatabase();
       const userData = createTestUser();
-      const insertUser = db.prepare(`INSERT INTO users (email, name) VALUES (?, ?)`);
-      insertUser.run(userData.email, userData.name);
+      const insertUser = db.prepare(`INSERT INTO users (id, email, name) VALUES (?, ?, ?)`);
+      insertUser.run(userData.id, userData.email, userData.name);
       
       const hostData = createTestHost();
-      const insertHost = db.prepare(`INSERT INTO hosts (user_id, name, email) VALUES (?, ?, ?)`);
-      insertHost.run(hostData.user_id, hostData.name, hostData.email);
+      const insertHost = db.prepare(`INSERT INTO hosts (user_id, name) VALUES (?, ?)`);
+      insertHost.run(hostData.user_id, hostData.name);
     });
 
     it('should create availability with valid date range', () => {
@@ -255,15 +254,15 @@ describe('Database Operations', () => {
       const db = getTestDatabase();
       
       // Create host user
-      const insertUser = db.prepare(`INSERT INTO users (email, name) VALUES (?, ?)`);
-      insertUser.run('host@example.com', 'Host User');
+      const insertUser = db.prepare(`INSERT INTO users (id, email, name) VALUES (?, ?, ?)`);
+      insertUser.run('test-user-1', 'host@example.com', 'Host User');
       
       // Create guest user
-      insertUser.run('guest@example.com', 'Guest User');
+      insertUser.run('test-user-2', 'guest@example.com', 'Guest User');
       
       // Create host
       const insertHost = db.prepare(`INSERT INTO hosts (user_id, name, email, max_guests) VALUES (?, ?, ?, ?)`);
-      insertHost.run(1, 'Test Host', 'host@example.com', 4);
+      insertHost.run('test-user-1', 'Test Host', 'host@example.com', 4);
     });
 
     it('should create booking request with valid data', () => {
@@ -337,9 +336,9 @@ describe('Database Operations', () => {
     beforeEach(() => {
       // Create test users
       const db = getTestDatabase();
-      const insertUser = db.prepare(`INSERT INTO users (email, name) VALUES (?, ?)`);
-      insertUser.run('user1@example.com', 'User 1');
-      insertUser.run('user2@example.com', 'User 2');
+      const insertUser = db.prepare(`INSERT INTO users (id, email, name) VALUES (?, ?, ?)`);
+      insertUser.run('test-user-1', 'user1@example.com', 'User 1');
+      insertUser.run('test-user-2', 'user2@example.com', 'User 2');
     });
 
     it('should create connection between users', () => {
@@ -380,8 +379,8 @@ describe('Database Operations', () => {
       `);
       
       expect(() => {
-        const userId = 1;
-        const connectedUserId = 1; // Same user
+        const userId = 'test-user-1';
+        const connectedUserId = 'test-user-1'; // Same user
         
         if (userId === connectedUserId) {
           throw new Error('Users cannot connect to themselves');
@@ -400,11 +399,11 @@ describe('Database Operations', () => {
       `);
       
       // First connection should succeed
-      insertConnection.run(1, 2, 'friend', 'pending');
+      insertConnection.run('test-user-1', 'test-user-2', 'friend', 'pending');
       
       // Duplicate connection should fail
       expect(() => {
-        insertConnection.run(1, 2, 'colleague', 'pending');
+        insertConnection.run('test-user-1', 'test-user-2', 'colleague', 'pending');
       }).toThrow(/UNIQUE constraint failed/);
     });
   });
@@ -413,8 +412,8 @@ describe('Database Operations', () => {
     beforeEach(() => {
       // Create test user
       const db = getTestDatabase();
-      const insertUser = db.prepare(`INSERT INTO users (email, name) VALUES (?, ?)`);
-      insertUser.run('inviter@example.com', 'Inviter User');
+      const insertUser = db.prepare(`INSERT INTO users (id, email, name) VALUES (?, ?, ?)`);
+      insertUser.run('test-user-1', 'inviter@example.com', 'Inviter User');
     });
 
     it('should create invitation with unique token', () => {
@@ -459,11 +458,11 @@ describe('Database Operations', () => {
       `);
       
       // First invitation should succeed
-      insertInvitation.run(1, 'test1@example.com', token, 'pending', new Date().toISOString());
+      insertInvitation.run('test-user-1', 'test1@example.com', token, 'pending', new Date().toISOString());
       
       // Second invitation with same token should fail
       expect(() => {
-        insertInvitation.run(1, 'test2@example.com', token, 'pending', new Date().toISOString());
+        insertInvitation.run('test-user-1', 'test2@example.com', token, 'pending', new Date().toISOString());
       }).toThrow(/UNIQUE constraint failed/);
     });
 
@@ -493,15 +492,15 @@ describe('Database Operations', () => {
       const db = getTestDatabase();
       
       // Create users
-      const insertUser = db.prepare(`INSERT INTO users (email, name) VALUES (?, ?)`);
-      insertUser.run('host@example.com', 'Host User');
-      insertUser.run('guest@example.com', 'Guest User');
+      const insertUser = db.prepare(`INSERT INTO users (id, email, name) VALUES (?, ?, ?)`);
+      insertUser.run('test-user-1', 'host@example.com', 'Host User');
+      insertUser.run('test-user-2', 'guest@example.com', 'Guest User');
       
       // Create host
       const insertHost = db.prepare(`
         INSERT INTO hosts (user_id, name, email, city, max_guests) VALUES (?, ?, ?, ?, ?)
       `);
-      insertHost.run(1, 'Beach House', 'host@example.com', 'Malibu', 6);
+      insertHost.run('test-user-1', 'Beach House', 'host@example.com', 'Malibu', 6);
       
       // Create availabilities
       const insertAvailability = db.prepare(`
@@ -515,7 +514,7 @@ describe('Database Operations', () => {
         INSERT INTO booking_requests (host_id, requester_id, start_date, end_date, guests, status)
         VALUES (?, ?, ?, ?, ?, ?)
       `);
-      insertBooking.run(1, 2, '2025-12-01', '2025-12-03', 2, 'pending');
+      insertBooking.run(1, 'test-user-2', '2025-12-01', '2025-12-03', 2, 'pending');
     });
 
     it('should find available hosts by date range', () => {
@@ -570,7 +569,7 @@ describe('Database Operations', () => {
       const insertHost = db.prepare(`
         INSERT INTO hosts (user_id, name, email, city, amenities) VALUES (?, ?, ?, ?, ?)
       `);
-      insertHost.run(1, 'Mountain Cabin', 'cabin@example.com', 'Aspen', JSON.stringify(['WiFi', 'Fireplace', 'Ski Storage']));
+      insertHost.run('test-user-1', 'Mountain Cabin', 'cabin@example.com', 'Aspen', JSON.stringify(['WiFi', 'Fireplace', 'Ski Storage']));
       
       const query = `
         SELECT * FROM hosts 
@@ -579,11 +578,11 @@ describe('Database Operations', () => {
       `;
       
       const searchHosts = db.prepare(query);
-      const results = searchHosts.all('%Aspen%', '%WiFi%') as any[];
+      const results = searchHosts.all('%Aspen%', '%WiFi%');
       
       expect(results.length).toBeGreaterThan(0);
-      expect(results[0].name).toBe('Mountain Cabin');
-      expect(JSON.parse(results[0].amenities)).toContain('WiFi');
+      expect((results[0] as any).name).toBe('Mountain Cabin');
+      expect(JSON.parse((results[0] as any).amenities)).toContain('WiFi');
     });
   });
 });

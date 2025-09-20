@@ -143,7 +143,7 @@ export const authOptions = {
           if (response.ok) {
             const data = await response.json()
             if (data.data?.user?.id) {
-              token.backendUserId = data.data.user.id.toString()
+              token.backendUserId = data.data.user.id
               console.log('Stored backend user ID in token:', token.backendUserId)
             }
           }

@@ -80,7 +80,7 @@ export default function ManageHostingPage() {
         // session?.user.id may be a string or number, so compare as strings
         const userId = (session?.user as User | undefined)?.id
         if (userId) {
-          const filtered = data.data.hosts.filter((h: HostData) => String(h.userId) === String(userId))
+          const filtered = data.data.hosts.filter((h: HostData) => h.userId === userId)
           setHostings(filtered)
         } else {
           // If no session user id available, fall back to empty list
@@ -130,7 +130,6 @@ export default function ManageHostingPage() {
     name: '',
     description: '',
     location: '',
-    email: '',
     address: '',
     city: '',
     state: '',
@@ -147,52 +146,152 @@ export default function ManageHostingPage() {
     houseRules: ''
   })
 
-  const handleAddHosting = () => {
-    const hosting: HostData = {
-      id: Date.now().toString(),
-      name: newHosting.name,
-      description: newHosting.description,
-      location: newHosting.location,
-      email: newHosting.email,
-      address: newHosting.address,
-      city: newHosting.city,
-      state: newHosting.state,
-      zipCode: newHosting.zipCode,
-      country: newHosting.country,
-      latitude: newHosting.latitude ? parseFloat(newHosting.latitude) : undefined,
-      longitude: newHosting.longitude ? parseFloat(newHosting.longitude) : undefined,
-      maxGuests: newHosting.maxGuests,
-      bedrooms: newHosting.bedrooms,
-      bathrooms: newHosting.bathrooms,
-      checkInTime: newHosting.checkInTime,
-      checkOutTime: newHosting.checkOutTime,
-      amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
-      houseRules: newHosting.houseRules,
-      photos: [],
-      availabilities: []
+  const handleAddHosting = async () => {
+    setSaving(true)
+    try {
+      // Get userId from session
+      const userId = (session?.user as User | undefined)?.id
+      console.log('userId: ', userId);
+      if (!userId) {
+        alert('You must be signed in to create a hosting')
+        setSaving(false)
+        return
+      }
+
+      // Call the GraphQL createHost mutation
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            mutation CreateHost(
+              $userId: ID!
+              $name: String!
+              $location: String
+              $description: String
+              $address: String
+              $city: String
+              $state: String
+              $zipCode: String
+              $country: String
+              $latitude: Float
+              $longitude: Float
+              $amenities: [String!]
+              $houseRules: String
+              $checkInTime: String
+              $checkOutTime: String
+              $maxGuests: Int
+              $bedrooms: Int
+              $bathrooms: Int
+              $photos: [String!]
+            ) {
+              createHost(
+                userId: $userId
+                name: $name
+                location: $location
+                description: $description
+                address: $address
+                city: $city
+                state: $state
+                zipCode: $zipCode
+                country: $country
+                latitude: $latitude
+                longitude: $longitude
+                amenities: $amenities
+                houseRules: $houseRules
+                checkInTime: $checkInTime
+                checkOutTime: $checkOutTime
+                maxGuests: $maxGuests
+                bedrooms: $bedrooms
+                bathrooms: $bathrooms
+                photos: $photos
+              ) {
+                id
+                name
+                location
+                description
+                address
+                city
+                state
+                zipCode
+                country
+                latitude
+                longitude
+                amenities
+                houseRules
+                checkInTime
+                checkOutTime
+                maxGuests
+                bedrooms
+                bathrooms
+                photos
+                createdAt
+                updatedAt
+                userId
+              }
+            }
+          `,
+          variables: {
+            userId: userId,
+            name: newHosting.name,
+            location: newHosting.location,
+            description: newHosting.description,
+            address: newHosting.address,
+            city: newHosting.city,
+            state: newHosting.state,
+            zipCode: newHosting.zipCode,
+            country: newHosting.country,
+            latitude: newHosting.latitude ? parseFloat(newHosting.latitude) : undefined,
+            longitude: newHosting.longitude ? parseFloat(newHosting.longitude) : undefined,
+            amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
+            houseRules: newHosting.houseRules,
+            checkInTime: newHosting.checkInTime,
+            checkOutTime: newHosting.checkOutTime,
+            maxGuests: newHosting.maxGuests,
+            bedrooms: newHosting.bedrooms,
+            bathrooms: newHosting.bathrooms,
+            photos: []
+          },
+        }),
+      })
+
+      const data = await response.json()
+      if (data.data?.createHost) {
+        // Refresh the hostings data to include the new host
+        const results = await fetchHostings()
+        console.log('fetchHostings: ', results);
+
+        // Reset form and close
+        setNewHosting({
+          name: '',
+          description: '',
+          location: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: '',
+          latitude: '',
+          longitude: '',
+          maxGuests: 2,
+          bedrooms: 1,
+          bathrooms: 1,
+          checkInTime: '3:00 PM',
+          checkOutTime: '11:00 AM',
+          amenities: '',
+          houseRules: ''
+        })
+        setShowAddForm(false)
+      } else {
+        console.error('Failed to create host:', data.errors)
+        alert('Failed to create hosting. Please check your inputs and try again.')
+      }
+    } catch (error) {
+      console.error('Error creating host:', error)
+      alert('Failed to create hosting. Please try again.')
+    } finally {
+      setSaving(false)
     }
-    setHostings([...hostings, hosting])
-    setNewHosting({
-      name: '',
-      description: '',
-      location: '',
-      email: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: '',
-      latitude: '',
-      longitude: '',
-      maxGuests: 2,
-      bedrooms: 1,
-      bathrooms: 1,
-      checkInTime: '3:00 PM',
-      checkOutTime: '11:00 AM',
-      amenities: '',
-      houseRules: ''
-    })
-    setShowAddForm(false)
   }
 
   const handleAddAvailability = (hostId: string) => async (startDate: string, endDate: string, notes?: string) => {
@@ -264,7 +363,6 @@ export default function ManageHostingPage() {
       const input: Partial<Omit<HostData, 'id' | 'availabilities'>> = {}
       
       if (editForm.name !== undefined) input.name = editForm.name
-      if (editForm.email !== undefined) input.email = editForm.email
       if (editForm.location !== undefined) input.location = editForm.location
       if (editForm.description !== undefined) input.description = editForm.description
       if (editForm.address !== undefined) input.address = editForm.address
@@ -292,7 +390,6 @@ export default function ManageHostingPage() {
               updateHost(id: $id, input: $input) {
                 id
                 name
-                email
                 location
                 description
                 address
@@ -550,16 +647,6 @@ export default function ManageHostingPage() {
                   placeholder="e.g., Cozy Downtown Apartment"
                 />
               </div>
-              <div>
-                <Label htmlFor="email">Host Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newHosting.email}
-                  onChange={(e) => setNewHosting({...newHosting, email: e.target.value})}
-                  placeholder="your.email@example.com"
-                />
-              </div>
             </div>
 
             <div>
@@ -753,8 +840,8 @@ export default function ManageHostingPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddHosting} disabled={!newHosting.name || (!newHosting.location && !newHosting.city)}>
-                Add Hosting
+              <Button onClick={handleAddHosting} disabled={saving || !newHosting.name || (!newHosting.location && !newHosting.city)}>
+                {saving ? 'Creating...' : 'Add Hosting'}
               </Button>
               <Button variant="outline" onClick={() => setShowAddForm(false)}>
                 Cancel
@@ -797,16 +884,6 @@ export default function ManageHostingPage() {
                             value={editForm.name || ''}
                             onChange={(e) => updateEditForm('name', e.target.value)}
                             placeholder="Property name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`edit-email-${hosting.id}`}>Host Email</Label>
-                          <Input
-                            id={`edit-email-${hosting.id}`}
-                            type="email"
-                            value={editForm.email || ''}
-                            onChange={(e) => updateEditForm('email', e.target.value)}
-                            placeholder="your.email@example.com"
                           />
                         </div>
                         <div>
@@ -930,11 +1007,6 @@ export default function ManageHostingPage() {
                             hosting.location || `${hosting.city}, ${hosting.state}`
                           }
                         </CardDescription>
-                        {hosting.email && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Contact: {hosting.email}
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>

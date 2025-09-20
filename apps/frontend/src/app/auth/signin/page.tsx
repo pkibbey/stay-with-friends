@@ -17,6 +17,7 @@ export default function SignIn() {
     try {
       await signIn('email', { email })
     } catch (error) {
+      console.log('error: ', error);
       console.error('Sign in error:', error)
     } finally {
       setLoading(false)

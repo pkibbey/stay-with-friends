@@ -23,10 +23,11 @@ const createTestResolvers = () => {
     },
     Mutation: {
       createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }) => {
-        const insertUser = db.prepare('INSERT INTO users (email, name, email_verified, image) VALUES (?, ?, ?, ?)');
-        const result = insertUser.run(email, name, null, image);
+        const insertUser = db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)');
+        const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        insertUser.run(newUserId, email, name, null, image);
         return {
-          id: result.lastInsertRowid.toString(),
+          id: newUserId,
           email,
           name,
           image,
