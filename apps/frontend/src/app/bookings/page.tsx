@@ -158,15 +158,12 @@ export default function BookingsPage() {
         }),
       })
       
-      console.log('Incoming requests response status:', incomingRequestsResponse.status)
       const incomingRequestsData = await incomingRequestsResponse.json()
-      console.log('Incoming requests data:', incomingRequestsData)
       
       if (incomingRequestsData.errors) {
         console.error('GraphQL errors in incoming requests:', incomingRequestsData.errors)
       }
       
-      console.log('incomingRequestsData.data: ', incomingRequestsData.data);
       setIncomingRequests(incomingRequestsData.data?.bookingRequestsByHostUser || [])
     } catch (error) {
       console.error('Error fetching booking requests:', error)

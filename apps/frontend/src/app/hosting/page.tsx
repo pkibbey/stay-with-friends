@@ -1,7 +1,7 @@
 "use client"
 
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -60,7 +60,7 @@ export default function ManageHostingPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const fetchHostings = async () => {
+  const fetchHostings = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
@@ -89,6 +89,7 @@ export default function ManageHostingPage() {
                 bedrooms
                 bathrooms
                 photos
+                userId
                 availabilities {
                   id
                   startDate
@@ -103,14 +104,23 @@ export default function ManageHostingPage() {
       })
       const data = await response.json()
       if (data.data?.hosts) {
-        setHostings(data.data.hosts)
+        // Filter to only hosts owned by the current signed-in user
+        // session?.user.id may be a string or number, so compare as strings
+        const userId = (session?.user as { id?: string | number } | undefined)?.id
+        if (userId) {
+          const filtered = data.data.hosts.filter((h: { userId?: string | number }) => String(h.userId) === String(userId))
+          setHostings(filtered)
+        } else {
+          // If no session user id available, fall back to empty list
+          setHostings([])
+        }
       }
     } catch (error) {
       console.error('Error fetching hostings:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [session?.user])
 
   useEffect(() => {
     const fetchPendingRequestsCount = async () => {
@@ -142,7 +152,7 @@ export default function ManageHostingPage() {
       fetchPendingRequestsCount()
       fetchHostings()
     }
-  }, [session?.user])
+  }, [fetchHostings, session?.user])
 
   const [newHosting, setNewHosting] = useState({
     title: '',

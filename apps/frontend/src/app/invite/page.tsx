@@ -1,13 +1,13 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
 import { useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Home } from "lucide-react"
 
 export default function InvitePage() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  // Read token from the URL query string using the browser API to avoid
+  // Next.js prerender issues with `useSearchParams` during build.
+  const token = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null
 
   useEffect(() => {
     if (token) {

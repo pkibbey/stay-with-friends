@@ -20,3 +20,16 @@ Add correct hosting data on the search cards
 Allow one of the media to be selected as the highlighted media.
 
 Arrange all the menu items to be grouped into logical sets, like personal items (profile, host, etc) and public items (search, home)
+
+I'd like there to be a way for there to be a single point of trurth for the data, and have other things like types and database and crud operations automatically based off of that.
+
+Add the ability to cancel sent invitations, and hide accepted ones by default.
+
+Allow removal of verified connections.
+
+Make search filters work correctly
+
+Make map view work correctly
+
+Improve the layout of the connections page by leaning on some shadcn layout blocks layouts
+

@@ -954,14 +954,9 @@ export const resolvers = {
       insertConnection.run(invitation.inviter_id, userResult.lastInsertRowid, 'friend', 'accepted');
       insertConnection.run(userResult.lastInsertRowid, invitation.inviter_id, 'friend', 'accepted');
 
-      return {
-        id: userResult.lastInsertRowid,
-        email: invitation.invitee_email,
-        name: userData.name || invitation.invitee_name,
-        image: userData.image,
-        emailVerified: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
+      // Return the DB row (snake_case) so field resolvers can map to GraphQL fields
+      const userRow = getUserById.get(userResult.lastInsertRowid);
+      return userRow;
     },
     cancelInvitation: (_: any, { invitationId }: { invitationId: string }) => {
       // Validate required field

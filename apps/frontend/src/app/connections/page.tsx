@@ -211,6 +211,7 @@ export default function Connections() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
     const email = session?.user?.email || undefined
+    console.log('email: ', email);
     if (!userId || !newInvitationEmail) return
     setLoading(true)
     try {
