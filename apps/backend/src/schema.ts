@@ -76,7 +76,6 @@ export const typeDefs = `#graphql
     id: ID!
     inviterId: ID!
     inviteeEmail: String!
-    inviteeName: String
     message: String
     token: String!
     status: String!
@@ -165,7 +164,7 @@ export const typeDefs = `#graphql
     createConnection(userId: ID!, connectedUserEmail: String!, relationship: String): Connection!
     updateConnectionStatus(connectionId: ID!, status: String!): Connection!
   deleteConnection(connectionId: ID!): Boolean!
-    createInvitation(inviterId: ID!, inviteeEmail: String!, inviteeName: String, message: String): Invitation!
+    createInvitation(inviterId: ID!, inviteeEmail: String!, message: String): Invitation!
     acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
     cancelInvitation(invitationId: ID!): Boolean!
     deleteInvitation(invitationId: ID!): Boolean!
@@ -907,7 +906,7 @@ export const resolvers = {
         return false;
       }
     },
-    createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: { inviterId: string, inviteeEmail: string, inviteeName?: string, message?: string }): GeneratedInvitation => {
+    createInvitation: (_: any, { inviterId, inviteeEmail, message }: { inviterId: string, inviteeEmail: string, message?: string }): GeneratedInvitation => {
       // Validate required fields
       if (!inviterId) {
         throw new Error('Inviter ID is required');
@@ -915,7 +914,6 @@ export const resolvers = {
       validateEmail(inviteeEmail);
       
       // Validate optional fields
-      validateOptionalText(inviteeName, 'Invitee name', 100);
       validateOptionalText(message, 'Invitation message', 500);
 
       // Check if user is already registered
@@ -944,7 +942,6 @@ export const resolvers = {
           // inviterId may be a user id string; preserve as string
           inviter_id: inviterId,
           invitee_email: inviteeEmail,
-          invitee_name: existingUser.name || inviteeName,
           message: message || `Connection request sent to ${existingUser.name || inviteeEmail}`,
           token: 'connection-request', // Mock token to indicate this was a connection request
           status: 'connection-sent',
@@ -969,7 +966,6 @@ export const resolvers = {
       insertInvitation.run(
         inviterId,
         inviteeEmail,
-        inviteeName,
         message,
         token,
         expiresAt.toISOString()
@@ -978,7 +974,6 @@ export const resolvers = {
       const invitation = {
         inviter_id: String(inviterId),
         invitee_email: inviteeEmail,
-        invitee_name: inviteeName,
         message,
         token,
         status: 'pending',
@@ -1049,7 +1044,7 @@ export const resolvers = {
       insertUser.run(
         newUserId,
         invitation.invitee_email,
-        userData.name || invitation.invitee_name,
+        userData.name,
         new Date().toISOString(), // email_verified
         userData.image
       );
@@ -1179,7 +1174,6 @@ export const resolvers = {
   Invitation: {
     inviterId: (parent: Invitation) => parent.inviter_id,
     inviteeEmail: (parent: Invitation) => parent.invitee_email,
-    inviteeName: (parent: Invitation) => parent.invitee_name,
     expiresAt: (parent: Invitation) => parent.expires_at,
     acceptedAt: (parent: Invitation) => parent.accepted_at,
     createdAt: (parent: Invitation) => parent.created_at,

@@ -71,7 +71,6 @@ export interface Invitation {
   id: string;
   inviterId: string;
   inviteeEmail: string;
-  inviteeName?: string;
   message?: string;
   token: string;
   status?: string;

@@ -371,8 +371,8 @@ export const deleteConnectionsBetweenUsers = db.prepare(`
 
 // Invitation prepared statements
 export const insertInvitation = db.prepare(`
-  INSERT INTO invitations (inviter_id, invitee_email, invitee_name, message, token, expires_at)
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO invitations (inviter_id, invitee_email, message, token, expires_at)
+  VALUES (?, ?, ?, ?, ?)
 `);
 
 export const getInvitationByToken = db.prepare(`

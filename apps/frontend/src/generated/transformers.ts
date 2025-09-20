@@ -100,7 +100,6 @@ export function transformInvitation(backendInvitation: BackendInvitation): Front
     id: String(backendInvitation.id),
     inviterId: String(backendInvitation.inviter_id),
     inviteeEmail: backendInvitation.invitee_email,
-    inviteeName: backendInvitation.invitee_name,
     message: backendInvitation.message,
     token: backendInvitation.token,
     status: backendInvitation.status,

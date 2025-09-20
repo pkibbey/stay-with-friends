@@ -43,7 +43,6 @@ describe('Invitations query', () => {
     insertInvitation.run(
       inviterId,
       'pending@example.com',
-      'Pending User',
       'Please join!',
       token1,
       expiresAt
@@ -54,7 +53,6 @@ describe('Invitations query', () => {
     const acceptedResult = insertInvitation.run(
       inviterId,
       'accepted@example.com',
-      'Accepted User',
       'Welcome!',
       token2,
       expiresAt

@@ -50,14 +50,14 @@ test('invite accept flow', async ({ page, request, baseURL }) => {
   const inviteRes = await request.post('http://localhost:4000/graphql', {
     data: {
       query: `
-        mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $inviteeName: String, $message: String) {
-          createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, inviteeName: $inviteeName, message: $message) {
+        mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
+          createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
             id
             token
           }
         }
       `,
-      variables: { inviterId, inviteeEmail, inviteeName: 'E2E Invitee', message: 'Please join' }
+      variables: { inviterId, inviteeEmail, message: 'Please join' }
     }
   });
 

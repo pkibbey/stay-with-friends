@@ -22,7 +22,7 @@ describe('Invitation Flow Integration', () => {
         }
       },
       Mutation: {
-        createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: any) => {
+        createInvitation: (_: any, { inviterId, inviteeEmail, message }: any) => {
           const db = getTestDatabase();
 
           const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(inviteeEmail);
@@ -41,14 +41,13 @@ describe('Invitation Flow Integration', () => {
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + 30);
 
-          const result = db.prepare(`INSERT INTO invitations (inviter_id, invitee_email, invitee_name, message, token, expires_at) VALUES (?, ?, ?, ?, ?, ?)`)
-            .run(inviterId, inviteeEmail, inviteeName, message, token, expiresAt.toISOString());
+          const result = db.prepare(`INSERT INTO invitations (inviter_id, invitee_email, message, token, expires_at) VALUES (?,?, ?, ?, ?)`)
+            .run(inviterId, inviteeEmail, message, token, expiresAt.toISOString());
 
           return {
             id: result.lastInsertRowid,
             inviterId,
             inviteeEmail,
-            inviteeName,
             message,
             token,
             status: 'pending',
@@ -70,7 +69,7 @@ describe('Invitation Flow Integration', () => {
           const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
           db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)')
-            .run(newUserId, invitation.invitee_email, userData.name || invitation.invitee_name, new Date().toISOString(), userData.image);
+            .run(newUserId, invitation.invitee_email, userData.name, new Date().toISOString(), userData.image);
 
           db.prepare('UPDATE invitations SET status = ?, accepted_at = ? WHERE id = ?').run('accepted', new Date().toISOString(), invitation.id);
 
@@ -83,7 +82,7 @@ describe('Invitation Flow Integration', () => {
           return {
             id: newUserId,
             email: invitation.invitee_email,
-            name: userData.name || invitation.invitee_name,
+            name: userData.name,
             image: userData.image,
             emailVerified: new Date().toISOString(),
             createdAt: new Date().toISOString(),
@@ -122,11 +121,10 @@ describe('Invitation Flow Integration', () => {
 
   it('creates and accepts an invitation', async () => {
     const createMutation = `
-      mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $inviteeName: String, $message: String) {
-        createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, inviteeName: $inviteeName, message: $message) {
+      mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
+        createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
           id
           inviteeEmail
-          inviteeName
           message
           status
           createdAt
@@ -142,7 +140,6 @@ describe('Invitation Flow Integration', () => {
         variables: {
           inviterId: 'test-inviter-1',
           inviteeEmail: 'newuser@example.com',
-          inviteeName: 'New User',
           message: 'Please join',
         }
       });

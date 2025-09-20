@@ -86,7 +86,6 @@ export const setupTestDatabase = (): Database.Database => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inviter_id TEXT NOT NULL,
         invitee_email TEXT NOT NULL,
-        invitee_name TEXT,
         message TEXT,
         token TEXT UNIQUE NOT NULL,
         status TEXT DEFAULT 'pending',
@@ -186,7 +185,6 @@ export const createTestInvitation = (overrides: Record<string, unknown> = {}) =>
   const defaultInvitation = {
     inviter_id: 'test-user-1',
     invitee_email: 'invitee@example.com',
-    invitee_name: 'Test Invitee',
     message: 'Join our platform!',
     token: 'test-token-123',
     status: 'pending',

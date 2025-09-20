@@ -71,7 +71,6 @@ CREATE TABLE IF NOT EXISTS invitations (
   id TEXT PRIMARY KEY AUTOINCREMENT,
   inviter_id TEXT NOT NULL,
   invitee_email TEXT NOT NULL,
-  invitee_name TEXT,
   message TEXT,
   token TEXT NOT NULL UNIQUE,
   status TEXT DEFAULT pending,

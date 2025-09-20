@@ -101,7 +101,6 @@ export default function Connections() {
               invitations(inviterId: $inviterId) {
                 id
                 inviteeEmail
-                inviteeName
                 message
                 status
                 createdAt
@@ -227,11 +226,10 @@ export default function Connections() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $inviteeName: String, $message: String) {
-              createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, inviteeName: $inviteeName, message: $message) {
+            mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
+              createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
                 id
                 inviteeEmail
-                inviteeName
                 message
                 status
                 createdAt
@@ -242,7 +240,6 @@ export default function Connections() {
           variables: { 
             inviterId: userId, 
             inviteeEmail: newInvitationEmail,
-            inviteeName: newInvitationName || undefined,
             message: newInvitationMessage || undefined
           },
         }),
@@ -441,7 +438,6 @@ export default function Connections() {
                   {invitations.map((invitation) => (
                     <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium">{invitation.inviteeName || invitation.inviteeEmail}</p>
                         <p className="text-sm text-gray-500">{invitation.inviteeEmail}</p>
                         <p className={`text-xs font-medium ${
                           invitation.status === 'pending' ? 'text-yellow-600' :

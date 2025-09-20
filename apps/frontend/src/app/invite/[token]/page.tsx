@@ -46,7 +46,6 @@ export default function AcceptInvitationPage() {
                   id
                   inviterId
                   inviteeEmail
-                  inviteeName
                   message
                   token
                   status
@@ -68,8 +67,8 @@ export default function AcceptInvitationPage() {
         if (data.data?.invitation) {
           setInvitation(data.data.invitation)
           // Pre-fill name if available
-          if (data.data.invitation.inviteeName) {
-            setUserData(prev => ({ ...prev, name: data.data.invitation.inviteeName }))
+          if (data.data.invitation.inviteeEmail) {
+            setUserData(prev => ({ ...prev, email: data.data.invitation.inviteeEmail }))
           }
         } else {
           setError('Invalid invitation token')

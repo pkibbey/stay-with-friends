@@ -46,7 +46,6 @@ describe('Invitation to existing user flow', () => {
     const result = resolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
-      inviteeName: 'Existing User',
       message: 'Want to connect!'
     });
 
@@ -75,8 +74,7 @@ describe('Invitation to existing user flow', () => {
     // Attempt to create an invitation for an existing user without message
     const result = resolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
-      inviteeEmail: 'existing@example.com',
-      inviteeName: 'Existing User'
+      inviteeEmail: 'existing@example.com'
     });
 
     // Should return an invitation-like object but with connection-sent status
@@ -92,7 +90,6 @@ describe('Invitation to existing user flow', () => {
     await resolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
-      inviteeName: 'Existing User',
       message: 'Want to connect!'
     });
 
@@ -101,7 +98,6 @@ describe('Invitation to existing user flow', () => {
       resolvers.Mutation.createInvitation(null, {
         inviterId: inviterId,
         inviteeEmail: 'existing@example.com',
-        inviteeName: 'Existing User',
         message: 'Another connection attempt!'
       });
     }).toThrow('Users are already connected or have a pending connection');
@@ -111,7 +107,6 @@ describe('Invitation to existing user flow', () => {
     const result = resolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'new-user@example.com',
-      inviteeName: 'New User',
       message: 'Join our platform!'
     });
 

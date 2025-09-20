@@ -70,7 +70,6 @@ export interface Invitation {
   id: string;
   inviter_id: string;
   invitee_email: string;
-  invitee_name?: string;
   message?: string;
   token: string;
   status?: string;

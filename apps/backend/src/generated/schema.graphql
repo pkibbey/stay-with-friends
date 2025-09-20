@@ -70,7 +70,6 @@ type Invitation {
   id: String!
   inviter_id: String!
   invitee_email: String!
-  invitee_name: String
   message: String
   token: String!
   status: String

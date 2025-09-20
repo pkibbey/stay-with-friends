@@ -82,7 +82,6 @@
         "id": { "type": "string", "primary": true, "autoincrement": true },
         "inviter_id": { "type": "string", "notNull": true },
         "invitee_email": { "type": "string", "notNull": true },
-        "invitee_name": { "type": "string", "nullable": true },
         "message": { "type": "string", "nullable": true },
         "token": { "type": "string", "unique": true, "notNull": true },
         "status": { "type": "string", "default": "pending" },

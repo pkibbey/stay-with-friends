@@ -421,14 +421,13 @@ describe('Database Operations', () => {
       const invitationData = createTestInvitation();
       
       const insertInvitation = db.prepare(`
-        INSERT INTO invitations (inviter_id, invitee_email, invitee_name, message, token, status, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO invitations (inviter_id, invitee_email, message, token, status, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertInvitation.run(
         invitationData.inviter_id,
         invitationData.invitee_email,
-        invitationData.invitee_name,
         invitationData.message,
         invitationData.token,
         invitationData.status,
