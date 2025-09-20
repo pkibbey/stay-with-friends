@@ -892,19 +892,21 @@ export const resolvers = {
 
       const invitation = {
         id: result.lastInsertRowid,
-        inviterId,
-        inviteeEmail,
-        inviteeName,
+        // DB-shaped fields (snake_case) used by field resolvers
+        inviter_id: inviterId,
+        invitee_email: inviteeEmail,
+        invitee_name: inviteeName,
         message,
         token,
         status: 'pending',
-        expiresAt: expiresAt.toISOString(),
-        createdAt: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString(),
       };
 
       // Send invitation email
       const invitationUrl = `http://localhost:3000/invite/${token}`;
       const emailResult = resolvers.Mutation.sendInvitationEmail(null, { email: inviteeEmail, invitationUrl });
+      console.log('emailResult: ', emailResult);
 
       return invitation;
     },

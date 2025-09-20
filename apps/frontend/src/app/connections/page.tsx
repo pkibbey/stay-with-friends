@@ -210,6 +210,7 @@ export default function Connections() {
   const handleCreateInvitation = async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
+    const email = session?.user?.email || undefined
     if (!userId || !newInvitationEmail) return
     setLoading(true)
     try {

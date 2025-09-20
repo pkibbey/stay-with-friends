@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
@@ -285,16 +286,6 @@ export default function AcceptInvitationPage() {
                     onChange={(e) => setUserData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter your full name"
                     required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="image">Profile Image URL (Optional)</Label>
-                  <Input
-                    id="image"
-                    value={userData.image}
-                    onChange={(e) => setUserData(prev => ({ ...prev, image: e.target.value }))}
-                    placeholder="https://example.com/your-photo.jpg"
                   />
                 </div>
 
