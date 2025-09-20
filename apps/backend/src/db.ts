@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Database from 'better-sqlite3';
 import path from 'path';
 
@@ -25,130 +26,55 @@ try {
     db.exec('ALTER TABLE hosts ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP');
   }
 } catch (error) {
-  console.log('Hosts table migration not needed or completed.');
+  console.error('Hosts table migration not needed or completed.', error);
 }
 
 // Create tables
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    name TEXT,
+    email_verified DATETIME,
+    image TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS hosts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
-    name TEXT NOT NULL CHECK(length(name) >= 1 AND length(name) <= 255),
-    email TEXT UNIQUE CHECK(email IS NULL OR (email LIKE '%@%' AND length(email) >= 5)),
-    location TEXT CHECK(location IS NULL OR length(location) <= 255),
-    description TEXT CHECK(description IS NULL OR length(description) <= 2000),
-    address TEXT CHECK(address IS NULL OR length(address) <= 255),
-    city TEXT CHECK(city IS NULL OR length(city) <= 100),
-    state TEXT CHECK(state IS NULL OR length(state) <= 100),
-    zip_code TEXT CHECK(zip_code IS NULL OR length(zip_code) <= 20),
-    country TEXT CHECK(country IS NULL OR length(country) <= 100),
-    latitude REAL CHECK(latitude IS NULL OR (latitude >= -90 AND latitude <= 90)),
-    longitude REAL CHECK(longitude IS NULL OR (longitude >= -180 AND longitude <= 180)),
-    amenities TEXT CHECK(amenities IS NULL OR json_valid(amenities)),
-    house_rules TEXT CHECK(house_rules IS NULL OR length(house_rules) <= 2000),
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    location TEXT,
+    description TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    zip_code TEXT,
+    country TEXT,
+    latitude TEXT,
+    longitude TEXT,
+    amenities TEXT,
+    house_rules TEXT,
     check_in_time TEXT,
     check_out_time TEXT,
-    max_guests INTEGER CHECK(max_guests IS NULL OR (max_guests > 0 AND max_guests <= 50)),
-    bedrooms INTEGER CHECK(bedrooms IS NULL OR (bedrooms >= 0 AND bedrooms <= 20)),
-    bathrooms INTEGER CHECK(bathrooms IS NULL OR (bathrooms >= 0 AND bathrooms <= 20)),
-    photos TEXT CHECK(photos IS NULL OR json_valid(photos)),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-  )
-`);
+    max_guests INTEGER,
+    bedrooms INTEGER,
+    bathrooms INTEGER,
+    photos TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 
-// // Add unique constraint to email if it doesn't exist (migration for existing databases)
-// try {
-//   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_hosts_email ON hosts(email)`);
-// } catch (error) {
-//   console.log('Email unique index already exists or could not be created:', error);
-// }
-
-db.exec(`
   CREATE TABLE IF NOT EXISTS availabilities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     host_id INTEGER NOT NULL,
-    start_date TEXT NOT NULL CHECK(start_date != ''),
-    end_date TEXT NOT NULL CHECK(end_date != '' AND end_date >= start_date),
-    status TEXT DEFAULT 'available' CHECK(status IN ('available', 'booked', 'blocked')),
-    notes TEXT CHECK(notes IS NULL OR length(notes) <= 500),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (host_id) REFERENCES hosts (id) ON DELETE CASCADE
-  )
-`);
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    status TEXT DEFAULT available,
+    notes TEXT
+  );
 
-// Migrate booking_requests table to use requester_id instead of requester_name/email
-// Check if the table has the old structure and migrate if needed
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(booking_requests)").all() as any[];
-  const hasRequesterName = tableInfo.some((col: any) => col.name === 'requester_name');
-  
-  if (hasRequesterName) {
-    console.log('Migrating booking_requests table to use requester_id...');
-    
-    // Create new table with correct structure
-    db.exec(`
-      CREATE TABLE booking_requests_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        host_id INTEGER NOT NULL,
-        requester_id INTEGER NOT NULL,
-        start_date TEXT NOT NULL,
-        end_date TEXT NOT NULL,
-        guests INTEGER NOT NULL,
-        message TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (host_id) REFERENCES hosts (id),
-        FOREIGN KEY (requester_id) REFERENCES users (id)
-      )
-    `);
-    
-    // For existing data, we'll need to find users by email and update
-    // This is a manual migration - in production you'd want better data preservation
-    db.exec(`
-      INSERT INTO booking_requests_new (host_id, requester_id, start_date, end_date, guests, message, status, created_at)
-      SELECT br.host_id, 
-             COALESCE(u.id, 1) as requester_id,  -- Default to user ID 1 if not found
-             br.start_date, 
-             br.end_date, 
-             br.guests, 
-             br.message, 
-             br.status, 
-             br.created_at
-      FROM booking_requests br
-      LEFT JOIN users u ON u.email = br.requester_email
-    `);
-    
-    // Drop old table and rename new one
-    db.exec('DROP TABLE booking_requests');
-    db.exec('ALTER TABLE booking_requests_new RENAME TO booking_requests');
-    
-    console.log('Migration completed successfully.');
-  }
-} catch (error) {
-  console.log('Booking requests table migration not needed or completed.');
-}
-
-// Migrate booking_requests table to add response fields
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(booking_requests)").all() as any[];
-  const hasResponseMessage = tableInfo.some((col: any) => col.name === 'response_message');
-  const hasRespondedAt = tableInfo.some((col: any) => col.name === 'responded_at');
-  
-  if (!hasResponseMessage) {
-    console.log('Adding response_message field to booking_requests table...');
-    db.exec('ALTER TABLE booking_requests ADD COLUMN response_message TEXT');
-  }
-  if (!hasRespondedAt) {
-    console.log('Adding responded_at field to booking_requests table...');
-    db.exec('ALTER TABLE booking_requests ADD COLUMN responded_at DATETIME');
-  }
-} catch (error) {
-  console.log('Booking requests response fields migration not needed or completed.');
-}
-
-db.exec(`
   CREATE TABLE IF NOT EXISTS booking_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     host_id INTEGER NOT NULL,
@@ -157,69 +83,33 @@ db.exec(`
     end_date TEXT NOT NULL,
     guests INTEGER NOT NULL,
     message TEXT,
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT pending,
     response_message TEXT,
     responded_at DATETIME,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (host_id) REFERENCES hosts (id),
-    FOREIGN KEY (requester_id) REFERENCES users (id)
-  )
-`);
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL CHECK(email LIKE '%@%' AND length(email) >= 5 AND length(email) <= 255),
-    name TEXT CHECK(name IS NULL OR (length(name) >= 1 AND length(name) <= 255)),
-    email_verified DATETIME,
-    image TEXT CHECK(image IS NULL OR length(image) <= 500),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
-  )
-`);
-
-// Migrate connections table to add relationship field
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(connections)").all() as any[];
-  const hasRelationship = tableInfo.some((col: any) => col.name === 'relationship');
-  
-  if (!hasRelationship) {
-    console.log('Adding relationship field to connections table...');
-    db.exec('ALTER TABLE connections ADD COLUMN relationship TEXT');
-    console.log('Relationship field added successfully.');
-  }
-} catch (error) {
-  console.log('Connections table relationship field migration not needed or completed.');
-}
-
-db.exec(`
   CREATE TABLE IF NOT EXISTS connections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     connected_user_id INTEGER NOT NULL,
-    relationship TEXT CHECK(relationship IS NULL OR relationship IN ('friend', 'family', 'colleague', 'roommate', 'acquaintance')),
-    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'blocked')),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    FOREIGN KEY (connected_user_id) REFERENCES users (id) ON DELETE CASCADE,
-    UNIQUE(user_id, connected_user_id),
-    CHECK(user_id != connected_user_id)
-  )
-`);
+    relationship TEXT,
+    status TEXT DEFAULT pending,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 
-db.exec(`
   CREATE TABLE IF NOT EXISTS invitations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     inviter_id INTEGER NOT NULL,
-    invitee_email TEXT NOT NULL CHECK(invitee_email LIKE '%@%' AND length(invitee_email) >= 5 AND length(invitee_email) <= 255),
-    invitee_name TEXT CHECK(invitee_name IS NULL OR (length(invitee_name) >= 1 AND length(invitee_name) <= 255)),
-    message TEXT CHECK(message IS NULL OR length(message) <= 1000),
-    token TEXT UNIQUE NOT NULL CHECK(length(token) >= 32),
-    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'expired', 'cancelled')),
-    expires_at DATETIME NOT NULL CHECK(expires_at > created_at),
-    accepted_at DATETIME CHECK(accepted_at IS NULL OR accepted_at >= created_at),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (inviter_id) REFERENCES users (id) ON DELETE CASCADE
-  )
+    invitee_email TEXT NOT NULL,
+    invitee_name TEXT,
+    message TEXT,
+    token TEXT NOT NULL UNIQUE,
+    status TEXT DEFAULT pending,
+    expires_at DATETIME NOT NULL,
+    accepted_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Add database constraints and indexes for data integrity and performance
@@ -409,6 +299,9 @@ export const getConnections = db.prepare(`
   JOIN users u ON c.connected_user_id = u.id
   WHERE c.user_id = ? AND c.status = 'accepted'
 `);
+export const getConnectionById = db.prepare(`
+  SELECT * FROM connections WHERE id = ?
+`);
 export const getConnectionRequests = db.prepare(`
   SELECT c.*, u.email, u.name, u.image
   FROM connections c
@@ -421,6 +314,14 @@ export const insertConnection = db.prepare(`
 `);
 export const updateConnectionStatus = db.prepare(`
   UPDATE connections SET status = ? WHERE id = ?
+`);
+
+export const deleteConnectionById = db.prepare(`
+  DELETE FROM connections WHERE id = ?
+`);
+
+export const deleteConnectionsBetweenUsers = db.prepare(`
+  DELETE FROM connections WHERE (user_id = ? AND connected_user_id = ?) OR (user_id = ? AND connected_user_id = ?)
 `);
 
 // Invitation prepared statements

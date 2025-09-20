@@ -1,0 +1,82 @@
+# Generated GraphQL SDL - do not edit
+
+type User {
+  id: ID!
+  email: String!
+  name: String
+  email_verified: String
+  image: String
+  created_at: String
+}
+
+type Host {
+  id: ID!
+  user_id: Int
+  name: String!
+  title: String
+  email: String
+  location: String
+  description: String
+  address: String
+  city: String
+  state: String
+  zip_code: String
+  country: String
+  latitude: Float
+  longitude: Float
+  amenities: [String]
+  house_rules: String
+  check_in_time: String
+  check_out_time: String
+  max_guests: Int
+  bedrooms: Int
+  bathrooms: Int
+  photos: [String]
+  created_at: String
+  updated_at: String
+}
+
+type Availability {
+  id: ID!
+  host_id: Int!
+  start_date: String!
+  end_date: String!
+  status: String
+  notes: String
+}
+
+type BookingRequest {
+  id: ID!
+  host_id: Int!
+  requester_id: Int!
+  start_date: String!
+  end_date: String!
+  guests: Int!
+  message: String
+  status: String
+  response_message: String
+  responded_at: String
+  created_at: String
+}
+
+type Connection {
+  id: ID!
+  user_id: Int!
+  connected_user_id: Int!
+  relationship: String
+  status: String
+  created_at: String
+}
+
+type Invitation {
+  id: ID!
+  inviter_id: Int!
+  invitee_email: String!
+  invitee_name: String
+  message: String
+  token: String!
+  status: String
+  expires_at: String!
+  accepted_at: String
+  created_at: String
+}

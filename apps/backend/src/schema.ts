@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const typeDefs = `#graphql
   type Host {
     id: ID!
@@ -166,6 +167,7 @@ export const typeDefs = `#graphql
     updateUser(id: ID!, name: String, image: String): User!
     createConnection(userId: ID!, connectedUserEmail: String!, relationship: String): Connection!
     updateConnectionStatus(connectionId: ID!, status: String!): Connection!
+  deleteConnection(connectionId: ID!): Boolean!
     createInvitation(inviterId: ID!, inviteeEmail: String!, inviteeName: String, message: String): Invitation!
     acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
     cancelInvitation(invitationId: ID!): Boolean!
@@ -227,9 +229,14 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail } from './db';
+import { getAllHosts, getHostById, getHostByEmail, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers } from './db';
+// Use generated types from the single source-of-truth
+import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation } from './generated/types';
 import fs from 'fs';
 import path from 'path';
+import Crypto from 'crypto';
+import BetterSqlite3 from 'better-sqlite3';
+import Path from 'path';
 
 // Validation functions
 export const validateEmail = (email: string): void => {
@@ -311,13 +318,13 @@ const validateStatus = (status: string, validStatuses: string[]): void => {
 
 export const resolvers = {
   Query: {
-    hosts: () => getAllHosts.all(),
-    searchHosts: (_: any, { query }: { query: string }) => {
+    hosts: (): GeneratedHost[] => getAllHosts.all() as GeneratedHost[],
+    searchHosts: (_: any, { query }: { query: string }): GeneratedHost[] => {
       const searchTerm = `%${query}%`;
-      return searchHosts.all(searchTerm, searchTerm);
+      return searchHosts.all(searchTerm, searchTerm) as GeneratedHost[];
     },
-    host: (_: any, { id }: { id: string }) => {
-      return getHostById.get(id);
+    host: (_: any, { id }: { id: string }): GeneratedHost | undefined => {
+      return getHostById.get(id) as GeneratedHost | undefined;
     },
     searchHostsAdvanced: (_: any, args: any) => {
       // For now, use the basic search - can be enhanced later
@@ -328,39 +335,41 @@ export const resolvers = {
       // If no query, return all hosts
       return getAllHosts.all();
     },
-    availabilitiesByDate: (_: any, { date }: { date: string }) => {
-      return getAvailabilitiesByDateRange.all(date, date);
+    availabilitiesByDate: (_: any, { date }: { date: string }): GeneratedAvailability[] => {
+      return getAvailabilitiesByDateRange.all(date, date) as GeneratedAvailability[];
     },
-    availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
-      return getAvailabilitiesByDateRange.all(endDate, startDate);
+    availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }): GeneratedAvailability[] => {
+      return getAvailabilitiesByDateRange.all(endDate, startDate) as GeneratedAvailability[];
     },
-    hostAvailabilities: (_: any, { hostId }: { hostId: string }) => {
-      return getHostAvailabilities.all(hostId);
+    hostAvailabilities: (_: any, { hostId }: { hostId: string }): GeneratedAvailability[] => {
+      return getHostAvailabilities.all(hostId) as GeneratedAvailability[];
     },
     availabilityDates: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
       const results = getAvailabilityDates.all(startDate, endDate, endDate, startDate) as { date: string }[];
       return results.map(row => row.date);
     },
     user: (_: any, { email }: { email: string }) => {
-      return getUserByEmail.get(email);
+      // Return typed user based on generated types
+      const row = getUserByEmail.get(email) as any;
+      return row as GeneratedUser | undefined;
     },
-    connections: (_: any, { userId }: { userId: string }) => {
-      return getConnections.all(userId);
+    connections: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
+      return getConnections.all(userId) as GeneratedConnection[];
     },
-    connectionRequests: (_: any, { userId }: { userId: string }) => {
-      return getConnectionRequests.all(userId);
+    connectionRequests: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
+      return getConnectionRequests.all(userId) as GeneratedConnection[];
     },
-    invitation: (_: any, { token }: { token: string }) => {
-      return getInvitationByToken.get(token);
+    invitation: (_: any, { token }: { token: string }): GeneratedInvitation | undefined => {
+      return getInvitationByToken.get(token) as GeneratedInvitation | undefined;
     },
-    invitations: (_: any, { inviterId }: { inviterId: string }) => {
-      return getInvitationsByInviter.all(inviterId);
+    invitations: (_: any, { inviterId }: { inviterId: string }): GeneratedInvitation[] => {
+      return getInvitationsByInviter.all(inviterId) as GeneratedInvitation[];
     },
-    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }) => {
-      return getBookingRequestsByHost.all(hostId);
+    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }): GeneratedBookingRequest[] => {
+      return getBookingRequestsByHost.all(hostId) as GeneratedBookingRequest[];
     },
-    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }) => {
-      return getBookingRequestsByRequester.all(requesterId);
+    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }): GeneratedBookingRequest[] => {
+      return getBookingRequestsByRequester.all(requesterId) as GeneratedBookingRequest[];
     },
     bookingRequestsByHostUser: (_: any, { userId }: { userId: string }) => {
       // Get all booking requests for hosts owned by this user
@@ -382,7 +391,7 @@ export const resolvers = {
     },
   },
   Mutation: {
-    createHost: (_: any, args: any) => {
+    createHost: (_: any, args: any): GeneratedHost => {
       try {
         // Validate required fields
         validateName(args.name);
@@ -441,7 +450,7 @@ export const resolvers = {
           ...args,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        };
+        } as GeneratedHost;
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
           throw new Error('A host with this email already exists');
@@ -449,7 +458,7 @@ export const resolvers = {
         throw error;
       }
     },
-    createAvailability: (_: any, args: any) => {
+    createAvailability: (_: any, args: any): GeneratedAvailability => {
       // Validate required fields
       validatePositiveInteger(parseInt(args.hostId), 'Host ID');
       validateDateRange(args.startDate, args.endDate);
@@ -468,15 +477,15 @@ export const resolvers = {
         args.notes
       );
       return {
-        id: result.lastInsertRowid.toString(),
+        id: Number(result.lastInsertRowid),
         host_id: parseInt(args.hostId),
         start_date: args.startDate,
         end_date: args.endDate,
         status: args.status || 'available',
         notes: args.notes || null,
-      };
+      } as GeneratedAvailability;
     },
-    createBookingRequest: (_: any, args: any) => {
+    createBookingRequest: (_: any, args: any): GeneratedBookingRequest => {
       // Validate required fields
       validatePositiveInteger(parseInt(args.hostId), 'Host ID');
       validatePositiveInteger(parseInt(args.requesterId), 'Requester ID');
@@ -496,7 +505,7 @@ export const resolvers = {
         'pending'
       );
       return {
-        id: result.lastInsertRowid.toString(),
+        id: Number(result.lastInsertRowid),
         host_id: parseInt(args.hostId),
         requester_id: parseInt(args.requesterId),
         start_date: args.startDate,
@@ -505,9 +514,9 @@ export const resolvers = {
         message: args.message,
         status: 'pending',
         created_at: new Date().toISOString(),
-      };
+      } as GeneratedBookingRequest;
     },
-    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }) => {
+    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }): GeneratedBookingRequest => {
       // Validate status
       validateStatus(status, ['pending', 'approved', 'declined', 'cancelled']);
 
@@ -537,8 +546,8 @@ export const resolvers = {
         } else {
           // Update existing availability periods to booked status
           // This is a simplified approach - in production you might want more sophisticated availability management
-          const Database = require('better-sqlite3');
-          const dbPath = require('path').join(__dirname, '..', 'database.db');
+          const Database = BetterSqlite3;
+          const dbPath = Path.join(__dirname, '..', 'database.db');
           const tempDb = new Database(dbPath);
           
           try {
@@ -562,7 +571,7 @@ export const resolvers = {
       }
 
       // Return updated booking request
-      return getBookingRequestById.get(id);
+      return getBookingRequestById.get(id) as GeneratedBookingRequest;
     },
     checkEmailExists: (_: any, { email }: { email: string }) => {
       validateEmail(email);
@@ -581,8 +590,8 @@ export const resolvers = {
       
       return invitationUrl;
     },
-    updateHost: (_: any, { id, input }: { id: string, input: any }) => {
-      const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
+    updateHost: (_: any, { id, input }: { id: string, input: any }): GeneratedHost | undefined => {
+      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
 
       try {
         // Validate fields if provided
@@ -741,7 +750,7 @@ export const resolvers = {
       }        
         if (updates.length === 0) {
           // No updates provided, return current host
-          return getHostById.get(id)
+          return getHostById.get(id) as GeneratedHost | undefined
         }
 
         const updateQuery = `UPDATE hosts SET ${updates.join(', ')} WHERE id = ?`
@@ -772,7 +781,7 @@ export const resolvers = {
         }
 
         // Return updated host
-        return getHostById.get(id)
+        return getHostById.get(id) as GeneratedHost | undefined
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
           throw new Error('A host with this email already exists');
@@ -783,7 +792,7 @@ export const resolvers = {
       }
     },
     deleteHost: (_: any, { id }: { id: string }) => {
-      const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
+      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
 
       try {
         // Delete availabilities first (foreign key constraint)
@@ -797,7 +806,7 @@ export const resolvers = {
 
         return result.changes > 0
       } catch (error) {
-        
+        console.log('error: ', error);      
         return false
       } finally {
         db.close()
@@ -805,19 +814,20 @@ export const resolvers = {
     },
     createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }) => {
       const result = insertUser.run(email, name, null, image);
-      return {
+      const created: GeneratedUser = {
         id: result.lastInsertRowid,
         email,
         name,
         image,
-        createdAt: new Date().toISOString(),
-      };
+        created_at: new Date().toISOString(),
+      } as any;
+      return created as any;
     },
     updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }) => {
       updateUser.run(name, image, id);
       return getUserById.get(id);
     },
-    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }) => {
+    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }): GeneratedConnection => {
       // Validate required fields
       validatePositiveInteger(parseInt(userId), 'User ID');
       validateEmail(connectedUserEmail);
@@ -832,27 +842,56 @@ export const resolvers = {
       
       const result = insertConnection.run(userId, connectedUser.id, relationship, 'pending');
       return {
-        id: result.lastInsertRowid,
-        userId,
-        connectedUserId: connectedUser.id,
+        id: Number(result.lastInsertRowid),
+        user_id: parseInt(userId),
+        connected_user_id: connectedUser.id,
         relationship,
         status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
+        created_at: new Date().toISOString(),
+      } as GeneratedConnection;
     },
-    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }) => {
+    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }): GeneratedConnection | undefined => {
       // Validate required fields
       validatePositiveInteger(parseInt(connectionId), 'Connection ID');
       validateStatus(status, ['pending', 'accepted', 'declined', 'cancelled']);
 
       const result = updateConnectionStatus.run(status, connectionId);
+      console.log('result: ', result);
       // Return the updated connection
-      const db = require('better-sqlite3')(require('path').join(__dirname, '..', 'database.db'));
+      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
       const connection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
       db.close();
-      return connection;
+      return connection as GeneratedConnection | undefined;
     },
-    createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: { inviterId: string, inviteeEmail: string, inviteeName?: string, message?: string }) => {
+    deleteConnection: (_: any, { connectionId }: { connectionId: string }) => {
+      // Validate
+      validatePositiveInteger(parseInt(connectionId), 'Connection ID');
+
+      // Use central prepared statements where possible
+      const connRow: any = getConnectionById.get(connectionId);
+      if (!connRow) {
+        throw new Error('Connection not found');
+      }
+
+      // Only allow deletion of accepted (verified) connections via this flow
+      if (connRow.status !== 'accepted') {
+        throw new Error('Only accepted connections can be removed via this operation');
+      }
+
+      try {
+        // Delete both directions (if present) to fully remove the relationship
+        const result = deleteConnectionsBetweenUsers.run(connRow.user_id, connRow.connected_user_id, connRow.user_id, connRow.connected_user_id);
+        // If the above didn't remove the reciprocal row (because user/connected_user order differs), also attempt by swapping
+        if (result.changes === 0) {
+          deleteConnectionsBetweenUsers.run(connRow.connected_user_id, connRow.user_id, connRow.connected_user_id, connRow.user_id);
+        }
+        return true;
+      } catch (e) {
+        console.error('Failed to delete connection', e);
+        return false;
+      }
+    },
+    createInvitation: (_: any, { inviterId, inviteeEmail, inviteeName, message }: { inviterId: string, inviteeEmail: string, inviteeName?: string, message?: string }): GeneratedInvitation => {
       // Validate required fields
       validatePositiveInteger(parseInt(inviterId), 'Inviter ID');
       validateEmail(inviteeEmail);
@@ -872,11 +911,9 @@ export const resolvers = {
       if (existingInvitation) {
         throw new Error('Invitation already sent to this email');
       }
-
       // Generate unique token
-      const crypto = require('crypto');
-      const token = crypto.randomBytes(32).toString('hex');
-
+      const token = Crypto.randomBytes(32).toString('hex');
+      
       // Set expiration to 30 days from now
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
@@ -891,9 +928,8 @@ export const resolvers = {
       );
 
       const invitation = {
-        id: result.lastInsertRowid,
-        // DB-shaped fields (snake_case) used by field resolvers
-        inviter_id: inviterId,
+        id: Number(result.lastInsertRowid),
+        inviter_id: parseInt(inviterId),
         invitee_email: inviteeEmail,
         invitee_name: inviteeName,
         message,
@@ -901,7 +937,7 @@ export const resolvers = {
         status: 'pending',
         expires_at: expiresAt.toISOString(),
         created_at: new Date().toISOString(),
-      };
+      } as GeneratedInvitation;
 
       // Send invitation email
       const invitationUrl = `http://localhost:3000/invite/${token}`;

@@ -11,7 +11,11 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint"
+    "generate": "node scripts/generate-from-models.js",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "test:coverage": "turbo test:coverage"
   },
   "packageManager": "npm@11.4.2"
 }

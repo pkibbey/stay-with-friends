@@ -146,6 +146,7 @@ app.post('/api/seed', (req: Request, res: Response) => {
     seedDatabase();
     res.json({ message: 'Database seeded successfully' });
   } catch (error) {
+    console.log('error: ', error);
     res.status(500).json({ error: 'Failed to seed database' });
   }
 });
