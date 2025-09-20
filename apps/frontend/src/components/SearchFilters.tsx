@@ -11,16 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { CalendarIcon, MapPin, Users, Star, X, Search } from 'lucide-react'
 import { format } from 'date-fns'
 import { parseLocalDate, formatDateForUrl } from '@/lib/date-utils'
-
-interface SearchFiltersState {
-  query: string
-  startDate: string | null
-  endDate: string | null
-  location: string
-  amenities: string[]
-  trustedHostsOnly: boolean
-  guests: number
-}
+import { SearchFiltersState } from '@/types'
 
 interface SearchFiltersProps {
   filters: SearchFiltersState

@@ -9,17 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Map, List, Filter } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
-import { HostProfileData } from '@/types'
+import { HostProfileData, SearchFiltersState } from '@/types'
 
-interface SearchFiltersState {
-  query: string
-  startDate: string | null
-  endDate: string | null
-  location: string
-  amenities: string[]
-  trustedHostsOnly: boolean
-  guests: number
-}
 
 function SearchPage() {
   const router = useRouter()

@@ -14,39 +14,10 @@ import { FileUpload } from '@/components/ui/file-upload'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2 } from 'lucide-react'
+import { HostWithAvailabilities, User } from '@/types'
 
-interface Availability {
-  id: string
-  hostId: string
-  startDate: string
-  endDate: string
-  status: string
-  notes?: string
-}
-
-interface HostData {
-  id: string
-  name: string
-  title: string
-  location: string
-  description: string
-  address?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  country?: string
-  latitude?: number
-  longitude?: number
-  amenities: string[]
-  houseRules?: string
-  checkInTime?: string
-  checkOutTime?: string
-  maxGuests: number
-  bedrooms: number
-  bathrooms: number
-  photos: string[]
-  availabilities: Availability[]
-}
+// Use the generated types
+type HostData = HostWithAvailabilities
 
 export default function ManageHostingPage() {
   const { data: session } = useSession()
@@ -106,9 +77,9 @@ export default function ManageHostingPage() {
       if (data.data?.hosts) {
         // Filter to only hosts owned by the current signed-in user
         // session?.user.id may be a string or number, so compare as strings
-        const userId = (session?.user as { id?: string | number } | undefined)?.id
+        const userId = (session?.user as User | undefined)?.id
         if (userId) {
-          const filtered = data.data.hosts.filter((h: { userId?: string | number }) => String(h.userId) === String(userId))
+          const filtered = data.data.hosts.filter((h: HostData) => String(h.userId) === String(userId))
           setHostings(filtered)
         } else {
           // If no session user id available, fall back to empty list

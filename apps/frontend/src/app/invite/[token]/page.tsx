@@ -10,12 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Home, CheckCircle } from "lucide-react"
 import Link from "next/link"
-import { Invitation, User } from "@/types"
-
-// Extended type for component-specific data (includes nested inviter data from GraphQL)
-interface InvitationWithUser extends Invitation {
-  inviterUser: User
-}
+import { InvitationWithUser } from "@/types"
 
 export default function AcceptInvitationPage() {
   const params = useParams()

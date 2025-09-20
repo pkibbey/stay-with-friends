@@ -9,17 +9,7 @@ import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
 import { MapPin, Users, Calendar, Home, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-import { HostProfileData } from '@/types'
-
-interface SearchFiltersState {
-  query: string
-  startDate: string | null
-  endDate: string | null
-  location: string
-  amenities: string[]
-  trustedHostsOnly: boolean
-  guests: number
-}
+import { HostProfileData, SearchFiltersState } from '@/types'
 
 interface SearchResultsProps {
   hosts: HostProfileData[]
@@ -68,7 +58,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
             width={400}
             height={300}
             src={result.photos[0]}
-            alt={result.title}
+            alt={result.title || ''}
             className="w-full h-full object-cover"
           />
         ) : (

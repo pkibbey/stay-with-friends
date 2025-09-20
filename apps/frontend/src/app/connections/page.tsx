@@ -7,12 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
-import { Connection, Invitation, User } from '@/types'
+import { ConnectionWithUser, Invitation } from '@/types'
 
-// Extended types for component-specific data (includes nested user data from GraphQL)
-interface ConnectionWithUser extends Connection {
-  connectedUser: User
-}
 
 export default function Connections() {
   const { data: session, status } = useSession()
