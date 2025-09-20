@@ -475,6 +475,15 @@ export default function ManageHostingPage() {
     setEditForm(prev => ({ ...prev, [field]: value }))
   }
 
+  // Mark a photo as featured by moving it to index 0 of the photos array
+  const setFeaturedPhoto = (index: number) => {
+    const photos = Array.isArray(editForm.photos) ? [...editForm.photos] : []
+    if (index < 0 || index >= photos.length) return
+    const [item] = photos.splice(index, 1)
+    photos.unshift(item)
+    updateEditForm('photos', photos)
+  }
+
   // Geocoding function to get coordinates from address
   const geocodeAddress = async (address: string, city: string, state: string, country: string, isEditForm = false) => {
     if (!address && !city) {
@@ -579,26 +588,11 @@ export default function ManageHostingPage() {
     )
   }
 
-  const headerActions = (
-    <Button onClick={() => setShowAddForm(!showAddForm)} className="flex items-center gap-2">
-      <Plus className="w-4 h-4" />
-      Add New Hosting
-    </Button>
-  )
-
   return (
     <PageLayout 
       title="Manage Your Hosting" 
       subtitle="Add and manage your properties for friends to stay"
-      headerActions={headerActions}
     >
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
-        </Link>
-      </div>
-
       {/* Booking Requests Summary */}
       <Card className="mb-6">
         <CardContent className="py-4">
@@ -615,7 +609,7 @@ export default function ManageHostingPage() {
                 </p>
               </div>
             </div>
-            <Link href="/bookings">
+            <Link href="/settings/bookings">
               <Button variant="outline" size="sm">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 View All Requests
@@ -1073,12 +1067,30 @@ export default function ManageHostingPage() {
                       </div>
                       <div className="flex gap-2 flex-wrap">
                         {(Array.isArray(editForm.photos) ? editForm.photos : []).map((p: string, idx: number) => (
-                          <div key={idx} className="w-24 h-16 bg-gray-100 rounded overflow-hidden relative">
+                          <div
+                            key={idx}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setFeaturedPhoto(idx)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setFeaturedPhoto(idx) }}
+                            className={`w-24 h-16 bg-gray-100 rounded overflow-hidden relative cursor-pointer ${idx === 0 ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-gray-300'}`}
+                            aria-label={`Set photo ${idx + 1} as featured`}
+                          >
                             <Image unoptimized src={p} alt={`photo-${idx}`} fill className="object-cover" sizes="96px" />
+
+                            {/* Featured badge for the first photo */}
+                            {idx === 0 && (
+                              <span className="absolute left-0 bottom-0 bg-blue-600 text-white text-xs px-1 py-0.5">
+                                Featured
+                              </span>
+                            )}
+
                             <button
                               type="button"
                               className="absolute top-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1"
-                              onClick={() => {
+                              onClick={(e) => {
+                                // Prevent the click from bubbling to the parent which would set this photo as featured
+                                e.stopPropagation()
                                 const photos = Array.isArray(editForm.photos) ? [...editForm.photos] : []
                                 photos.splice(idx, 1)
                                 updateEditForm('photos', photos)
@@ -1168,6 +1180,20 @@ export default function ManageHostingPage() {
                   </div>
                 ) : (
                   <>
+                    {/* Featured image preview (first photo is treated as featured) */}
+                    {hosting.photos && hosting.photos.length > 0 ? (
+                      <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
+                        <Image
+                          unoptimized
+                          src={hosting.photos[0]}
+                          alt={`${hosting.name} featured`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      </div>
+                    ) : null}
+
                     <p className="text-gray-600 mb-4">{hosting.description}</p>
                     
                     {/* Address Information */}

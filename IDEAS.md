@@ -1,6 +1,10 @@
 Change the word Friends in the title to be the search bar for finding friends 
 - make it obvious with animation and have it selected to type initially
 
+Tearing down the app and starting again is useful to discover the user journey. We can limit certain things they see until they list as a host. Focus them on creating a host, but they also don't have to, it's fine, no pressure. They can do two main things - find connections, or create a hosting.
+
+change the ids generated to use uuid instead of auto-increment
+
 Rename bookings to stays - do much later
 
 Availabilty calendar must be free to move without being locked by selecting a date.
