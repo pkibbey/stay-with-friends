@@ -1,9 +1,9 @@
-Maybe we could have the host you are staying with as the unique identifier, that you can have multiple people visiting this specific friend, but you can't have a host stay at multiple places in the same night.
-
 Change the word Friends in the title to be the search bar for finding friends 
 - make it obvious with animation and have it selected to type initially
 
-Allow the user to start a request to stay at a place
+Rename bookings to stays
+
+Availabilty calendar must be free to move without being locked by selecting a date.
 
 Friends can see basic information about their existence, but should not be able to share availability while they are not confirmed as friends.
 

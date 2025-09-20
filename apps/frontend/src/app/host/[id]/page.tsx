@@ -10,22 +10,27 @@ import { HostHouseRules } from "@/components/HostHouseRules"
 import { HostLocation } from "@/components/HostLocation"
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar"
 import { BookingForm } from "@/components/BookingForm"
+import { ExistingBookingRequests } from "@/components/ExistingBookingRequests"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from 'next/link'
 import * as React from "react"
 import { parseDateFromUrl, formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
-import type { Host } from '@/types'
+import { useSession } from 'next-auth/react'
+import type { HostWithAvailabilities, BookingRequest } from '@/types'
 
 export default function HostDetailPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session } = useSession()
   const hostId = params.id as string
+  const userId = (session?.user as { id?: string })?.id
 
-  const [host, setHost] = useState<Host | null>(null)
+  const [host, setHost] = useState<HostWithAvailabilities | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([])
 
   // Function to check if a date is available
   const isDateAvailable = (date: Date | undefined): boolean => {
@@ -116,8 +121,55 @@ export default function HostDetailPage() {
       }
     }
 
+    const fetchBookingRequests = async () => {
+      if (!userId) return
+
+      try {
+        const response = await fetch('http://localhost:4000/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `
+            query GetBookingRequestsByRequester($requesterId: ID!) {
+              bookingRequestsByRequester(requesterId: $requesterId) {
+                id
+                hostId
+                requesterId
+                startDate
+                endDate
+                guests
+                message
+                status
+                responseMessage
+                respondedAt
+                createdAt
+                host {
+                  id
+                  name
+                }
+              }
+            }
+          `,
+            variables: { requesterId: userId },
+          }),
+        })
+
+        const data = await response.json()
+        // Filter for requests to this specific host
+        const hostRequests = data.data?.bookingRequestsByRequester?.filter(
+          (request: BookingRequest) => request.hostId === hostId
+        ) || []
+        setBookingRequests(hostRequests)
+      } catch (error) {
+        console.error('Failed to fetch booking requests:', error)
+      }
+    }
+
     fetchHostDetails()
-  }, [hostId])
+    fetchBookingRequests()
+  }, [hostId, userId])
 
   // Handle date parameter from URL
   useEffect(() => {
@@ -172,12 +224,24 @@ export default function HostDetailPage() {
             <AvailabilityCalendar
               selectedDate={selectedDate}
               onSelect={handleDateSelect}
-              availabilities={host.availabilities}
+              availabilities={host.availabilities?.map(a => ({
+                startDate: a.startDate,
+                endDate: a.endDate,
+                status: a.status || 'available'
+              }))}
             />
           </div>
           
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
+            {/* Show existing booking requests if user is logged in and has any */}
+            {bookingRequests.length > 0 && (
+              <ExistingBookingRequests
+                requests={bookingRequests}
+                hostName={host.name}
+              />
+            )}
+
             {selectedDate && isDateAvailable(selectedDate) && (
               <BookingForm
                 host={host}

@@ -1,9 +1,9 @@
 import { formatDateForUrl, parseLocalDate } from "@/lib/date-utils"
 import { AvailabilityCard } from "./AvailabilityCard"
-import type { Availability } from '@/types'
+import type { AvailabilityWithHost } from '@/types'
 
 interface AllAvailabilitiesProps {
-  allAvailabilities: Availability[]
+  allAvailabilities: AvailabilityWithHost[]
   isLoadingAll: boolean
 }
 
@@ -23,7 +23,7 @@ export function AllAvailabilities({ allAvailabilities, isLoadingAll }: AllAvaila
             <AvailabilityCard
               key={availability.id}
               availability={availability}
-              linkHref={`/host/${availability.host?.id || availability.hostId}?date=${availability.startDate ? formatDateForUrl(parseLocalDate(availability.startDate)) : ''}`}
+              linkHref={`/host/${availability.hostId}?date=${availability.startDate ? formatDateForUrl(parseLocalDate(availability.startDate)) : ''}`}
               iconColor="green"
             />
           ))}

@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AvailabilityCalendar } from '@/components/AvailabilityCalendar'
-import { MapPin, Users, Calendar, Home, Eye } from 'lucide-react'
+import { MapPin, Users, Home, Eye } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
 import { HostProfileData, SearchFiltersState } from '@/types'
@@ -18,8 +17,6 @@ interface SearchResultsProps {
 }
 
 function ResultCard({ result, filters }: { result: HostProfileData; filters: SearchFiltersState }) {
-  const [showCalendar, setShowCalendar] = React.useState(false)
-  
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
     if (!filters.startDate || !filters.endDate) return true
@@ -130,35 +127,13 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
           </div>
         )}
 
-        {/* Calendar toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="flex-1"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            {showCalendar ? 'Hide' : 'Show'} Calendar
+        {/* View Details */}
+        <Link href={`/host/${result.id}`} className="flex-1">
+          <Button size="sm" className="w-full">
+            <Eye className="w-4 h-4 mr-1" />
+            View Details
           </Button>
-          <Link href={`/host/${result.id}`} className="flex-1">
-            <Button size="sm" className="w-full">
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
-            </Button>
-          </Link>
-        </div>
-
-        {/* Availability Calendar */}
-        {showCalendar && (
-          <div className="pt-4 border-t">
-            <AvailabilityCalendar
-              selectedDate={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
-              onSelect={() => {}} // Read-only for search results
-              availabilities={result.availabilities}
-            />
-          </div>
-        )}
+        </Link>
       </CardContent>
     </Card>
   )

@@ -74,19 +74,19 @@ export function ListingForm({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.title.trim()) {
+    if (!formData.title?.trim()) {
       newErrors.title = 'Title is required'
     }
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       newErrors.description = 'Description is required'
     }
-    if (!formData.address.trim()) {
+    if (!formData.address?.trim()) {
       newErrors.address = 'Address is required'
     }
-    if (!formData.city.trim()) {
+    if (!formData.city?.trim()) {
       newErrors.city = 'City is required'
     }
-    if (!formData.state.trim()) {
+    if (!formData.state?.trim()) {
       newErrors.state = 'State is required'
     }
     if (!formData.maxGuests || formData.maxGuests < 1) {
@@ -118,16 +118,16 @@ export function ListingForm({
   const toggleAmenity = (amenity: string) => {
     setFormData(prev => ({
       ...prev,
-      amenities: prev.amenities.includes(amenity)
+      amenities: prev.amenities?.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
+        : [...(prev.amenities || []), amenity]
     }))
   }
 
   const removePhoto = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      photos: prev.photos.filter((_, i) => i !== index)
+      photos: prev.photos?.filter((_, i) => i !== index) || []
     }))
   }
 
@@ -328,7 +328,7 @@ export function ListingForm({
                 <div key={amenity} className="flex items-center space-x-2">
                   <Checkbox
                     id={`amenity-${amenity}`}
-                    checked={formData.amenities.includes(amenity)}
+                    checked={formData.amenities?.includes(amenity) || false}
                     onCheckedChange={() => toggleAmenity(amenity)}
                   />
                   <Label htmlFor={`amenity-${amenity}`} className="text-sm">{amenity}</Label>
@@ -373,7 +373,7 @@ export function ListingForm({
                 Photo upload functionality will be added in the next phase with Cloudinary integration.
               </p>
               
-              {formData.photos.length > 0 && (
+              {formData.photos && formData.photos.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {formData.photos.map((photo, index) => (
                     <div key={index} className="relative">

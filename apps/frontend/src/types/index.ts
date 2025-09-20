@@ -8,6 +8,11 @@ import type { Host, Availability, Invitation, User, BookingRequest, Connection }
 export type PartialHost = Partial<Host>;
 export type HostWithAvailabilities = Host & { availabilities: Availability[] };
 
+// Extended type for availability with host data
+export interface AvailabilityWithHost extends Availability {
+  host?: Host
+}
+
 export interface SearchFiltersState {
   query: string
   startDate: string | null

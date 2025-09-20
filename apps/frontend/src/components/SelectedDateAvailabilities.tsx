@@ -1,10 +1,10 @@
 import { AvailabilityCard } from "./AvailabilityCard"
 import { formatDateForUrl } from '@/lib/date-utils'
-import type { Availability } from '@/types'
+import type { AvailabilityWithHost } from '@/types'
 
 interface SelectedDateAvailabilitiesProps {
   selectedDate: Date | undefined
-  calendarResults: Availability[]
+  calendarResults: AvailabilityWithHost[]
   isLoadingCalendar: boolean
 }
 

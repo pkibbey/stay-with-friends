@@ -76,16 +76,16 @@ export function HostProfileForm({
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required'
     }
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       newErrors.email = 'Email is required'
     }
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       newErrors.description = 'Please tell friends about yourself and your home'
     }
-    if (!formData.city.trim()) {
+    if (!formData.city?.trim()) {
       newErrors.city = 'City is required'
     }
-    if (!formData.state.trim()) {
+    if (!formData.state?.trim()) {
       newErrors.state = 'State is required'
     }
     if (!formData.maxGuests || formData.maxGuests < 1) {
@@ -117,9 +117,9 @@ export function HostProfileForm({
   const toggleAmenity = (amenity: string) => {
     setFormData(prev => ({
       ...prev,
-      amenities: prev.amenities.includes(amenity)
+      amenities: prev.amenities?.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
+        : [...prev.amenities ?? [], amenity]
     }))
   }
 
@@ -355,7 +355,7 @@ export function HostProfileForm({
                 <div key={amenity} className="flex items-center space-x-2">
                   <Checkbox
                     id={`amenity-${amenity}`}
-                    checked={formData.amenities.includes(amenity)}
+                    checked={formData.amenities?.includes(amenity)}
                     onCheckedChange={() => toggleAmenity(amenity)}
                   />
                   <Label htmlFor={`amenity-${amenity}`} className="text-sm">{amenity}</Label>

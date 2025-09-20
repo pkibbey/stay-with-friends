@@ -5,7 +5,7 @@ import * as React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { HeroSection } from "@/components/HeroSection"
 import { Suspense } from "react"
-import type { HostSummary, Availability } from '@/types'
+import type { HostSummary, AvailabilityWithHost } from '@/types'
 
 // NOTE: This needs to get the last day of the month on the screen, which could
 // be 1 or 2 or 3 months ahead depending on the screen size
@@ -15,7 +15,7 @@ function Home() {
   const [searchQuery] = useState("")
   const [selectedDate] = useState<Date | undefined>(new Date())
   const [currentMonth] = useState<Date>(new Date())
-  const [, setAllAvailabilities] = useState<Availability[]>([])
+  const [, setAllAvailabilities] = useState<AvailabilityWithHost[]>([])
   const [, setIsLoadingAll] = useState(false)
   const [, setSearchResults] = useState<HostSummary[]>([])
   const [, setIsSearching] = useState(false)
@@ -107,7 +107,7 @@ function Home() {
       const allAvailabilitiesData = data.data?.availabilitiesByDateRange || []
 
       // Filter out availabilities that are already shown in the "Available on" section
-      const filteredAvailabilities = allAvailabilitiesData.filter((availability: Availability) => {
+      const filteredAvailabilities = allAvailabilitiesData.filter((availability: AvailabilityWithHost) => {
         // If no selected date, show all availabilities
         if (!selectedDate) return true
 

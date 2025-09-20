@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge"
 import { Users } from "lucide-react"
 import Link from 'next/link'
 import { formatDateRange } from '@/lib/date-utils'
-import type { Availability } from '@/types'
+import type { AvailabilityWithHost } from '@/types'
 
 interface AvailabilityCardProps {
-  availability: Availability
+  availability: AvailabilityWithHost
   linkHref: string
   iconColor?: string
 }
