@@ -5,6 +5,10 @@ import EmailProvider from 'next-auth/providers/email'
 import { createTransport } from 'nodemailer'
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "./db"
+import jwt from 'jsonwebtoken'
+
+// Use the same JWT secret as the backend
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export const authOptions = {
   adapter: DrizzleAdapter(db),
@@ -112,6 +116,16 @@ export const authOptions = {
         session.user.id = token.sub
         console.log('Using NextAuth user ID as fallback:', session.user.id)
       }
+      // Ensure email, name and image are available on the client session
+      if (!session.user) session.user = {}
+      if (token?.email) session.user.email = token.email
+      if (token?.name) session.user.name = token.name
+      if (token?.picture) session.user.image = token.picture
+      
+      // Add the JWT token for API calls
+      if (token?.apiToken) {
+        session.apiToken = token.apiToken
+      }
       
       console.log('Returning session with user:', session.user)
       return session
@@ -150,6 +164,29 @@ export const authOptions = {
         } catch (error) {
           console.error('Error fetching backend user ID in JWT callback:', error)
         }
+      }
+
+      // Generate API token for backend authentication
+      if (token.backendUserId || token.sub) {
+        const apiToken = jwt.sign(
+          {
+            sub: token.sub,
+            email: token.email,
+            name: token.name,
+            backendUserId: token.backendUserId,
+          },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        )
+        token.apiToken = apiToken
+      }
+
+      // Propagate basic profile fields from the provider/user into the token
+      // so they are available in the client session when using JWT strategy
+      if (user) {
+        if (user.email) token.email = user.email
+        if (user.name) token.name = user.name
+        if (user.image) token.picture = user.image
       }
       
       return token

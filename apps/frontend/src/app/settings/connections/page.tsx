@@ -11,12 +11,11 @@ import { ConnectionWithUser, Invitation } from '@/types'
 
 
 export default function Connections() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [connections, setConnections] = useState<ConnectionWithUser[]>([])
   const [requests, setRequests] = useState<ConnectionWithUser[]>([])
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [newInvitationEmail, setNewInvitationEmail] = useState('')
-  const [newInvitationName, setNewInvitationName] = useState('')
   const [newInvitationMessage, setNewInvitationMessage] = useState('')
   const [lastInvitationUrl, setLastInvitationUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -252,7 +251,6 @@ export default function Connections() {
           // Connection request was sent to existing user
           alert('Connection request sent! The user is already registered, so a connection request has been sent instead.')
           setNewInvitationEmail('')
-          setNewInvitationName('')
           setNewInvitationMessage('')
           // Refresh connections data since we may have sent a connection request
           fetchConnections()
@@ -262,7 +260,6 @@ export default function Connections() {
           const invitationUrl = `http://localhost:3000/invite/${invitation.token}`
           setLastInvitationUrl(invitationUrl)
           setNewInvitationEmail('')
-          setNewInvitationName('')
           setNewInvitationMessage('')
           fetchInvitations()
         }
@@ -276,10 +273,6 @@ export default function Connections() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (status === 'loading') {
-    return <div>Loading...</div>
   }
 
   if (!session) {

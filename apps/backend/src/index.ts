@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
+import { expressMiddleware } from '@as-integrations/express5';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
 import { resolvers, typeDefs } from './schema';
 
 // Initialize database by importing db.ts (tables are created on import)
@@ -13,6 +14,17 @@ console.log('Database initialized');
 const app = express();
 const port = process.env.PORT || 4000;
 
+// JWT secret - in production this should be from environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// JWT payload interface
+interface JWTPayload {
+  sub?: string;
+  email?: string;
+  name?: string;
+  backendUserId?: string;
+}
+ 
 // Enable CORS for REST endpoints (GraphQL uses its own middleware)
 app.use(cors());
 
@@ -20,6 +32,39 @@ app.use(cors());
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
+
+// Authentication context interface
+interface AuthContext {
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
+// Middleware to extract user from JWT token
+const getAuthContext = (req: Request): AuthContext => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {};
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    return {
+      user: {
+        id: decoded.backendUserId || decoded.sub || '',
+        email: decoded.email || '',
+        name: decoded.name,
+      },
+    };
+  } catch (error) {
+    console.error('JWT verification failed:', error);
+    return {};
+  }
+};
 
 // Multer setup for handling multipart/form-data image uploads
 const storage = multer.diskStorage({
@@ -79,7 +124,7 @@ app.post('/api/reset', (req: Request, res: Response) => {
   }
 });
 
-const server = new ApolloServer({
+const server = new ApolloServer<AuthContext>({
   typeDefs,
   resolvers,
 });
@@ -87,7 +132,9 @@ const server = new ApolloServer({
 async function startServer() {  
   await server.start();
 
-  app.use('/graphql', cors<cors.CorsRequest>(), express.json(), expressMiddleware(server));
+  app.use('/graphql', cors<cors.CorsRequest>(), express.json(), expressMiddleware(server, {
+    context: async ({ req }) => getAuthContext(req as Request),
+  }));
 
   // Image upload endpoint
   app.post('/api/upload-image', upload.single('image'), (req: Request, res: Response) => {

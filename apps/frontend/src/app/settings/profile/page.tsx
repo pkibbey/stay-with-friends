@@ -10,10 +10,9 @@ import { PageLayout } from '@/components/PageLayout'
 import { User } from '@/types'
 
 export default function Profile() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [user, setUser] = useState<User | null>(null)
   const [name, setName] = useState('')
-  const [image, setImage] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export default function Profile() {
                 id
                 email
                 name
-                image
               }
             }
           `,
@@ -45,9 +43,9 @@ export default function Profile() {
       const data = await response.json()
       const userData = data.data?.user
       if (userData) {
+        console.log('userData: ', userData);
         setUser(userData)
         setName(userData.name || '')
-        setImage(userData.image || '')
       }
     } catch (error) {
       console.error('Error fetching user:', error)
@@ -55,6 +53,7 @@ export default function Profile() {
   }
 
   const handleUpdateProfile = async () => {
+    console.log('user: ', user);
     if (!user) return
     setLoading(true)
     try {
@@ -63,20 +62,19 @@ export default function Profile() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `
-            mutation UpdateUser($id: ID!, $name: String, $image: String) {
-              updateUser(id: $id, name: $name, image: $image) {
+            mutation UpdateUser($id: ID!, $name: String) {
+              updateUser(id: $id, name: $name) {
                 id
                 name
-                image
               }
             }
           `,
-          variables: { id: user.id, name: name || undefined, image: image || undefined },
+          variables: { id: user.id, name: name || undefined },
         }),
       })
       const data = await response.json()
       if (data.data?.updateUser) {
-        setUser({ ...user, name: data.data.updateUser.name, image: data.data.updateUser.image })
+        setUser({ ...user, name: data.data.updateUser.name })
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -84,10 +82,6 @@ export default function Profile() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (status === 'loading') {
-    return <div>Loading...</div>
   }
 
   if (!session) {
@@ -129,15 +123,6 @@ export default function Profile() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="image">Profile Image URL</Label>
-              <Input
-                id="image"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://..."
               />
             </div>
             <div className="flex gap-4">

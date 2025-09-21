@@ -61,7 +61,6 @@ export default function BookingsPage() {
                   id
                   email
                   name
-                  image
                 }
               }
             }
@@ -71,6 +70,7 @@ export default function BookingsPage() {
       })
       
       const myRequestsData = await myRequestsResponse.json()
+      console.log('myRequestsData: ', myRequestsData);
       
       if (myRequestsData.errors) {
         console.error('GraphQL errors in my requests:', myRequestsData.errors)

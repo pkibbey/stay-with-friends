@@ -49,9 +49,7 @@ export function Header() {
           <TextLogo className="text-xs md:text-xl" />
         </Link>
         <nav className="flex items-center gap-6">
-          {status === 'loading' ? (
-            <div>Loading...</div>
-          ) : session ? (
+          {status === 'loading' ? undefined : session ? (
             <>
               {/* Common/Public Navigation */}
               <div className="flex items-center gap-4">

@@ -61,6 +61,7 @@ export function AvailabilityManager({
                 type="date"
                 value={newStartDate}
                 onChange={(e) => setNewStartDate(e.target.value)}
+                className="grid"
               />
             </div>
             <div>
@@ -70,6 +71,7 @@ export function AvailabilityManager({
                 type="date"
                 value={newEndDate}
                 onChange={(e) => setNewEndDate(e.target.value)}
+                className="grid"
               />
             </div>
           </div>

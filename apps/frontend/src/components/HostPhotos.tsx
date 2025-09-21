@@ -31,7 +31,7 @@ export function HostPhotos({ host }: HostPhotosProps) {
               key={index}
               src={photo}
               alt={`${host.name}'s place`}
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full object-cover rounded-lg"
               width={400}
               height={192}
             />

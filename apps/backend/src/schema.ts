@@ -234,6 +234,15 @@ import Crypto from 'crypto';
 import BetterSqlite3 from 'better-sqlite3';
 import Path from 'path';
 
+// Authentication context interface
+interface AuthContext {
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
 // Validation functions
 export const validateEmail = (email: string): void => {
   if (!email || typeof email !== 'string') {
@@ -314,15 +323,21 @@ const validateStatus = (status: string, validStatuses: string[]): void => {
 
 export const resolvers = {
   Query: {
-    hosts: (): GeneratedHost[] => getAllHosts.all() as GeneratedHost[],
+    hosts: (): GeneratedHost[] => {
+      // Hosts query is public - anyone can view available hosts
+      return getAllHosts.all() as GeneratedHost[];
+    },
     searchHosts: (_: any, { query }: { query: string }): GeneratedHost[] => {
+      // Search is public
       const searchTerm = `%${query}%`;
       return searchHosts.all(searchTerm, searchTerm) as GeneratedHost[];
     },
     host: (_: any, { id }: { id: string }): GeneratedHost | undefined => {
+      // Host details are public
       return getHostById.get(id) as GeneratedHost | undefined;
     },
     searchHostsAdvanced: (_: any, args: any) => {
+      // Advanced search is public
       // For now, use the basic search - can be enhanced later
       if (args.query) {
         const searchTerm = `%${args.query}%`;
@@ -332,42 +347,94 @@ export const resolvers = {
       return getAllHosts.all();
     },
     availabilitiesByDate: (_: any, { date }: { date: string }): GeneratedAvailability[] => {
+      // Availability info is public
       return getAvailabilitiesByDateRange.all(date, date) as GeneratedAvailability[];
     },
     availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }): GeneratedAvailability[] => {
+      // Availability info is public
       return getAvailabilitiesByDateRange.all(endDate, startDate) as GeneratedAvailability[];
     },
     hostAvailabilities: (_: any, { hostId }: { hostId: string }): GeneratedAvailability[] => {
+      // Availability info is public
       return getHostAvailabilities.all(hostId) as GeneratedAvailability[];
     },
     availabilityDates: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
+      // Availability info is public
       const results = getAvailabilityDates.all(startDate, endDate, endDate, startDate) as { date: string }[];
       return results.map(row => row.date);
     },
-    user: (_: any, { email }: { email: string }) => {
+    user: (_: any, { email }: { email: string }, context: AuthContext) => {
+      // User lookup requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
       // Return typed user based on generated types
       const row = getUserByEmail.get(email) as any;
       return row as GeneratedUser | undefined;
     },
-    connections: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
+    connections: (_: any, { userId }: { userId: string }, context: AuthContext): GeneratedConnection[] => {
+      // Connections require authentication and user can only see their own connections
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== userId) {
+        throw new Error('Unauthorized: Can only view your own connections');
+      }
       return getConnections.all(userId, userId, userId) as GeneratedConnection[];
     },
-    connectionRequests: (_: any, { userId }: { userId: string }): GeneratedConnection[] => {
+    connectionRequests: (_: any, { userId }: { userId: string }, context: AuthContext): GeneratedConnection[] => {
+      // Connection requests require authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== userId) {
+        throw new Error('Unauthorized: Can only view your own connection requests');
+      }
       return getConnectionRequests.all(userId) as GeneratedConnection[];
     },
     invitation: (_: any, { token }: { token: string }): GeneratedInvitation | undefined => {
+      // Invitation lookup is public (for accepting invitations)
       return getInvitationByToken.get(token) as GeneratedInvitation | undefined;
     },
-    invitations: (_: any, { inviterId }: { inviterId: string }): GeneratedInvitation[] => {
+    invitations: (_: any, { inviterId }: { inviterId: string }, context: AuthContext): GeneratedInvitation[] => {
+      // Invitations require authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== inviterId) {
+        throw new Error('Unauthorized: Can only view your own invitations');
+      }
       return getInvitationsByInviter.all(inviterId) as GeneratedInvitation[];
     },
-    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }): GeneratedBookingRequest[] => {
+    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }, context: AuthContext): GeneratedBookingRequest[] => {
+      // Booking requests require authentication and user must own the host
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      const host = getHostById.get(hostId) as any;
+      if (!host || host.user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only view booking requests for your own hosts');
+      }
       return getBookingRequestsByHost.all(hostId) as GeneratedBookingRequest[];
     },
-    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }): GeneratedBookingRequest[] => {
+    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }, context: AuthContext): GeneratedBookingRequest[] => {
+      // Booking requests require authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== requesterId) {
+        throw new Error('Unauthorized: Can only view your own booking requests');
+      }
       return getBookingRequestsByRequester.all(requesterId) as GeneratedBookingRequest[];
     },
-    bookingRequestsByHostUser: (_: any, { userId }: { userId: string }) => {
+    bookingRequestsByHostUser: (_: any, { userId }: { userId: string }, context: AuthContext) => {
+      // Booking requests require authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== userId) {
+        throw new Error('Unauthorized: Can only view booking requests for your own hosts');
+      }
       // Get all booking requests for hosts owned by this user
       const allHosts = getAllHosts.all();
       const userHosts = allHosts.filter((host: any) => host.user_id === userId);
@@ -381,18 +448,35 @@ export const resolvers = {
       // Sort by created_at desc
       return allRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
-    pendingBookingRequestsCount: (_: any, { userId }: { userId: string }) => {
+    pendingBookingRequestsCount: (_: any, { userId }: { userId: string }, context: AuthContext) => {
+      // Booking requests require authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      if (context.user.id !== userId) {
+        throw new Error('Unauthorized: Can only view your own pending requests count');
+      }
       const result = getPendingBookingRequestsCountByHostUser.get(userId) as any;
       return result?.count || 0;
     },
   },
   Mutation: {
-    createHost: (_: any, args: any): GeneratedHost => {
+    createHost: (_: any, args: any, context: AuthContext): GeneratedHost => {
+      // Creating a host requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       try {
         // Validate required fields
         validateName(args.name);
         if (!args.userId) {
           throw new Error('User ID is required');
+        }
+        
+        // Ensure user can only create hosts for themselves
+        if (args.userId !== context.user.id) {
+          throw new Error('Unauthorized: Can only create hosts for yourself');
         }
         
         // Validate optional text fields
@@ -473,10 +557,21 @@ export const resolvers = {
         throw error;
       }
     },
-    createAvailability: (_: any, args: any): GeneratedAvailability => {
+    createAvailability: (_: any, args: any, context: AuthContext): GeneratedAvailability => {
+      // Creating availability requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate required fields
       validatePositiveInteger(parseInt(args.hostId), 'Host ID');
       validateDateRange(args.startDate, args.endDate);
+      
+      // Ensure user owns the host
+      const host = getHostById.get(args.hostId) as any;
+      if (!host || host.user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only manage availability for your own hosts');
+      }
       
       // Validate optional fields
       if (args.status) {
@@ -500,12 +595,23 @@ export const resolvers = {
         notes: args.notes || null,
       } as GeneratedAvailability;
     },
-    createBookingRequest: (_: any, args: any): GeneratedBookingRequest => {
+    createBookingRequest: (_: any, args: any, context: AuthContext): GeneratedBookingRequest => {
+      // Creating booking requests requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate required fields
       validatePositiveInteger(parseInt(args.hostId), 'Host ID');
       if (!args.requesterId) {
         throw new Error('Requester ID is required');
       }
+      
+      // Ensure user can only create booking requests for themselves
+      if (args.requesterId !== context.user.id) {
+        throw new Error('Unauthorized: Can only create booking requests for yourself');
+      }
+      
       validateDateRange(args.startDate, args.endDate);
       validatePositiveInteger(args.guests, 'Guests count', 50);
       
@@ -533,7 +639,12 @@ export const resolvers = {
         created_at: new Date().toISOString(),
       } as GeneratedBookingRequest;
     },
-    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }): GeneratedBookingRequest => {
+    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }, context: AuthContext): GeneratedBookingRequest => {
+      // Updating booking request status requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate status
       validateStatus(status, ['pending', 'approved', 'declined', 'cancelled']);
 
@@ -541,6 +652,12 @@ export const resolvers = {
       const bookingRequest = getBookingRequestById.get(id) as any;
       if (!bookingRequest) {
         throw new Error('Booking request not found');
+      }
+
+      // Check if user owns the host for this booking request
+      const host = getHostById.get(bookingRequest.host_id) as any;
+      if (!host || host.user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only update booking requests for your own hosts');
       }
 
       // Update the booking request status
@@ -605,7 +722,18 @@ export const resolvers = {
             
       return invitationUrl;
     },
-    updateHost: (_: any, { id, input }: { id: string, input: any }): GeneratedHost | undefined => {
+    updateHost: (_: any, { id, input }: { id: string, input: any }, context: AuthContext): GeneratedHost | undefined => {
+      // Updating hosts requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Ensure user can only update their own hosts
+      const host = getHostById.get(id) as any;
+      if (!host || host.user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only update your own hosts');
+      }
+      
       const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
 
       try {
@@ -801,7 +929,18 @@ export const resolvers = {
         db.close()
       }
     },
-    deleteHost: (_: any, { id }: { id: string }) => {
+    deleteHost: (_: any, { id }: { id: string }, context: AuthContext) => {
+      // Deleting hosts requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Ensure user can only delete their own hosts
+      const host = getHostById.get(id) as any;
+      if (!host || host.user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only delete your own hosts');
+      }
+      
       const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
 
       try {
@@ -822,7 +961,12 @@ export const resolvers = {
         db.close()
       }
     },
-    createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }) => {
+    createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }, context: AuthContext): GeneratedUser => {
+      // Creating users requires authentication (called from auth callback)
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Generate a unique string ID for the new user
       const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
@@ -836,11 +980,31 @@ export const resolvers = {
       } as any;
       return created as any;
     },
-    updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }) => {
+    updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }, context: AuthContext): GeneratedUser => {
+      // Updating user requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Ensure user can only update their own profile
+      if (context.user.id !== id) {
+        throw new Error('Unauthorized: Can only update your own profile');
+      }
+      
       updateUser.run(name, image, id);
-      return getUserById.get(id);
+      return getUserById.get(id) as GeneratedUser;
     },
-    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }): GeneratedConnection => {
+    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }, context: AuthContext): GeneratedConnection => {
+      // Creating connections requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Ensure user can only create connections for themselves
+      if (context.user.id !== userId) {
+        throw new Error('Unauthorized: Can only create connections for yourself');
+      }
+      
       // Validate required fields
       if (!userId) {
         throw new Error('User ID is required');
@@ -865,20 +1029,43 @@ export const resolvers = {
         created_at: new Date().toISOString(),
       } as unknown as GeneratedConnection;
     },
-    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }): GeneratedConnection | undefined => {
+    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }, context: AuthContext): GeneratedConnection | undefined => {
+      // Updating connection status requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate required fields
       validatePositiveInteger(parseInt(connectionId), 'Connection ID');
       validateStatus(status, ['pending', 'accepted', 'declined', 'cancelled']);
 
+      // Check if user is part of this connection
+      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
+      const connection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId) as any;
+      db.close();
+      
+      if (!connection) {
+        throw new Error('Connection not found');
+      }
+      
+      if (connection.user_id !== context.user.id && connection.connected_user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only update connections you are part of');
+      }
+
       const result = updateConnectionStatus.run(status, connectionId);
       console.log('result: ', result);
       // Return the updated connection
-      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
-      const connection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
-      db.close();
-      return connection as GeneratedConnection | undefined;
+      const db2 = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
+      const updatedConnection = db2.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
+      db2.close();
+      return updatedConnection as GeneratedConnection | undefined;
     },
-    deleteConnection: (_: any, { connectionId }: { connectionId: string }) => {
+    deleteConnection: (_: any, { connectionId }: { connectionId: string }, context: AuthContext) => {
+      // Deleting connections requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate
       validatePositiveInteger(parseInt(connectionId), 'Connection ID');
 
@@ -886,6 +1073,11 @@ export const resolvers = {
       const connRow: any = getConnectionById.get(connectionId);
       if (!connRow) {
         throw new Error('Connection not found');
+      }
+
+      // Check if user is part of this connection
+      if (connRow.user_id !== context.user.id && connRow.connected_user_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only delete connections you are part of');
       }
 
       // Only allow deletion of accepted (verified) connections via this flow
@@ -906,7 +1098,17 @@ export const resolvers = {
         return false;
       }
     },
-    createInvitation: (_: any, { inviterId, inviteeEmail, message }: { inviterId: string, inviteeEmail: string, message?: string }): GeneratedInvitation => {
+    createInvitation: (_: any, { inviterId, inviteeEmail, message }: { inviterId: string, inviteeEmail: string, message?: string }, context: AuthContext): GeneratedInvitation => {
+      // Creating invitations requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Ensure user can only create invitations for themselves
+      if (context.user.id !== inviterId) {
+        throw new Error('Unauthorized: Can only create invitations for yourself');
+      }
+      
       // Validate required fields
       if (!inviterId) {
         throw new Error('Inviter ID is required');
@@ -983,11 +1185,17 @@ export const resolvers = {
 
       // Send invitation email
       const invitationUrl = `http://localhost:3000/invite/${token}`;
-      resolvers.Mutation.sendInvitationEmail(null, { email: inviteeEmail, invitationUrl });
+      // For now, we'll just log the invitation and return the URL for testing
+      console.log('Invitation created:', { email: inviteeEmail, url: invitationUrl });
 
       return invitation;
     },
-    acceptInvitation: (_: any, { token, userData }: { token: string, userData: any }) => {
+    acceptInvitation: (_: any, { token, userData }: { token: string, userData: any }, context: AuthContext) => {
+      // Accepting invitations requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate token
       if (!token || typeof token !== 'string') {
         throw new Error('Invalid token format');
@@ -1008,6 +1216,11 @@ export const resolvers = {
 
       if (new Date(invitation.expires_at) < new Date()) {
         throw new Error('Invitation has expired');
+      }
+
+      // Ensure the authenticated user matches the invitee
+      if (context.user.email !== invitation.invitee_email) {
+        throw new Error('Unauthorized: Can only accept invitations sent to your email');
       }
 
       // Check if user already exists
@@ -1060,24 +1273,50 @@ export const resolvers = {
       const userRow = getUserById.get(newUserId);
       return userRow;
     },
-    cancelInvitation: (_: any, { invitationId }: { invitationId: string }) => {
+    cancelInvitation: (_: any, { invitationId }: { invitationId: string }, context: AuthContext) => {
+      // Cancelling invitations requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
       // Validate required field
       validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
 
-      const result = updateInvitationStatus.run('cancelled', null, invitationId);
-      return result.changes > 0;
-    },
-    deleteInvitation: (_: any, { invitationId }: { invitationId: string }) => {
-      // Validate required field
-      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
-
-      // Only allow deletion of pending invitations
-      const invitation = getInvitationById.get(invitationId);
+      // Get invitation to check ownership
+      const invitation = getInvitationById.get(invitationId) as any;
       if (!invitation) {
         throw new Error('Invitation not found');
       }
 
-      if ((invitation as any).status !== 'pending' && (invitation as any).status !== 'cancelled') {
+      // Ensure user can only cancel their own invitations
+      if (invitation.inviter_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only cancel your own invitations');
+      }
+
+      const result = updateInvitationStatus.run('cancelled', null, invitationId);
+      return result.changes > 0;
+    },
+    deleteInvitation: (_: any, { invitationId }: { invitationId: string }, context: AuthContext) => {
+      // Deleting invitations requires authentication
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      // Validate required field
+      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
+
+      // Get invitation to check ownership
+      const invitation = getInvitationById.get(invitationId) as any;
+      if (!invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      // Ensure user can only delete their own invitations
+      if (invitation.inviter_id !== context.user.id) {
+        throw new Error('Unauthorized: Can only delete your own invitations');
+      }
+
+      if (invitation.status !== 'pending' && invitation.status !== 'cancelled') {
         throw new Error('Only pending or cancelled invitations can be deleted');
       }
 
@@ -1151,7 +1390,20 @@ export const resolvers = {
     hostId: (parent: BookingRequest) => parent.host_id,
     requesterId: (parent: BookingRequest) => parent.requester_id,
     requester: (parent: BookingRequest) => {
-      return getUserById.get(parent.requester_id);
+      const user = getUserById.get(parent.requester_id);
+      if (!user) {
+        // Return a placeholder user object if the requester doesn't exist
+        // This prevents GraphQL errors for orphaned booking requests
+        return {
+          id: parent.requester_id,
+          email: 'unknown@example.com',
+          name: 'Unknown User',
+          image: null,
+          email_verified: null,
+          created_at: new Date().toISOString(),
+        };
+      }
+      return user;
     },
     startDate: (parent: BookingRequest) => parent.start_date,
     endDate: (parent: BookingRequest) => parent.end_date,

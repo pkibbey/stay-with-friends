@@ -10,6 +10,7 @@ import { Map, List, Filter } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
 import { HostProfileData, SearchFiltersState } from '@/types'
+import { graphqlRequest } from '@/lib/graphql'
 
 
 function SearchPage() {
@@ -174,28 +175,9 @@ function SearchPage() {
         `
       }
 
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          variables,
-        }),
-      })
+      const result = await graphqlRequest(query, variables)
       
-      if (!response.ok) {
-        throw new Error('Failed to search hosts')
-      }
-
-      const data = await response.json()
-      
-      if (data.errors) {
-        throw new Error(data.errors[0].message)
-      }
-
-      const hosts = data.data?.searchHostsAdvanced || data.data?.hosts || []
+      const hosts = (result.data as { searchHostsAdvanced?: HostProfileData[], hosts?: HostProfileData[] })?.searchHostsAdvanced || (result.data as { searchHostsAdvanced?: HostProfileData[], hosts?: HostProfileData[] })?.hosts || []
       setHosts(hosts)
     } catch (err) {
       console.error('Search error:', err)

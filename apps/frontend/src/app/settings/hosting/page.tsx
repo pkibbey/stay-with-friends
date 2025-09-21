@@ -13,7 +13,7 @@ import { AvailabilityManager } from '@/components/AvailabilityManager'
 import { FileUpload } from '@/components/ui/file-upload'
 import { PageLayout } from '@/components/PageLayout'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2, Navigation } from 'lucide-react'
+import { Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2, Navigation } from 'lucide-react'
 import { HostWithAvailabilities, User } from '@/types'
 
 // Use the generated types
@@ -25,8 +25,8 @@ export default function ManageHostingPage() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [hostings, setHostings] = useState<HostData[]>([])
   const [loading, setLoading] = useState(true)
-  const [editingHostId, setEditingHostId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<Partial<HostData>>({})
+  const [editingHostIds, setEditingHostIds] = useState<string[]>([])
+  const [editForms, setEditForms] = useState<Record<string, Partial<HostData>>>({})
   const [saving, setSaving] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -342,20 +342,28 @@ export default function ManageHostingPage() {
   }
 
   const startEdit = (hosting: HostData) => {
-    setEditingHostId(hosting.id)
-    setEditForm({
-      ...hosting,
-      amenities: hosting.amenities // Keep as array for editing
+    setEditingHostIds(prev => [...prev, hosting.id])
+    setEditForms(prev => ({
+      ...prev,
+      [hosting.id]: {
+        ...hosting,
+        amenities: hosting.amenities // Keep as array for editing
+      }
+    }))
+  }
+
+  const cancelEdit = (hostId: string) => {
+    setEditingHostIds(prev => prev.filter(id => id !== hostId))
+    setEditForms(prev => {
+      const newForms = { ...prev }
+      delete newForms[hostId]
+      return newForms
     })
   }
 
-  const cancelEdit = () => {
-    setEditingHostId(null)
-    setEditForm({})
-  }
-
-  const saveEdit = async () => {
-    if (!editForm.id) return
+  const saveEdit = async (hostId: string) => {
+    const editForm = editForms[hostId]
+    if (!editForm?.id) return
 
     setSaving(true)
     try {
@@ -421,8 +429,8 @@ export default function ManageHostingPage() {
       if (data.data?.updateHost) {
         // Refresh the hostings data to get the latest updates
         await fetchHostings()
-        setEditingHostId(null)
-        setEditForm({})
+        // Remove this host from editing state
+        cancelEdit(hostId)
       } else {
         console.error('Failed to update host:', data.errors)
         alert('Failed to save changes')
@@ -436,7 +444,7 @@ export default function ManageHostingPage() {
   }
 
   // Upload a single image file to backend and append returned URL to editForm.photos
-  const handleFileUpload = async (file: File | null) => {
+  const handleFileUpload = async (hostId: string, file: File | null) => {
     if (!file) return
     // Client-side validation: type and size
     if (!file.type || !file.type.startsWith('image/')) {
@@ -459,8 +467,8 @@ export default function ManageHostingPage() {
 
       const data = await resp.json()
       if (data?.url) {
-        const currentPhotos = Array.isArray(editForm.photos) ? editForm.photos : []
-        updateEditForm('photos', [...currentPhotos, data.url])
+        const currentPhotos = Array.isArray(editForms[hostId]?.photos) ? editForms[hostId].photos : []
+        updateEditForm(hostId, 'photos', [...currentPhotos, data.url])
       } else {
         console.error('Upload failed', data)
         alert('Failed to upload image')
@@ -471,21 +479,27 @@ export default function ManageHostingPage() {
     }
   }
 
-  const updateEditForm = (field: keyof HostData, value: string | number | string[] | undefined) => {
-    setEditForm(prev => ({ ...prev, [field]: value }))
+  const updateEditForm = (hostId: string, field: keyof HostData, value: string | number | string[] | undefined) => {
+    setEditForms(prev => ({
+      ...prev,
+      [hostId]: {
+        ...prev[hostId],
+        [field]: value
+      }
+    }))
   }
 
   // Mark a photo as featured by moving it to index 0 of the photos array
-  const setFeaturedPhoto = (index: number) => {
-    const photos = Array.isArray(editForm.photos) ? [...editForm.photos] : []
+  const setFeaturedPhoto = (hostId: string, index: number) => {
+    const photos = Array.isArray(editForms[hostId]?.photos) ? [...editForms[hostId].photos] : []
     if (index < 0 || index >= photos.length) return
     const [item] = photos.splice(index, 1)
     photos.unshift(item)
-    updateEditForm('photos', photos)
+    updateEditForm(hostId, 'photos', photos)
   }
 
   // Geocoding function to get coordinates from address
-  const geocodeAddress = async (address: string, city: string, state: string, country: string, isEditForm = false) => {
+  const geocodeAddress = async (address: string, city: string, state: string, country: string, isEditForm = false, hostId?: string) => {
     if (!address && !city) {
       return
     }
@@ -512,9 +526,9 @@ export default function ManageHostingPage() {
         const lat = parseFloat(data[0].lat)
         const lng = parseFloat(data[0].lon)
         
-        if (isEditForm) {
-          updateEditForm('latitude', lat)
-          updateEditForm('longitude', lng)
+        if (isEditForm && hostId) {
+          updateEditForm(hostId, 'latitude', lat)
+          updateEditForm(hostId, 'longitude', lng)
         } else {
           setNewHosting(prev => ({
             ...prev,
@@ -869,14 +883,14 @@ export default function ManageHostingPage() {
               <CardHeader>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1">
-                    {editingHostId === hosting.id ? (
+                    {editingHostIds.includes(hosting.id) ? (
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor={`edit-name-${hosting.id}`}>Name</Label>
                           <Input
                             id={`edit-name-${hosting.id}`}
-                            value={editForm.name || ''}
-                            onChange={(e) => updateEditForm('name', e.target.value)}
+                            value={editForms[hosting.id]?.name || ''}
+                            onChange={(e) => updateEditForm(hosting.id, 'name', e.target.value)}
                             placeholder="Property name"
                           />
                         </div>
@@ -884,8 +898,8 @@ export default function ManageHostingPage() {
                           <Label htmlFor={`edit-location-${hosting.id}`}>General Location Description</Label>
                           <Input
                             id={`edit-location-${hosting.id}`}
-                            value={editForm.location || ''}
-                            onChange={(e) => updateEditForm('location', e.target.value)}
+                            value={editForms[hosting.id]?.location || ''}
+                            onChange={(e) => updateEditForm(hosting.id, 'location', e.target.value)}
                             placeholder="e.g., Downtown San Francisco, Near Golden Gate Park"
                           />
                         </div>
@@ -897,8 +911,8 @@ export default function ManageHostingPage() {
                             <Label htmlFor={`edit-address-${hosting.id}`}>Street Address</Label>
                             <Input
                               id={`edit-address-${hosting.id}`}
-                              value={editForm.address || ''}
-                              onChange={(e) => updateEditForm('address', e.target.value)}
+                              value={editForms[hosting.id]?.address || ''}
+                              onChange={(e) => updateEditForm(hosting.id, 'address', e.target.value)}
                               placeholder="e.g., 123 Main Street, Apt 4B"
                             />
                           </div>
@@ -907,8 +921,8 @@ export default function ManageHostingPage() {
                               <Label htmlFor={`edit-city-${hosting.id}`}>City</Label>
                               <Input
                                 id={`edit-city-${hosting.id}`}
-                                value={editForm.city || ''}
-                                onChange={(e) => updateEditForm('city', e.target.value)}
+                                value={editForms[hosting.id]?.city || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'city', e.target.value)}
                                 placeholder="San Francisco"
                               />
                             </div>
@@ -916,8 +930,8 @@ export default function ManageHostingPage() {
                               <Label htmlFor={`edit-state-${hosting.id}`}>State/Province</Label>
                               <Input
                                 id={`edit-state-${hosting.id}`}
-                                value={editForm.state || ''}
-                                onChange={(e) => updateEditForm('state', e.target.value)}
+                                value={editForms[hosting.id]?.state || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'state', e.target.value)}
                                 placeholder="CA"
                               />
                             </div>
@@ -925,8 +939,8 @@ export default function ManageHostingPage() {
                               <Label htmlFor={`edit-zipCode-${hosting.id}`}>ZIP/Postal Code</Label>
                               <Input
                                 id={`edit-zipCode-${hosting.id}`}
-                                value={editForm.zipCode || ''}
-                                onChange={(e) => updateEditForm('zipCode', e.target.value)}
+                                value={editForms[hosting.id]?.zipCode || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'zipCode', e.target.value)}
                                 placeholder="94102"
                               />
                             </div>
@@ -936,8 +950,8 @@ export default function ManageHostingPage() {
                               <Label htmlFor={`edit-country-${hosting.id}`}>Country</Label>
                               <Input
                                 id={`edit-country-${hosting.id}`}
-                                value={editForm.country || ''}
-                                onChange={(e) => updateEditForm('country', e.target.value)}
+                                value={editForms[hosting.id]?.country || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'country', e.target.value)}
                                 placeholder="United States"
                               />
                             </div>
@@ -947,8 +961,8 @@ export default function ManageHostingPage() {
                                 id={`edit-latitude-${hosting.id}`}
                                 type="number"
                                 step="any"
-                                value={editForm.latitude || ''}
-                                onChange={(e) => updateEditForm('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                value={editForms[hosting.id]?.latitude || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                                 placeholder="37.7749"
                               />
                               <p className="text-xs text-gray-500 mt-1">For precise map location</p>
@@ -959,8 +973,8 @@ export default function ManageHostingPage() {
                                 id={`edit-longitude-${hosting.id}`}
                                 type="number"
                                 step="any"
-                                value={editForm.longitude || ''}
-                                onChange={(e) => updateEditForm('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                value={editForms[hosting.id]?.longitude || ''}
+                                onChange={(e) => updateEditForm(hosting.id, 'longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
                                 placeholder="-122.4194"
                               />
                               <p className="text-xs text-gray-500 mt-1">For precise map location</p>
@@ -972,13 +986,14 @@ export default function ManageHostingPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => geocodeAddress(
-                                editForm.address || '',
-                                editForm.city || '',
-                                editForm.state || '',
-                                editForm.country || '',
-                                true
+                                editForms[hosting.id]?.address || '',
+                                editForms[hosting.id]?.city || '',
+                                editForms[hosting.id]?.state || '',
+                                editForms[hosting.id]?.country || '',
+                                true,
+                                hosting.id
                               )}
-                              disabled={geocodingEdit || (!editForm.address && !editForm.city)}
+                              disabled={geocodingEdit || (!editForms[hosting.id]?.address && !editForms[hosting.id]?.city)}
                             >
                               <Navigation className="w-4 h-4 mr-2" />
                               {geocodingEdit ? 'Finding Coordinates...' : 'Get Coordinates from Address'}
@@ -1005,10 +1020,10 @@ export default function ManageHostingPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    {editingHostId === hosting.id ? (
+                    {editingHostIds.includes(hosting.id) ? (
                       <>
                         <Button 
-                          onClick={saveEdit} 
+                          onClick={() => saveEdit(hosting.id)} 
                           disabled={saving}
                           size="sm"
                         >
@@ -1016,7 +1031,7 @@ export default function ManageHostingPage() {
                         </Button>
                         <Button 
                           variant="outline" 
-                          onClick={cancelEdit}
+                          onClick={() => cancelEdit(hosting.id)}
                           size="sm"
                         >
                           Cancel
@@ -1047,14 +1062,14 @@ export default function ManageHostingPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {editingHostId === hosting.id ? (
+                {editingHostIds.includes(hosting.id) ? (
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor={`edit-description-${hosting.id}`}>Description</Label>
                       <Textarea
                         id={`edit-description-${hosting.id}`}
-                        value={editForm.description || ''}
-                        onChange={(e) => updateEditForm('description', e.target.value)}
+                        value={editForms[hosting.id]?.description || ''}
+                        onChange={(e) => updateEditForm(hosting.id, 'description', e.target.value)}
                         placeholder="Describe your space..."
                         rows={3}
                       />
@@ -1063,16 +1078,16 @@ export default function ManageHostingPage() {
                     <div>
                       <Label>Photos</Label>
                       <div className="flex items-center gap-2 mb-2">
-                        <FileUpload onChange={(files) => handleFileUpload(files && files.length ? files[0] : null)} />
+                        <FileUpload onChange={(files) => handleFileUpload(hosting.id, files && files.length ? files[0] : null)} />
                       </div>
                       <div className="flex gap-2 flex-wrap">
-                        {(Array.isArray(editForm.photos) ? editForm.photos : []).map((p: string, idx: number) => (
+                        {(editForms[hosting.id]?.photos || []).map((p: string, idx: number) => (
                           <div
                             key={idx}
                             role="button"
                             tabIndex={0}
-                            onClick={() => setFeaturedPhoto(idx)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setFeaturedPhoto(idx) }}
+                            onClick={() => setFeaturedPhoto(hosting.id, idx)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setFeaturedPhoto(hosting.id, idx) }}
                             className={`w-24 h-16 bg-gray-100 rounded overflow-hidden relative cursor-pointer ${idx === 0 ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-gray-300'}`}
                             aria-label={`Set photo ${idx + 1} as featured`}
                           >
@@ -1091,9 +1106,9 @@ export default function ManageHostingPage() {
                               onClick={(e) => {
                                 // Prevent the click from bubbling to the parent which would set this photo as featured
                                 e.stopPropagation()
-                                const photos = Array.isArray(editForm.photos) ? [...editForm.photos] : []
+                                const photos = editForms[hosting.id]?.photos || []
                                 photos.splice(idx, 1)
-                                updateEditForm('photos', photos)
+                                updateEditForm(hosting.id, 'photos', photos)
                               }}
                             >
                               Remove
@@ -1109,8 +1124,8 @@ export default function ManageHostingPage() {
                         <Input
                           id={`edit-maxGuests-${hosting.id}`}
                           type="number"
-                          value={editForm.maxGuests || 1}
-                          onChange={(e) => updateEditForm('maxGuests', parseInt(e.target.value))}
+                          value={editForms[hosting.id]?.maxGuests || 1}
+                          onChange={(e) => updateEditForm(hosting.id, 'maxGuests', parseInt(e.target.value))}
                           min="1"
                         />
                       </div>
@@ -1119,8 +1134,8 @@ export default function ManageHostingPage() {
                         <Input
                           id={`edit-bedrooms-${hosting.id}`}
                           type="number"
-                          value={editForm.bedrooms || 1}
-                          onChange={(e) => updateEditForm('bedrooms', parseInt(e.target.value))}
+                          value={editForms[hosting.id]?.bedrooms || 1}
+                          onChange={(e) => updateEditForm(hosting.id, 'bedrooms', parseInt(e.target.value))}
                           min="0"
                         />
                       </div>
@@ -1129,8 +1144,8 @@ export default function ManageHostingPage() {
                         <Input
                           id={`edit-bathrooms-${hosting.id}`}
                           type="number"
-                          value={editForm.bathrooms || 1}
-                          onChange={(e) => updateEditForm('bathrooms', parseInt(e.target.value))}
+                          value={editForms[hosting.id]?.bathrooms || 1}
+                          onChange={(e) => updateEditForm(hosting.id, 'bathrooms', parseInt(e.target.value))}
                           min="1"
                         />
                       </div>
@@ -1141,8 +1156,8 @@ export default function ManageHostingPage() {
                         <Label htmlFor={`edit-checkInTime-${hosting.id}`}>Check-in Time</Label>
                         <Input
                           id={`edit-checkInTime-${hosting.id}`}
-                          value={editForm.checkInTime || ''}
-                          onChange={(e) => updateEditForm('checkInTime', e.target.value)}
+                          value={editForms[hosting.id]?.checkInTime || ''}
+                          onChange={(e) => updateEditForm(hosting.id, 'checkInTime', e.target.value)}
                           placeholder="e.g., 3:00 PM"
                         />
                       </div>
@@ -1150,8 +1165,8 @@ export default function ManageHostingPage() {
                         <Label htmlFor={`edit-checkOutTime-${hosting.id}`}>Check-out Time</Label>
                         <Input
                           id={`edit-checkOutTime-${hosting.id}`}
-                          value={editForm.checkOutTime || ''}
-                          onChange={(e) => updateEditForm('checkOutTime', e.target.value)}
+                          value={editForms[hosting.id]?.checkOutTime || ''}
+                          onChange={(e) => updateEditForm(hosting.id, 'checkOutTime', e.target.value)}
                           placeholder="e.g., 11:00 AM"
                         />
                       </div>
@@ -1161,8 +1176,8 @@ export default function ManageHostingPage() {
                       <Label htmlFor={`edit-amenities-${hosting.id}`}>Amenities (comma-separated)</Label>
                       <Input
                         id={`edit-amenities-${hosting.id}`}
-                        value={Array.isArray(editForm.amenities) ? editForm.amenities.join(', ') : ''}
-                        onChange={(e) => updateEditForm('amenities', e.target.value.split(',').map(a => a.trim()).filter(a => a))}
+                        value={Array.isArray(editForms[hosting.id]?.amenities) ? (editForms[hosting.id]?.amenities || []).join(', ') : ''}
+                        onChange={(e) => updateEditForm(hosting.id, 'amenities', e.target.value.split(',').map(a => a.trim()).filter(a => a))}
                         placeholder="e.g., WiFi, Kitchen, Parking"
                       />
                     </div>
@@ -1171,8 +1186,8 @@ export default function ManageHostingPage() {
                       <Label htmlFor={`edit-houseRules-${hosting.id}`}>House Rules</Label>
                       <Textarea
                         id={`edit-houseRules-${hosting.id}`}
-                        value={editForm.houseRules || ''}
-                        onChange={(e) => updateEditForm('houseRules', e.target.value)}
+                        value={editForms[hosting.id]?.houseRules || ''}
+                        onChange={(e) => updateEditForm(hosting.id, 'houseRules', e.target.value)}
                         placeholder="e.g., No smoking, quiet hours after 10pm"
                         rows={2}
                       />
