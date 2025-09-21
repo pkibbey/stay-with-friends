@@ -1,5 +1,4 @@
-Change the word Friends in the title to be the search bar for finding friends 
-- make it obvious with animation and have it selected to type initially
+Convert the header into a better menu.
 
 Tearing down the app and starting again is useful to discover the user journey. We can limit certain things they see until they list as a host. Focus them on creating a host, but they also don't have to, it's fine, no pressure. They can do two main things - find connections, or create a hosting.
 
@@ -28,5 +27,3 @@ Make search filters work correctly
 Make map view work correctly
 
 Improve the layout of the connections page by leaning on some shadcn layout blocks layouts
-
-All requests should have authentication checks on them

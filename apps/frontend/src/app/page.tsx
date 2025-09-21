@@ -153,9 +153,9 @@ function Home() {
 // Wrapper component with Suspense boundary for useSearchParams
 function HomeWrapper() {
   return (
-    // <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <Home />
-    // </Suspense>
+    </Suspense>
   )
 }
 

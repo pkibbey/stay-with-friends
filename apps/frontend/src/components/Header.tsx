@@ -3,7 +3,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu'
 import Link from 'next/link'
 import { TextLogo } from './TextLogo'
 
@@ -44,52 +44,35 @@ export function Header() {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between h-16">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between h-14">
         <Link href="/" className="text-xl font-bold">
-          <TextLogo className="text-xs md:text-xl" />
+          <TextLogo className="text-lg md:text-xl" />
         </Link>
         <nav className="flex items-center gap-6">
           {status === 'loading' ? undefined : session ? (
             <>
-              {/* Common/Public Navigation */}
               <div className="flex items-center gap-4">
-                <Link href="/search" className="text-gray-600 hover:text-gray-900 font-medium">
-                  Search
-                </Link>
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink href="/search" className='font-medium px-4'>Search</NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <NavigationMenuLink href="/settings/profile">Profile</NavigationMenuLink>
+                        <NavigationMenuLink href="/settings/connections">Connections</NavigationMenuLink>
+                        <NavigationMenuLink href="/settings/bookings">Bookings {pendingRequestsCount ? pendingRequestsCount : null}</NavigationMenuLink>
+                        <NavigationMenuLink href="/settings/hosting">Hosting</NavigationMenuLink>
+                        <NavigationMenuLink className="cursor-pointer" onClick={() => signOut()}>
+                            Sign Out
+                        </NavigationMenuLink>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+
               </div>
-              
-              {/* Visual separator */}
-              <div className="h-6 w-px bg-gray-300"></div>
-              
-              {/* Personal/Account Navigation */}
-              <div className="flex items-center gap-4">
-                <Link href="/settings/profile" className="text-gray-600 hover:text-gray-900">
-                  Profile
-                </Link>
-                <Link href="/settings/connections" className="text-gray-600 hover:text-gray-900">
-                  Connections
-                </Link>
-                <Link href="/settings/bookings" className="text-gray-600 hover:text-gray-900 relative">
-                  <div className="flex items-center gap-1">
-                    Bookings
-                    {pendingRequestsCount > 0 && (
-                      <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs min-w-[1.2rem] h-5">
-                        {pendingRequestsCount}
-                      </Badge>
-                    )}
-                  </div>
-                </Link>
-                <Link href="/settings/hosting" className="text-gray-600 hover:text-gray-900">
-                  Hosting
-                </Link>
-              </div>
-              
-              {/* Another separator before account actions */}
-              <div className="h-6 w-px bg-gray-300"></div>
-              
-              <Button variant="outline" className='cursor-pointer' onClick={() => signOut()}>
-                Sign Out
-              </Button>
             </>
           ) : (
             <>

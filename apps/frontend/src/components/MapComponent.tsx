@@ -340,7 +340,7 @@ export function MapComponent({
   }
 
   return (
-    <div className="relative">
+    <div className="relative pt-6">
       <div
         ref={mapRef}
         className={`w-full rounded-lg overflow-hidden ${className}`}
