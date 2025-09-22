@@ -231,6 +231,7 @@ import type { User as GeneratedUser, Host as GeneratedHost, Connection as Genera
 import fs from 'fs';
 import path from 'path';
 import Crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import BetterSqlite3 from 'better-sqlite3';
 import Path from 'path';
 
@@ -295,6 +296,17 @@ const validatePositiveInteger = (value: number | undefined, fieldName: string, m
     if (max && value > max) {
       throw new Error(`${fieldName} must be no more than ${max}`);
     }
+  }
+};
+
+const validateUUID = (value: string | undefined, fieldName: string): void => {
+  if (!value || typeof value !== 'string') {
+    throw new Error(`${fieldName} is required and must be a UUID string`);
+  }
+  // Basic UUID v4 format check (does not enforce v4 specifically, but ensures UUID structure)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(value)) {
+    throw new Error(`${fieldName} must be a valid UUID`);
   }
 };
 
@@ -505,7 +517,9 @@ export const resolvers = {
           throw new Error('Photos must be an array');
         }
 
-        const result = insertHost.run(
+        const newHostId = uuidv4();
+        insertHost.run(
+          newHostId,
           args.userId,
           args.name,
           args.location,
@@ -527,7 +541,7 @@ export const resolvers = {
           args.photos ? JSON.stringify(args.photos) : null
         );
         return {
-          id: result.lastInsertRowid,
+          id: newHostId,
           user_id: args.userId,
           name: args.name,
           location: args.location,
@@ -563,8 +577,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate required fields
-      validatePositiveInteger(parseInt(args.hostId), 'Host ID');
+  // Validate required fields
+  validateUUID(args.hostId, 'Host ID');
       validateDateRange(args.startDate, args.endDate);
       
       // Ensure user owns the host
@@ -579,15 +593,17 @@ export const resolvers = {
       }
       validateOptionalText(args.notes, 'Notes', 500);
 
-      const result = insertAvailability.run(
-        parseInt(args.hostId),
+      const newAvailabilityId = uuidv4();
+      insertAvailability.run(
+        newAvailabilityId,
+        args.hostId,
         args.startDate,
         args.endDate,
         args.status || 'available',
         args.notes
       );
       return {
-        id: String(result.lastInsertRowid),
+        id: newAvailabilityId,
         host_id: args.hostId,
         start_date: args.startDate,
         end_date: args.endDate,
@@ -601,8 +617,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate required fields
-      validatePositiveInteger(parseInt(args.hostId), 'Host ID');
+  // Validate required fields
+  validateUUID(args.hostId, 'Host ID');
       if (!args.requesterId) {
         throw new Error('Requester ID is required');
       }
@@ -618,8 +634,10 @@ export const resolvers = {
       // Validate optional fields
       validateOptionalText(args.message, 'Message', 1000);
 
-      const result = insertBookingRequest.run(
-        parseInt(args.hostId),
+      const newBookingId = uuidv4();
+      insertBookingRequest.run(
+        newBookingId,
+        args.hostId,
         args.requesterId,
         args.startDate,
         args.endDate,
@@ -628,7 +646,7 @@ export const resolvers = {
         'pending'
       );
       return {
-        id: String(result.lastInsertRowid),
+        id: newBookingId,
         host_id: args.hostId,
         requester_id: args.requesterId,
         start_date: args.startDate,
@@ -968,9 +986,9 @@ export const resolvers = {
       }
       
       // Generate a unique string ID for the new user
-      const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const newUserId = uuidv4();
       
-      insertUser.run(newUserId, email, name, null, image);
+  insertUser.run(newUserId, email, name, null, image);
       const created: GeneratedUser = {
         id: newUserId,
         email,
@@ -1019,9 +1037,10 @@ export const resolvers = {
         throw new Error('User with this email not found');
       }
       
-      const result = insertConnection.run(userId, connectedUser.id, relationship, 'pending');
+      const newConnectionId = uuidv4();
+      insertConnection.run(newConnectionId, userId, connectedUser.id, relationship, 'pending');
       return {
-        id: Number(result.lastInsertRowid),
+        id: newConnectionId,
         user_id: userId,
         connected_user_id: connectedUser.id,
         relationship,
@@ -1035,8 +1054,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate required fields
-      validatePositiveInteger(parseInt(connectionId), 'Connection ID');
+  // Validate required fields
+  validateUUID(connectionId, 'Connection ID');
       validateStatus(status, ['pending', 'accepted', 'declined', 'cancelled']);
 
       // Check if user is part of this connection
@@ -1066,8 +1085,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate
-      validatePositiveInteger(parseInt(connectionId), 'Connection ID');
+  // Validate
+  validateUUID(connectionId, 'Connection ID');
 
       // Use central prepared statements where possible
       const connRow: any = getConnectionById.get(connectionId);
@@ -1136,11 +1155,12 @@ export const resolvers = {
         }
 
         // Create a connection request
-        const connectionResult = insertConnection.run(inviterId, existingUser.id, 'friend', 'pending');
+        const newConnId = uuidv4();
+        insertConnection.run(newConnId, inviterId, existingUser.id, 'friend', 'pending');
         
         // Return a mock invitation-like response to maintain API compatibility
         return {
-          id: String(connectionResult.lastInsertRowid),
+          id: newConnId,
           // inviterId may be a user id string; preserve as string
           inviter_id: inviterId,
           invitee_email: inviteeEmail,
@@ -1165,7 +1185,9 @@ export const resolvers = {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
+      const newInvitationId = uuidv4();
       insertInvitation.run(
+        newInvitationId,
         inviterId,
         inviteeEmail,
         message,
@@ -1184,9 +1206,9 @@ export const resolvers = {
       } as GeneratedInvitation;
 
       // Send invitation email
-      const invitationUrl = `http://localhost:3000/invite/${token}`;
-      // For now, we'll just log the invitation and return the URL for testing
-      console.log('Invitation created:', { email: inviteeEmail, url: invitationUrl });
+      // const invitationUrl = `http://localhost:3000/invite/${token}`;
+      // // For now, we'll just log the invitation and return the URL for testing
+      // console.log('Invitation created:', { email: inviteeEmail, url: invitationUrl });
 
       return invitation;
     },
@@ -1252,7 +1274,7 @@ export const resolvers = {
 
       // Create new user (original logic)
       // Generate a unique string ID for the new user
-      const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newUserId = uuidv4();
       
       insertUser.run(
         newUserId,
@@ -1279,8 +1301,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate required field
-      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
+  // Validate required field
+  validateUUID(invitationId, 'Invitation ID');
 
       // Get invitation to check ownership
       const invitation = getInvitationById.get(invitationId) as any;
@@ -1302,8 +1324,8 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Validate required field
-      validatePositiveInteger(parseInt(invitationId), 'Invitation ID');
+  // Validate required field
+  validateUUID(invitationId, 'Invitation ID');
 
       // Get invitation to check ownership
       const invitation = getInvitationById.get(invitationId) as any;

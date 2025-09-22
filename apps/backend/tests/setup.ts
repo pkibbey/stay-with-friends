@@ -20,7 +20,7 @@ export const setupTestDatabase = (): Database.Database => {
       );
 
       CREATE TABLE hosts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         user_id TEXT,
         name TEXT NOT NULL,
         email TEXT UNIQUE,
@@ -47,8 +47,8 @@ export const setupTestDatabase = (): Database.Database => {
       );
 
       CREATE TABLE availabilities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        host_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        host_id TEXT NOT NULL,
         start_date TEXT NOT NULL,
         end_date TEXT NOT NULL,
         status TEXT DEFAULT 'available',
@@ -57,8 +57,8 @@ export const setupTestDatabase = (): Database.Database => {
       );
 
       CREATE TABLE booking_requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        host_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        host_id TEXT NOT NULL,
         requester_id TEXT NOT NULL,
         start_date TEXT NOT NULL,
         end_date TEXT NOT NULL,
@@ -71,7 +71,7 @@ export const setupTestDatabase = (): Database.Database => {
       );
 
       CREATE TABLE connections (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         connected_user_id TEXT NOT NULL,
         relationship TEXT,
@@ -83,7 +83,7 @@ export const setupTestDatabase = (): Database.Database => {
       );
 
       CREATE TABLE invitations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         inviter_id TEXT NOT NULL,
         invitee_email TEXT NOT NULL,
         message TEXT,
@@ -123,6 +123,7 @@ export const createTestUser = (overrides: Record<string, unknown> = {}) => {
 
 export const createTestHost = (overrides: Record<string, unknown> = {}) => {
   const defaultHost = {
+    id: 'test-host-1',
     user_id: 'test-user-1',
     name: 'Test Host',
     email: 'host@example.com',
@@ -149,7 +150,8 @@ export const createTestHost = (overrides: Record<string, unknown> = {}) => {
 
 export const createTestAvailability = (overrides: Record<string, unknown> = {}) => {
   const defaultAvailability = {
-    host_id: 1,
+    id: 'test-availability-1',
+    host_id: 'test-host-1',
     start_date: '2025-12-01',
     end_date: '2025-12-07',
     status: 'available',
@@ -160,7 +162,8 @@ export const createTestAvailability = (overrides: Record<string, unknown> = {}) 
 
 export const createTestBookingRequest = (overrides: Record<string, unknown> = {}) => {
   const defaultBooking = {
-    host_id: 1,
+    id: 'test-booking-1',
+    host_id: 'test-host-1',
     requester_id: 'test-user-2',
     start_date: '2025-12-01',
     end_date: '2025-12-03',
@@ -173,6 +176,7 @@ export const createTestBookingRequest = (overrides: Record<string, unknown> = {}
 
 export const createTestConnection = (overrides: Record<string, unknown> = {}) => {
   const defaultConnection = {
+    id: 'test-connection-1',
     user_id: 'test-user-1',
     connected_user_id: 'test-user-2',
     relationship: 'friend',
@@ -183,6 +187,7 @@ export const createTestConnection = (overrides: Record<string, unknown> = {}) =>
 
 export const createTestInvitation = (overrides: Record<string, unknown> = {}) => {
   const defaultInvitation = {
+    id: 'test-invitation-1',
     inviter_id: 'test-user-1',
     invitee_email: 'invitee@example.com',
     message: 'Join our platform!',

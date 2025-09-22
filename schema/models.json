@@ -3,7 +3,7 @@
     "User": {
       "table": "users",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "email": { "type": "string", "unique": true, "notNull": true },
         "name": { "type": "string", "nullable": true },
         "email_verified": { "type": "datetime", "nullable": true },
@@ -14,7 +14,7 @@
     "Host": {
       "table": "hosts",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "user_id": { "type": "string", "nullable": true },
         "name": { "type": "string", "notNull": true },
         "location": { "type": "string", "nullable": true },
@@ -41,7 +41,7 @@
     "Availability": {
       "table": "availabilities",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "host_id": { "type": "string", "notNull": true },
         "start_date": { "type": "string", "notNull": true },
         "end_date": { "type": "string", "notNull": true },
@@ -52,7 +52,7 @@
     "BookingRequest": {
       "table": "booking_requests",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "host_id": { "type": "string", "notNull": true },
         "requester_id": { "type": "string", "notNull": true },
         "start_date": { "type": "string", "notNull": true },
@@ -68,7 +68,7 @@
     "Connection": {
       "table": "connections",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "user_id": { "type": "string", "notNull": true },
         "connected_user_id": { "type": "string", "notNull": true },
         "relationship": { "type": "string", "nullable": true },
@@ -79,7 +79,7 @@
     "Invitation": {
       "table": "invitations",
       "fields": {
-        "id": { "type": "string", "primary": true, "autoincrement": true },
+        "id": { "type": "string", "primary": true },
         "inviter_id": { "type": "string", "notNull": true },
         "invitee_email": { "type": "string", "notNull": true },
         "message": { "type": "string", "nullable": true },

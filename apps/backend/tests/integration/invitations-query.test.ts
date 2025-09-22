@@ -21,8 +21,7 @@ describe('Invitations query', () => {
     db.exec('DELETE FROM hosts');
     db.exec('DELETE FROM users');
     
-    // Reset auto-increment
-    db.exec('DELETE FROM sqlite_sequence WHERE name IN (\'users\', \'connections\', \'invitations\', \'hosts\', \'availabilities\', \'booking_requests\')');
+  // No sqlite_sequence reset needed for TEXT primary keys
 
     // Create an inviter user with explicit ID
     inviterId = 'test-inviter-1';
@@ -40,29 +39,18 @@ describe('Invitations query', () => {
     // Create a pending invitation
     const token1 = 'a'.repeat(32); // Valid 32-character token
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    insertInvitation.run(
-      inviterId,
-      'pending@example.com',
-      'Please join!',
-      token1,
-      expiresAt
-    );
+    insertInvitation.run('inv-1', inviterId, 'pending@example.com', 'Please join!', token1, expiresAt);
 
-    // Create another invitation and mark it as accepted
-    const token2 = 'b'.repeat(32); // Valid 32-character token
-    const acceptedResult = insertInvitation.run(
-      inviterId,
-      'accepted@example.com',
-      'Welcome!',
-      token2,
-      expiresAt
-    );
+      // Create another invitation and mark it as accepted
+      const token2 = 'b'.repeat(32); // Valid 32-character token
+      const acceptedId = 'inv-2';
+      insertInvitation.run(acceptedId, inviterId, 'accepted@example.com', 'Welcome!', token2, expiresAt);
     
     // Mark the second invitation as accepted
-    updateInvitationStatus.run('accepted', new Date().toISOString(), acceptedResult.lastInsertRowid);
+    updateInvitationStatus.run('accepted', new Date().toISOString(), acceptedId);
 
     // Query invitations using the GraphQL resolver
-    const result = resolvers.Query.invitations(null, { inviterId: inviterId });
+      const result = resolvers.Query.invitations(null, { inviterId: inviterId }, { user: { id: inviterId } } as any);
 
     // Should return both invitations
     expect(result).toHaveLength(2);
@@ -79,7 +67,7 @@ describe('Invitations query', () => {
   });
 
   test('should return empty array when no invitations exist', async () => {
-    const result = resolvers.Query.invitations(null, { inviterId: inviterId.toString() });
+      const result = resolvers.Query.invitations(null, { inviterId: inviterId.toString() }, { user: { id: inviterId } } as any);
     expect(result).toHaveLength(0);
   });
 });

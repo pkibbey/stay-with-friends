@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
+import { expressMiddleware } from '@as-integrations/express5';
 import express from 'express';
 import cors from 'cors';
 import request from 'supertest';
 import { typeDefs } from '../../src/schema';
-import { setupTestDatabase, teardownTestDatabase, getTestDatabase, createTestInvitation, createTestUser } from '../setup';
+import { setupTestDatabase, teardownTestDatabase, getTestDatabase, createTestUser } from '../setup';
+import Crypto from 'crypto';
 
 describe('Invitation Flow Integration', () => {
   let app: express.Application;
@@ -35,17 +37,17 @@ describe('Invitation Flow Integration', () => {
             throw new Error('Invitation already sent to this email');
           }
 
-          const crypto = require('crypto');
-          const token = crypto.randomBytes(32).toString('hex');
+          const token = Crypto.randomBytes(32).toString('hex');
 
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + 30);
 
-          const result = db.prepare(`INSERT INTO invitations (inviter_id, invitee_email, message, token, expires_at) VALUES (?,?, ?, ?, ?)`)
-            .run(inviterId, inviteeEmail, message, token, expiresAt.toISOString());
+          const newId = `inv-${Date.now()}-${Math.random().toString(36).substr(2,6)}`;
+          db.prepare(`INSERT INTO invitations (id, inviter_id, invitee_email, message, token, expires_at) VALUES (?,?,?,?, ?, ?)`)
+            .run(newId, inviterId, inviteeEmail, message, token, expiresAt.toISOString());
 
           return {
-            id: result.lastInsertRowid,
+            id: newId,
             inviterId,
             inviteeEmail,
             message,

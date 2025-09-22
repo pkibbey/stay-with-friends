@@ -64,14 +64,16 @@ describe('Database Operations', () => {
       
       const insertHost = db.prepare(`
         INSERT INTO hosts (
-          user_id, name, location, description,
+          id, user_id, name, location, description,
           address, city, state, zip_code, country, latitude, longitude,
           amenities, house_rules, check_in_time, check_out_time,
           max_guests, bedrooms, bathrooms, photos
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
+      const hostId = 'test-host-1';
       const result = insertHost.run(
+        hostId,
         hostData.user_id,
         hostData.name,
         hostData.location,
@@ -92,12 +94,12 @@ describe('Database Operations', () => {
         hostData.bathrooms,
         hostData.photos
       );
-      
+
       expect(result.changes).toBe(1);
-      
+
       // Verify host was created with all data
       const getHost = db.prepare('SELECT * FROM hosts WHERE id = ?');
-      const host = getHost.get(result.lastInsertRowid) as any;
+      const host = getHost.get(hostId) as any;
       
       expect(host).toMatchObject({
         name: hostData.name,
@@ -115,11 +117,12 @@ describe('Database Operations', () => {
       const hostData = createTestHost({ user_id: 'non-existent-user' }); // Non-existent user
       
       const insertHost = db.prepare(`
-        INSERT INTO hosts (user_id, name, email) VALUES (?, ?, ?)
+        INSERT INTO hosts (id, user_id, name, email) VALUES (?, ?, ?, ?)
       `);
-      
+
       expect(() => {
-        insertHost.run(hostData.user_id, hostData.name, hostData.email);
+        // Provide an explicit id but a non-existent user_id to trigger FK failure
+        insertHost.run('bad-host-1', hostData.user_id, hostData.name, hostData.email);
       }).toThrow(/FOREIGN KEY constraint failed/);
     });
 
@@ -146,13 +149,14 @@ describe('Database Operations', () => {
       
       // Create host
       const insertHost = db.prepare(`
-        INSERT INTO hosts (user_id, name, email) VALUES (?, ?, ?)
+        INSERT INTO hosts (id, user_id, name, email) VALUES (?, ?, ?, ?)
       `);
-      const hostResult = insertHost.run(hostData.user_id, hostData.name, hostData.email);
-      
-      // Verify host exists
-      const getHost = db.prepare('SELECT * FROM hosts WHERE id = ?');
-      expect(getHost.get(hostResult.lastInsertRowid)).toBeTruthy();
+  const hostId = 'test-host-2';
+  const hostResult = insertHost.run(hostId, hostData.user_id, hostData.name, hostData.email);
+
+  // Verify host exists
+  const getHost = db.prepare('SELECT * FROM hosts WHERE id = ?');
+  expect(getHost.get(hostId)).toBeTruthy();
       
       // Delete user
       const deleteUser = db.prepare('DELETE FROM users WHERE id = ?');
@@ -172,8 +176,8 @@ describe('Database Operations', () => {
       insertUser.run(userData.id, userData.email, userData.name);
       
       const hostData = createTestHost();
-      const insertHost = db.prepare(`INSERT INTO hosts (user_id, name) VALUES (?, ?)`);
-      insertHost.run(hostData.user_id, hostData.name);
+  const insertHost = db.prepare(`INSERT INTO hosts (id, user_id, name) VALUES (?, ?, ?)`);
+  insertHost.run(hostData.id, hostData.user_id, hostData.name);
     });
 
     it('should create availability with valid date range', () => {
@@ -181,11 +185,12 @@ describe('Database Operations', () => {
       const availabilityData = createTestAvailability();
       
       const insertAvailability = db.prepare(`
-        INSERT INTO availabilities (host_id, start_date, end_date, status, notes)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO availabilities (id, host_id, start_date, end_date, status, notes)
+        VALUES (?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertAvailability.run(
+        availabilityData.id,
         availabilityData.host_id,
         availabilityData.start_date,
         availabilityData.end_date,
@@ -195,8 +200,9 @@ describe('Database Operations', () => {
       
       expect(result.changes).toBe(1);
       
-      const getAvailability = db.prepare('SELECT * FROM availabilities WHERE id = ?');
-      const availability = getAvailability.get(result.lastInsertRowid);
+  const availabilityId = 'test-availability-1';
+  const getAvailability = db.prepare('SELECT * FROM availabilities WHERE id = ?');
+  const availability = getAvailability.get(availabilityId);
       
       expect(availability).toMatchObject({
         host_id: availabilityData.host_id,
@@ -260,9 +266,9 @@ describe('Database Operations', () => {
       // Create guest user
       insertUser.run('test-user-2', 'guest@example.com', 'Guest User');
       
-      // Create host
-      const insertHost = db.prepare(`INSERT INTO hosts (user_id, name, email, max_guests) VALUES (?, ?, ?, ?)`);
-      insertHost.run('test-user-1', 'Test Host', 'host@example.com', 4);
+  // Create host (provide explicit id so tests can reference it)
+  const insertHost = db.prepare(`INSERT INTO hosts (id, user_id, name, email, max_guests) VALUES (?, ?, ?, ?, ?)`);
+  insertHost.run('test-host-1', 'test-user-1', 'Test Host', 'host@example.com', 4);
     });
 
     it('should create booking request with valid data', () => {
@@ -270,11 +276,12 @@ describe('Database Operations', () => {
       const bookingData = createTestBookingRequest();
       
       const insertBooking = db.prepare(`
-        INSERT INTO booking_requests (host_id, requester_id, start_date, end_date, guests, message, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO booking_requests (id, host_id, requester_id, start_date, end_date, guests, message, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertBooking.run(
+        bookingData.id,
         bookingData.host_id,
         bookingData.requester_id,
         bookingData.start_date,
@@ -286,8 +293,9 @@ describe('Database Operations', () => {
       
       expect(result.changes).toBe(1);
       
-      const getBooking = db.prepare('SELECT * FROM booking_requests WHERE id = ?');
-      const booking = getBooking.get(result.lastInsertRowid);
+  const bookingId = 'test-booking-1';
+  const getBooking = db.prepare('SELECT * FROM booking_requests WHERE id = ?');
+  const booking = getBooking.get(bookingId);
       
       expect(booking).toMatchObject({
         host_id: bookingData.host_id,
@@ -302,8 +310,8 @@ describe('Database Operations', () => {
       
       // Get host max capacity
       const getHost = db.prepare('SELECT max_guests FROM hosts WHERE id = ?');
-      const host = getHost.get(1) as any;
-      const maxGuests = host.max_guests;
+  const host = getHost.get('test-host-1') as any;
+  const maxGuests = host.max_guests;
       
       expect(() => {
         const guestCount = maxGuests + 1; // Exceed capacity
@@ -346,11 +354,12 @@ describe('Database Operations', () => {
       const connectionData = createTestConnection();
       
       const insertConnection = db.prepare(`
-        INSERT INTO connections (user_id, connected_user_id, relationship, status)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO connections (id, user_id, connected_user_id, relationship, status)
+        VALUES (?, ?, ?, ?, ?)
       `);
       
       const result = insertConnection.run(
+        'test-connection-1',
         connectionData.user_id,
         connectionData.connected_user_id,
         connectionData.relationship,
@@ -359,8 +368,9 @@ describe('Database Operations', () => {
       
       expect(result.changes).toBe(1);
       
-      const getConnection = db.prepare('SELECT * FROM connections WHERE id = ?');
-      const connection = getConnection.get(result.lastInsertRowid);
+  const connectionId = 'test-connection-1';
+  const getConnection = db.prepare('SELECT * FROM connections WHERE id = ?');
+  const connection = getConnection.get(connectionId);
       
       expect(connection).toMatchObject({
         user_id: connectionData.user_id,
@@ -421,11 +431,12 @@ describe('Database Operations', () => {
       const invitationData = createTestInvitation();
       
       const insertInvitation = db.prepare(`
-        INSERT INTO invitations (inviter_id, invitee_email, message, token, status, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO invitations (id, inviter_id, invitee_email, message, token, status, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = insertInvitation.run(
+        'test-invitation-1',
         invitationData.inviter_id,
         invitationData.invitee_email,
         invitationData.message,
@@ -436,8 +447,9 @@ describe('Database Operations', () => {
       
       expect(result.changes).toBe(1);
       
-      const getInvitation = db.prepare('SELECT * FROM invitations WHERE id = ?');
-      const invitation = getInvitation.get(result.lastInsertRowid);
+  const invitationId = 'test-invitation-1';
+  const getInvitation = db.prepare('SELECT * FROM invitations WHERE id = ?');
+  const invitation = getInvitation.get(invitationId);
       
       expect(invitation).toMatchObject({
         inviter_id: invitationData.inviter_id,
@@ -497,23 +509,23 @@ describe('Database Operations', () => {
       
       // Create host
       const insertHost = db.prepare(`
-        INSERT INTO hosts (user_id, name, email, city, max_guests) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO hosts (id, user_id, name, email, city, max_guests) VALUES (?, ?, ?, ?, ?, ?)
       `);
-      insertHost.run('test-user-1', 'Beach House', 'host@example.com', 'Malibu', 6);
+      insertHost.run('test-host-1', 'test-user-1', 'Beach House', 'host@example.com', 'Malibu', 6);
       
       // Create availabilities
       const insertAvailability = db.prepare(`
-        INSERT INTO availabilities (host_id, start_date, end_date, status) VALUES (?, ?, ?, ?)
+        INSERT INTO availabilities (id, host_id, start_date, end_date, status, notes) VALUES (?, ?, ?, ?, ?, ?)
       `);
-      insertAvailability.run(1, '2025-12-01', '2025-12-07', 'available');
-      insertAvailability.run(1, '2025-12-15', '2025-12-20', 'booked');
+  insertAvailability.run('test-availability-1', 'test-host-1', '2025-12-01', '2025-12-07', 'available', null);
+  insertAvailability.run('test-availability-2', 'test-host-1', '2025-12-15', '2025-12-20', 'booked', null);
       
       // Create booking requests
       const insertBooking = db.prepare(`
-        INSERT INTO booking_requests (host_id, requester_id, start_date, end_date, guests, status)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO booking_requests (id, host_id, requester_id, start_date, end_date, guests, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      insertBooking.run(1, 'test-user-2', '2025-12-01', '2025-12-03', 2, 'pending');
+  insertBooking.run('test-booking-1', 'test-host-1', 'test-user-2', '2025-12-01', '2025-12-03', 2, 'pending');
     });
 
     it('should find available hosts by date range', () => {
@@ -550,7 +562,7 @@ describe('Database Operations', () => {
       `;
       
       const getBookingRequests = db.prepare(query);
-      const results = getBookingRequests.all(1);
+  const results = getBookingRequests.all('test-host-1');
       
       expect(results.length).toBe(1);
       expect(results[0]).toMatchObject({

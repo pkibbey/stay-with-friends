@@ -2,7 +2,11 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useSession } from 'next-auth/react'
+import { authenticatedGraphQLRequest } from '@/lib/graphql'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -126,44 +130,70 @@ export default function ManageHostingPage() {
     }
   }, [fetchHostings, session?.user])
 
-  const [newHosting, setNewHosting] = useState({
-    name: '',
-    description: '',
-    location: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    latitude: '',
-    longitude: '',
-    maxGuests: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    checkInTime: '3:00 PM',
-    checkOutTime: '11:00 AM',
-    amenities: '',
-    houseRules: ''
+  // Zod schema for the add-hosting form
+  const AddHostingSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().optional().nullable().or(z.literal('')),
+    location: z.string().optional().nullable().or(z.literal('')),
+    address: z.string().optional().nullable().or(z.literal('')),
+    city: z.string().optional().nullable().or(z.literal('')),
+    state: z.string().optional().nullable().or(z.literal('')),
+    zipCode: z.string().optional().nullable().or(z.literal('')),
+    country: z.string().optional().nullable().or(z.literal('')),
+    latitude: z.string().optional().nullable().or(z.literal('')),
+    longitude: z.string().optional().nullable().or(z.literal('')),
+    maxGuests: z.number().int().min(1).default(2),
+    bedrooms: z.number().int().min(0).default(1),
+    bathrooms: z.number().int().min(1).default(1),
+    checkInTime: z.string().optional().default('3:00 PM'),
+    checkOutTime: z.string().optional().default('11:00 AM'),
+    amenities: z.string().optional().nullable().or(z.literal('')),
+    houseRules: z.string().optional().nullable().or(z.literal('')),
   })
 
-  const handleAddHosting = async () => {
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(AddHostingSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      location: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: '',
+      latitude: '',
+      longitude: '',
+      maxGuests: 2,
+      bedrooms: 1,
+      bathrooms: 1,
+      checkInTime: '3:00 PM',
+      checkOutTime: '11:00 AM',
+      amenities: '',
+      houseRules: ''
+    }
+  })
+
+  const handleAddHosting = async (values: z.infer<typeof AddHostingSchema>) => {
     setSaving(true)
     try {
       // Get userId from session
       const userId = (session?.user as User | undefined)?.id
-      console.log('userId: ', userId);
       if (!userId) {
         alert('You must be signed in to create a hosting')
         setSaving(false)
         return
       }
 
-      // Call the GraphQL createHost mutation
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
+      // Parse numeric coordinates
+      const latitude = values.latitude ? parseFloat(values.latitude as unknown as string) : undefined
+      const longitude = values.longitude ? parseFloat(values.longitude as unknown as string) : undefined
+
+      // Build amenities array
+  const amenities = (values.amenities || '').split(',').map((a: string) => a.trim()).filter(a => a)
+
+      // Call the GraphQL createHost mutation using the authenticated helper
+      const mutation = `
             mutation CreateHost(
               $userId: ID!
               $name: String!
@@ -230,60 +260,40 @@ export default function ManageHostingPage() {
                 userId
               }
             }
-          `,
-          variables: {
-            userId: userId,
-            name: newHosting.name,
-            location: newHosting.location,
-            description: newHosting.description,
-            address: newHosting.address,
-            city: newHosting.city,
-            state: newHosting.state,
-            zipCode: newHosting.zipCode,
-            country: newHosting.country,
-            latitude: newHosting.latitude ? parseFloat(newHosting.latitude) : undefined,
-            longitude: newHosting.longitude ? parseFloat(newHosting.longitude) : undefined,
-            amenities: newHosting.amenities.split(',').map(a => a.trim()).filter(a => a),
-            houseRules: newHosting.houseRules,
-            checkInTime: newHosting.checkInTime,
-            checkOutTime: newHosting.checkOutTime,
-            maxGuests: newHosting.maxGuests,
-            bedrooms: newHosting.bedrooms,
-            bathrooms: newHosting.bathrooms,
-            photos: []
-          },
-        }),
-      })
+          `
 
-      const data = await response.json()
-      if (data.data?.createHost) {
+      const variables = {
+        userId: userId,
+        name: values.name,
+        location: values.location || undefined,
+        description: values.description || undefined,
+        address: values.address || undefined,
+        city: values.city || undefined,
+        state: values.state || undefined,
+        zipCode: values.zipCode || undefined,
+        country: values.country || undefined,
+        latitude,
+        longitude,
+        amenities,
+        houseRules: values.houseRules || undefined,
+        checkInTime: values.checkInTime || undefined,
+        checkOutTime: values.checkOutTime || undefined,
+        maxGuests: values.maxGuests,
+        bedrooms: values.bedrooms,
+        bathrooms: values.bathrooms,
+        photos: []
+      }
+
+      const result = await authenticatedGraphQLRequest(mutation, variables)
+
+      if (result.data?.createHost) {
         // Refresh the hostings data to include the new host
-        const results = await fetchHostings()
-        console.log('fetchHostings: ', results);
+        await fetchHostings()
 
         // Reset form and close
-        setNewHosting({
-          name: '',
-          description: '',
-          location: '',
-          address: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          country: '',
-          latitude: '',
-          longitude: '',
-          maxGuests: 2,
-          bedrooms: 1,
-          bathrooms: 1,
-          checkInTime: '3:00 PM',
-          checkOutTime: '11:00 AM',
-          amenities: '',
-          houseRules: ''
-        })
         setShowAddForm(false)
       } else {
-        console.error('Failed to create host:', data.errors)
+        console.error('Failed to create host:', result)
         alert('Failed to create hosting. Please check your inputs and try again.')
       }
     } catch (error) {
@@ -525,16 +535,19 @@ export default function ManageHostingPage() {
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat)
         const lng = parseFloat(data[0].lon)
-        
+
         if (isEditForm && hostId) {
           updateEditForm(hostId, 'latitude', lat)
           updateEditForm(hostId, 'longitude', lng)
         } else {
-          setNewHosting(prev => ({
-            ...prev,
-            latitude: lat.toString(),
-            longitude: lng.toString()
-          }))
+          // Set values on the add-hosting form
+          try {
+            setValue('latitude', lat.toString())
+            setValue('longitude', lng.toString())
+          } catch (e) {
+            // setValue might not be available in some contexts; ignore
+            console.warn('Could not set form values for coordinates', e)
+          }
         }
         
         // Success feedback
@@ -645,216 +658,123 @@ export default function ManageHostingPage() {
             <CardDescription>Create a new hosting opportunity for your friends</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={newHosting.name}
-                  onChange={(e) => setNewHosting({...newHosting, name: e.target.value})}
-                  placeholder="e.g., Cozy Downtown Apartment"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={newHosting.description}
-                onChange={(e) => setNewHosting({...newHosting, description: e.target.value})}
-                placeholder="Describe your space..."
-                rows={3}
-              />
-            </div>
-
-            {/* Address Section */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Address Information</h4>
-              <div className="grid grid-cols-1 gap-4">
+            <form onSubmit={handleSubmit(handleAddHosting)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    value={newHosting.address}
-                    onChange={(e) => setNewHosting({...newHosting, address: e.target.value})}
-                    placeholder="e.g., 123 Main Street, Apt 4B"
-                  />
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" {...register('name')} placeholder="e.g., Cozy Downtown Apartment" />
+                  {errors.name && <p className="text-xs text-red-600 mt-1">{String(errors.name?.message)}</p>}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" {...register('description')} placeholder="Describe your space..." rows={3} />
+              </div>
+
+              {/* Address Section */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900">Address Information</h4>
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={newHosting.city}
-                      onChange={(e) => setNewHosting({...newHosting, city: e.target.value})}
-                      placeholder="San Francisco"
-                    />
+                    <Label htmlFor="address">Street Address</Label>
+                    <Input id="address" {...register('address')} placeholder="e.g., 123 Main Street, Apt 4B" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input id="city" {...register('city')} placeholder="San Francisco" />
+                    </div>
+                    <div>
+                      <Label htmlFor="state">State/Province</Label>
+                      <Input id="state" {...register('state')} placeholder="CA" />
+                    </div>
+                    <div>
+                      <Label htmlFor="zipCode">ZIP/Postal Code</Label>
+                      <Input id="zipCode" {...register('zipCode')} placeholder="94102" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="country">Country</Label>
+                      <Input id="country" {...register('country')} placeholder="United States" />
+                    </div>
+                    <div>
+                      <Label htmlFor="latitude">Latitude (optional)</Label>
+                      <Input id="latitude" type="number" step="any" {...register('latitude')} placeholder="37.7749" />
+                      <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="longitude">Longitude (optional)</Label>
+                      <Input id="longitude" type="number" step="any" {...register('longitude')} placeholder="-122.4194" />
+                      <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => geocodeAddress(watch('address') || '', watch('city') || '', watch('state') || '', watch('country') || '')}
+                      disabled={geocoding || (!watch('address') && !watch('city'))}
+                    >
+                      <Navigation className="w-4 h-4 mr-2" />
+                      {geocoding ? 'Finding Coordinates...' : 'Get Coordinates from Address'}
+                    </Button>
+                    <p className="text-xs text-gray-500">Automatically find latitude and longitude from your address</p>
                   </div>
                   <div>
-                    <Label htmlFor="state">State/Province</Label>
-                    <Input
-                      id="state"
-                      value={newHosting.state}
-                      onChange={(e) => setNewHosting({...newHosting, state: e.target.value})}
-                      placeholder="CA"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="zipCode">ZIP/Postal Code</Label>
-                    <Input
-                      id="zipCode"
-                      value={newHosting.zipCode}
-                      onChange={(e) => setNewHosting({...newHosting, zipCode: e.target.value})}
-                      placeholder="94102"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={newHosting.country}
-                      onChange={(e) => setNewHosting({...newHosting, country: e.target.value})}
-                      placeholder="United States"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="latitude">Latitude (optional)</Label>
-                    <Input
-                      id="latitude"
-                      type="number"
-                      step="any"
-                      value={newHosting.latitude}
-                      onChange={(e) => setNewHosting({...newHosting, latitude: e.target.value})}
-                      placeholder="37.7749"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">For precise map location</p>
-                  </div>
-                  <div>
-                    <Label htmlFor="longitude">Longitude (optional)</Label>
-                    <Input
-                      id="longitude"
-                      type="number"
-                      step="any"
-                      value={newHosting.longitude}
-                      onChange={(e) => setNewHosting({...newHosting, longitude: e.target.value})}
-                      placeholder="-122.4194"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">For precise map location</p>
+                    <Label htmlFor="location">General Location Description</Label>
+                    <Input id="location" {...register('location')} placeholder="e.g., Downtown San Francisco, Near Golden Gate Park" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => geocodeAddress(newHosting.address, newHosting.city, newHosting.state, newHosting.country)}
-                    disabled={geocoding || (!newHosting.address && !newHosting.city)}
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    {geocoding ? 'Finding Coordinates...' : 'Get Coordinates from Address'}
-                  </Button>
-                  <p className="text-xs text-gray-500">
-                    Automatically find latitude and longitude from your address
-                  </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="maxGuests">Max Guests</Label>
+                  <Input id="maxGuests" type="number" {...register('maxGuests', { valueAsNumber: true })} min="1" />
                 </div>
                 <div>
-                  <Label htmlFor="location">General Location Description</Label>
-                  <Input
-                    id="location"
-                    value={newHosting.location}
-                    onChange={(e) => setNewHosting({...newHosting, location: e.target.value})}
-                    placeholder="e.g., Downtown San Francisco, Near Golden Gate Park"
-                  />
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input id="bedrooms" type="number" {...register('bedrooms', { valueAsNumber: true })} min="0" />
+                </div>
+                <div>
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input id="bathrooms" type="number" {...register('bathrooms', { valueAsNumber: true })} min="1" />
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="maxGuests">Max Guests</Label>
-                <Input
-                  id="maxGuests"
-                  type="number"
-                  value={newHosting.maxGuests}
-                  onChange={(e) => setNewHosting({...newHosting, maxGuests: parseInt(e.target.value)})}
-                  min="1"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="checkInTime">Check-in Time</Label>
+                  <Input id="checkInTime" {...register('checkInTime')} placeholder="e.g., 3:00 PM" />
+                </div>
+                <div>
+                  <Label htmlFor="checkOutTime">Check-out Time</Label>
+                  <Input id="checkOutTime" {...register('checkOutTime')} placeholder="e.g., 11:00 AM" />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="bedrooms">Bedrooms</Label>
-                <Input
-                  id="bedrooms"
-                  type="number"
-                  value={newHosting.bedrooms}
-                  onChange={(e) => setNewHosting({...newHosting, bedrooms: parseInt(e.target.value)})}
-                  min="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="bathrooms">Bathrooms</Label>
-                <Input
-                  id="bathrooms"
-                  type="number"
-                  value={newHosting.bathrooms}
-                  onChange={(e) => setNewHosting({...newHosting, bathrooms: parseInt(e.target.value)})}
-                  min="1"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="checkInTime">Check-in Time</Label>
-                <Input
-                  id="checkInTime"
-                  value={newHosting.checkInTime}
-                  onChange={(e) => setNewHosting({...newHosting, checkInTime: e.target.value})}
-                  placeholder="e.g., 3:00 PM"
-                />
+                <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+                <Input id="amenities" {...register('amenities')} placeholder="e.g., WiFi, Kitchen, Parking" />
               </div>
+
               <div>
-                <Label htmlFor="checkOutTime">Check-out Time</Label>
-                <Input
-                  id="checkOutTime"
-                  value={newHosting.checkOutTime}
-                  onChange={(e) => setNewHosting({...newHosting, checkOutTime: e.target.value})}
-                  placeholder="e.g., 11:00 AM"
-                />
+                <Label htmlFor="houseRules">House Rules</Label>
+                <Textarea id="houseRules" {...register('houseRules')} placeholder="e.g., No smoking, quiet hours after 10pm" rows={2} />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="amenities">Amenities (comma-separated)</Label>
-              <Input
-                id="amenities"
-                value={newHosting.amenities}
-                onChange={(e) => setNewHosting({...newHosting, amenities: e.target.value})}
-                placeholder="e.g., WiFi, Kitchen, Parking"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="houseRules">House Rules</Label>
-              <Textarea
-                id="houseRules"
-                value={newHosting.houseRules}
-                onChange={(e) => setNewHosting({...newHosting, houseRules: e.target.value})}
-                placeholder="e.g., No smoking, quiet hours after 10pm"
-                rows={2}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleAddHosting} disabled={saving || !newHosting.name || (!newHosting.location && !newHosting.city)}>
-                {saving ? 'Creating...' : 'Add Hosting'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                Cancel
-              </Button>
-            </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isSubmitting || saving || !watch('name') || (!watch('location') && !watch('city'))}>
+                  {saving || isSubmitting ? 'Creating...' : 'Add Hosting'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowAddForm(false)} type="button">
+                  Cancel
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}

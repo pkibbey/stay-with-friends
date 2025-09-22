@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect, describe, test, beforeEach, afterEach } from '@jest/globals';
 import { getUserByEmail, getConnectionBetweenUsers } from '../../src/db';
 import { resolvers } from '../../src/schema';
@@ -8,6 +9,7 @@ describe('Invitation to existing user flow', () => {
   let inviterId: string;
   let existingUserId: string;
   let db: BetterSqlite3.Database;
+  let userContext: any;
 
   beforeEach(() => {
     // Clean up any existing data
@@ -22,8 +24,7 @@ describe('Invitation to existing user flow', () => {
     db.exec('DELETE FROM hosts');
     db.exec('DELETE FROM users');
     
-    // Reset auto-increment
-    db.exec('DELETE FROM sqlite_sequence WHERE name IN (\'users\', \'connections\', \'invitations\', \'hosts\', \'availabilities\', \'booking_requests\')');
+  // No sqlite_sequence reset needed for TEXT primary keys
 
     // Create an inviter user
     inviterId = 'test-inviter-1';
@@ -33,7 +34,11 @@ describe('Invitation to existing user flow', () => {
     // Create an existing user that will be invited
     existingUserId = 'test-existing-1';
     insertUserWithId.run(existingUserId, 'existing@example.com', 'Existing User', null, null);
+
+    // Set user context for resolvers
+    userContext = { user: { id: inviterId } };
   });
+
 
   afterEach(() => {
     if (db) {
@@ -47,7 +52,7 @@ describe('Invitation to existing user flow', () => {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
       message: 'Want to connect!'
-    });
+    }, userContext);
 
     // Should return an invitation-like object but with connection-sent status
     expect(result.status).toBe('connection-sent');
@@ -75,7 +80,7 @@ describe('Invitation to existing user flow', () => {
     const result = resolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com'
-    });
+    }, userContext);
 
     // Should return an invitation-like object but with connection-sent status
     expect(result.status).toBe('connection-sent');
@@ -91,7 +96,7 @@ describe('Invitation to existing user flow', () => {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
       message: 'Want to connect!'
-    });
+    }, userContext);
 
     // Try to create another invitation - should fail
     expect(() => {
@@ -99,7 +104,7 @@ describe('Invitation to existing user flow', () => {
         inviterId: inviterId,
         inviteeEmail: 'existing@example.com',
         message: 'Another connection attempt!'
-      });
+      }, userContext);
     }).toThrow('Users are already connected or have a pending connection');
   });
 
@@ -108,7 +113,7 @@ describe('Invitation to existing user flow', () => {
       inviterId: inviterId,
       inviteeEmail: 'new-user@example.com',
       message: 'Join our platform!'
-    });
+    }, userContext);
 
     // Should return a normal invitation
     expect(result.status).toBe('pending');

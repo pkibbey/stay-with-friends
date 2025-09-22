@@ -1,80 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Database from 'better-sqlite3';
 import path from 'path';
 
 const dbPath = path.join(__dirname, '..', 'database.db');
 const db = new Database(dbPath);
 
-// Migrate hosts table to add missing fields and fix user_id type
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
-  const hasUserId = tableInfo.some((col: any) => col.name === 'user_id');
-  const hasCreatedAt = tableInfo.some((col: any) => col.name === 'created_at');
-  const hasUpdatedAt = tableInfo.some((col: any) => col.name === 'updated_at');
-  const userIdColumn = tableInfo.find((col: any) => col.name === 'user_id');
-
-  if (!hasUserId) {
-    console.log('Adding user_id field to hosts table...');
-    db.exec('ALTER TABLE hosts ADD COLUMN user_id TEXT');
-    db.exec('ALTER TABLE hosts ADD FOREIGN KEY (user_id) REFERENCES users (id)');
-  } else if (userIdColumn && userIdColumn.type === 'INTEGER') {
-    console.log('Converting user_id from INTEGER to TEXT in hosts table...');
-    // Check if user_id_new already exists from a previous failed migration
-    const hasUserIdNew = tableInfo.some((col: any) => col.name === 'user_id_new');
-    
-    try {
-      // Drop the index first to avoid conflicts
-      db.exec('DROP INDEX IF EXISTS idx_hosts_user_id');
-      
-      if (!hasUserIdNew) {
-        // Create new column, copy data, drop old column, rename new column
-        db.exec('ALTER TABLE hosts ADD COLUMN user_id_new TEXT');
-      }
-      db.exec('UPDATE hosts SET user_id_new = CAST(user_id AS TEXT) WHERE user_id IS NOT NULL');
-      
-      // Check if old user_id column still exists before trying to drop it
-      const currentTableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
-      const stillHasOldUserId = currentTableInfo.some((col: any) => col.name === 'user_id' && col.type === 'INTEGER');
-      
-      if (stillHasOldUserId) {
-        db.exec('ALTER TABLE hosts DROP COLUMN user_id');
-      }
-      
-      // Check if we need to rename the new column
-      const finalTableInfo = db.prepare("PRAGMA table_info(hosts)").all() as any[];
-      const hasNewColumn = finalTableInfo.some((col: any) => col.name === 'user_id_new');
-      const hasUserIdColumn = finalTableInfo.some((col: any) => col.name === 'user_id');
-      
-      if (hasNewColumn && !hasUserIdColumn) {
-        db.exec('ALTER TABLE hosts RENAME COLUMN user_id_new TO user_id');
-      }
-      
-      // Recreate the index with the new TEXT column
-      db.exec('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)');
-      
-    } catch (dropError) {
-      console.error('Error during user_id column migration:', dropError);
-      // Try to recreate the index in case it was dropped but migration failed
-      try {
-        db.exec('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id)');
-      } catch (indexError) {
-        console.error('Could not recreate user_id index:', indexError);
-      }
-    }
-  }
-  if (!hasCreatedAt) {
-    console.log('Adding created_at field to hosts table...');
-    db.exec('ALTER TABLE hosts ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP');
-  }
-  if (!hasUpdatedAt) {
-    console.log('Adding updated_at field to hosts table...');
-    db.exec('ALTER TABLE hosts ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP');
-  }
-} catch (error) {
-  console.error('Hosts table migration not needed or completed.', error);
-}
-
-// Create tables
+// Create tables first to ensure migrations that inspect/alter tables won't fail when the file is new
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -86,7 +16,7 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS hosts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     user_id TEXT,
     name TEXT NOT NULL,
     email TEXT UNIQUE,
@@ -112,49 +42,52 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS availabilities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    host_id INTEGER NOT NULL,
+    id TEXT PRIMARY KEY,
+    host_id TEXT NOT NULL,
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
-    status TEXT DEFAULT available,
+    status TEXT DEFAULT 'available',
     notes TEXT
   );
 
   CREATE TABLE IF NOT EXISTS booking_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    host_id INTEGER NOT NULL,
+    id TEXT PRIMARY KEY,
+    host_id TEXT NOT NULL,
     requester_id TEXT NOT NULL,
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
     guests INTEGER NOT NULL,
     message TEXT,
-    status TEXT DEFAULT pending,
+    status TEXT DEFAULT 'pending',
     response_message TEXT,
     responded_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS connections (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     connected_user_id TEXT NOT NULL,
     relationship TEXT,
-    status TEXT DEFAULT pending,
+    status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS invitations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     inviter_id TEXT NOT NULL,
     invitee_email TEXT NOT NULL,
     message TEXT,
     token TEXT NOT NULL UNIQUE,
-    status TEXT DEFAULT pending,
+    status TEXT DEFAULT 'pending',
     expires_at DATETIME NOT NULL,
     accepted_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Legacy runtime migrations removed - DB will be recreated from scratch when needed.
+// This file now only ensures schema creation and prepares statements.
 
 // Users table constraints and indexes
 try {
@@ -234,8 +167,8 @@ export const searchHosts = db.prepare(`
   WHERE name LIKE ? OR location LIKE ?
 `);
 export const insertHost = db.prepare(`
-  INSERT INTO hosts (user_id, name, location, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO hosts (id, user_id, name, location, description, address, city, state, zip_code, country, latitude, longitude, amenities, house_rules, check_in_time, check_out_time, max_guests, bedrooms, bathrooms, photos)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 export const getHostAvailabilities = db.prepare(`
@@ -253,13 +186,13 @@ export const getAvailabilitiesByDateRange = db.prepare(`
 `);
 
 export const insertAvailability = db.prepare(`
-  INSERT INTO availabilities (host_id, start_date, end_date, status, notes)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO availabilities (id, host_id, start_date, end_date, status, notes)
+  VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 export const insertBookingRequest = db.prepare(`
-  INSERT INTO booking_requests (host_id, requester_id, start_date, end_date, guests, message, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO booking_requests (id, host_id, requester_id, start_date, end_date, guests, message, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 export const getBookingRequestsByHost = db.prepare(`
@@ -354,8 +287,8 @@ export const getConnectionRequests = db.prepare(`
   WHERE c.connected_user_id = ? AND c.status = 'pending'
 `);
 export const insertConnection = db.prepare(`
-  INSERT INTO connections (user_id, connected_user_id, relationship, status)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO connections (id, user_id, connected_user_id, relationship, status)
+  VALUES (?, ?, ?, ?, ?)
 `);
 export const updateConnectionStatus = db.prepare(`
   UPDATE connections SET status = ? WHERE id = ?
@@ -371,8 +304,8 @@ export const deleteConnectionsBetweenUsers = db.prepare(`
 
 // Invitation prepared statements
 export const insertInvitation = db.prepare(`
-  INSERT INTO invitations (inviter_id, invitee_email, message, token, expires_at)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO invitations (id, inviter_id, invitee_email, message, token, expires_at)
+  VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 export const getInvitationByToken = db.prepare(`

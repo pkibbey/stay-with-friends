@@ -2,7 +2,7 @@
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   name TEXT,
   email_verified DATETIME,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS hosts (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   user_id TEXT,
   name TEXT NOT NULL,
   location TEXT,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS hosts (
 );
 
 CREATE TABLE IF NOT EXISTS availabilities (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   host_id TEXT NOT NULL,
   start_date TEXT NOT NULL,
   end_date TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS availabilities (
 );
 
 CREATE TABLE IF NOT EXISTS booking_requests (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   host_id TEXT NOT NULL,
   requester_id TEXT NOT NULL,
   start_date TEXT NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS booking_requests (
 );
 
 CREATE TABLE IF NOT EXISTS connections (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   connected_user_id TEXT NOT NULL,
   relationship TEXT,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS connections (
 );
 
 CREATE TABLE IF NOT EXISTS invitations (
-  id TEXT PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   inviter_id TEXT NOT NULL,
   invitee_email TEXT NOT NULL,
   message TEXT,
