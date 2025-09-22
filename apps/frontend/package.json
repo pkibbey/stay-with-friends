@@ -14,9 +14,11 @@
   "dependencies": {
     "@auth/drizzle-adapter": "^1.10.0",
     "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-navigation-menu": "^1.2.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@tabler/icons-react": "^3.35.0",
     "@types/ol": "^7.0.0",
     "better-sqlite3": "^12.2.0",

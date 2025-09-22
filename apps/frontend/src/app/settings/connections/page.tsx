@@ -10,6 +10,10 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
 import { ConnectionWithUser, Invitation } from '@/types'
+import { Status, StatusIndicator, StatusLabel } from '@/components/ui/status'
+import { Banner, BannerTitle, BannerClose } from '@/components/ui/banner'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { CheckCircle, UserPlus, Clock, X, AlertCircle } from 'lucide-react'
 
 export default function Connections() {
   const { data: session } = useSession()
@@ -248,90 +252,148 @@ export default function Connections() {
 
   return (
     <PageLayout title="Connections" subtitle="Manage your trusted network">
-      <div>
-        <div className="grid gap-6">
-          {/* Send Invitation */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Invite Friends</CardTitle>
-              <CardDescription>Send invitations to friends to join the platform, or connection requests to existing users</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="invitation-email">Friend&apos;s Email</Label>
-                  <Input
-                    id="invitation-email"
-                    type="email"
-                    value={newInvitationEmail}
-                    onChange={(e) => setNewInvitationEmail(e.target.value)}
-                    placeholder="friend@example.com"
-                  />
+      <div className="grid gap-8">
+        {/* Send Invitation */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Invite Friends
+            </CardTitle>
+            <CardDescription>Send invitations to friends to join the platform, or connection requests to existing users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="invitation-email">Friend&apos;s Email</Label>
+                <Input
+                  id="invitation-email"
+                  type="email"
+                  value={newInvitationEmail}
+                  onChange={(e) => setNewInvitationEmail(e.target.value)}
+                  placeholder="friend@example.com"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invitation-message">Personal Message (Optional)</Label>
+                <textarea
+                  id="invitation-message"
+                  value={newInvitationMessage}
+                  onChange={(e) => setNewInvitationMessage(e.target.value)}
+                  placeholder="Hey! Join me on Stay With Friends so we can share our homes with each other..."
+                  className="w-full px-3 py-2 mt-1 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background"
+                  rows={3}
+                />
+              </div>
+              <Button onClick={handleCreateInvitation} disabled={loading || !newInvitationEmail} className="w-full sm:w-auto">
+                {loading ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Send Invitation
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {lastInvitationUrl && (
+          <Banner 
+            className="bg-green-100 border-green-200 text-green-800 dark:bg-green-900/20 dark:text-green-200" 
+            inset
+            onClose={() => setLastInvitationUrl(null)}
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle size={16} />
+              <BannerTitle className="text-green-800 dark:text-green-200">
+                <strong>Invitation link created!</strong> Share this link with your friend:
+              </BannerTitle>
+            </div>
+            <BannerClose />
+          </Banner>
+        )}
+
+        {lastInvitationUrl && (
+          <Card className="border-green-200 bg-green-50 dark:bg-green-900/10">
+            <CardContent className="pt-4">
+              <div className="text-sm">
+                <div className="p-3 bg-white dark:bg-gray-800 rounded border font-mono text-xs break-all">
+                  {lastInvitationUrl}
                 </div>
-                <div>
-                  <Label htmlFor="invitation-message">Personal Message (Optional)</Label>
-                  <textarea
-                    id="invitation-message"
-                    value={newInvitationMessage}
-                    onChange={(e) => setNewInvitationMessage(e.target.value)}
-                    placeholder="Hey! Join me on Stay With Friends so we can share our homes with each other..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                  />
-                </div>
-                <Button onClick={handleCreateInvitation} disabled={loading || !newInvitationEmail}>
-                  {loading ? 'Sending...' : 'Send Invitation'}
-                </Button>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {lastInvitationUrl && (
-            <Card className="border-green-200 bg-green-50 dark:bg-green-900/10">
-              <CardContent className="pt-4">
-                <div className="text-sm text-green-800 dark:text-green-200">
-                  <strong>Invitation link created!</strong> Share this link with your friend:
-                  <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border font-mono text-xs break-all">
-                    {lastInvitationUrl}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
+        {/* Connection Requests and Verified Connections */}
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Connection Requests */}
           <Card>
             <CardHeader>
-              <CardTitle>Connection Requests</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Connection Requests
+                {requests.length > 0 && (
+                  <span className="ml-auto text-sm font-normal text-muted-foreground">
+                    ({requests.length})
+                  </span>
+                )}
+              </CardTitle>
               <CardDescription>Pending requests from others</CardDescription>
             </CardHeader>
             <CardContent>
               {requests.length === 0 ? (
-                <p className="text-gray-500">No pending requests</p>
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No pending requests</p>
+                </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {requests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{request.connectedUser.name || request.connectedUser.email}</p>
-                        <p className="text-sm text-gray-500">{request.connectedUser.email}</p>
+                    <Card key={request.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={request.connectedUser.image || ''} />
+                            <AvatarFallback>
+                              {(request.connectedUser.name || request.connectedUser.email)?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{request.connectedUser.name || request.connectedUser.email}</p>
+                            <p className="text-xs text-muted-foreground">{request.connectedUser.email}</p>
+                            <Status status="pending" className="mt-1">
+                              <StatusIndicator />
+                              <StatusLabel>Pending request</StatusLabel>
+                            </Status>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleUpdateConnectionStatus(request.id, 'accepted')}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleUpdateConnectionStatus(request.id, 'blocked')}
+                            size="sm"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Decline
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleUpdateConnectionStatus(request.id, 'accepted')}
-                          size="sm"
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleUpdateConnectionStatus(request.id, 'blocked')}
-                          size="sm"
-                        >
-                          Decline
-                        </Button>
-                      </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               )}
@@ -341,88 +403,144 @@ export default function Connections() {
           {/* Verified Connections */}
           <Card>
             <CardHeader>
-              <CardTitle>Verified Connections</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Verified Connections
+                {connections.length > 0 && (
+                  <span className="ml-auto text-sm font-normal text-muted-foreground">
+                    ({connections.length})
+                  </span>
+                )}
+              </CardTitle>
               <CardDescription>Your trusted network</CardDescription>
             </CardHeader>
             <CardContent>
               {connections.length === 0 ? (
-                <p className="text-gray-500">No connections yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {connections.map((connection) => (
-                    <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{connection.connectedUser.name || connection.connectedUser.email}</p>
-                        <p className="text-sm text-gray-500">{connection.connectedUser.email}</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDeleteConnection(connection.id)}
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <UserPlus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No connections yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Send invitations to start building your network</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Sent Invitations */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Sent Invitations</CardTitle>
-              <CardDescription>Invitations you&apos;ve sent to friends</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {invitations.length === 0 ? (
-                <p className="text-gray-500">No pending invitations</p>
               ) : (
-                <div className="space-y-4">
-                  {invitations.map((invitation) => (
-                    <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-500">{invitation.inviteeEmail}</p>
-                        <p className={`text-xs font-medium ${
-                          invitation.status === 'pending' ? 'text-yellow-600' :
-                          invitation.status === 'accepted' ? 'text-green-600' :
-                          invitation.status === 'connection-sent' ? 'text-blue-600' :
-                          invitation.status === 'cancelled' ? 'text-gray-500' :
-                          'text-gray-400'
-                        }`}>
-                          Status: {
-                            invitation.status === 'connection-sent' ? 'Connection Request Sent' :
-                            invitation.status ? invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1) : 'Unknown'
-                          }
-                        </p>
-                      </div>
-                      {(invitation.status === 'pending' || invitation.status === 'cancelled') && (
+                <div className="space-y-3">
+                  {connections.map((connection) => (
+                    <Card key={connection.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={connection.connectedUser.image || ''} />
+                            <AvatarFallback>
+                              {(connection.connectedUser.name || connection.connectedUser.email)?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{connection.connectedUser.name || connection.connectedUser.email}</p>
+                            <p className="text-xs text-muted-foreground">{connection.connectedUser.email}</p>
+                            <Status status="accepted" className="mt-1">
+                              <StatusIndicator />
+                              <StatusLabel>Connected</StatusLabel>
+                            </Status>
+                          </div>
+                        </div>
                         <Button
                           variant="outline"
-                          onClick={() => handleDeleteInvitation(invitation.id)}
+                          onClick={() => handleDeleteConnection(connection.id)}
                           size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          Delete
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
                         </Button>
-                      )}
-                      {invitation.status === 'accepted' && (
-                        <span className="text-xs text-green-600 font-medium">
-                          ✓ User joined & connected
-                        </span>
-                      )}
-                      {invitation.status === 'connection-sent' && (
-                        <span className="text-xs text-blue-600 font-medium">
-                          ✓ Connection request sent to existing user
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Sent Invitations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Sent Invitations
+              {invitations.length > 0 && (
+                <span className="ml-auto text-sm font-normal text-muted-foreground">
+                  ({invitations.length})
+                </span>
+              )}
+            </CardTitle>
+            <CardDescription>Invitations you&apos;ve sent to friends</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invitations.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No pending invitations</p>
+                <p className="text-xs text-muted-foreground mt-1">Send an invitation above to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {invitations.map((invitation) => (
+                  <Card key={invitation.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>
+                            {invitation.inviteeEmail.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{invitation.inviteeEmail}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Invited on {invitation.createdAt ? new Date(invitation.createdAt).toLocaleDateString() : 'Unknown date'}
+                          </p>
+                          <Status 
+                            status={invitation.status as 'accepted' | 'pending' | 'blocked' | 'cancelled' | 'connection-sent'} 
+                            className="mt-1"
+                          >
+                            <StatusIndicator />
+                            <StatusLabel>
+                              {invitation.status === 'connection-sent' ? 'Connection Request Sent' :
+                                invitation.status ? invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1) : 'Unknown'}
+                            </StatusLabel>
+                          </Status>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {invitation.status === 'accepted' && (
+                          <div className="flex items-center gap-1 text-green-600 text-xs font-medium">
+                            <CheckCircle size={14} />
+                            User joined & connected
+                          </div>
+                        )}
+                        {invitation.status === 'connection-sent' && (
+                          <div className="flex items-center gap-1 text-blue-600 text-xs font-medium">
+                            <UserPlus size={14} />
+                            Connection request sent
+                          </div>
+                        )}
+                        {(invitation.status === 'pending' || invitation.status === 'cancelled') && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleDeleteInvitation(invitation.id)}
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </PageLayout>
   )
