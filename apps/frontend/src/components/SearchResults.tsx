@@ -19,11 +19,10 @@ interface SearchResultsProps {
 function ResultCard({ result, filters }: { result: HostProfileData; filters: SearchFiltersState }) {
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
-    if (!filters.startDate || !filters.endDate) return true
+    if (!filters.startDate) return true
 
     const startDate = parseLocalDate(filters.startDate)
-    const endDate = parseLocalDate(filters.endDate)
-
+    
     if (!result.availabilities || result.availabilities.length === 0) {
       return false
     }
@@ -34,9 +33,9 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
       const availStart = parseLocalDate(availability.startDate)
       const availEnd = parseLocalDate(availability.endDate)
 
-      return startDate >= availStart && endDate <= availEnd
+      return startDate >= availStart && startDate <= availEnd
     })
-  }, [result.availabilities, filters.startDate, filters.endDate])
+  }, [result.availabilities, filters.startDate])
 
   const availableNow = result.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
@@ -66,7 +65,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
         
         {/* Availability badge */}
         <div className="absolute top-3 left-3">
-          {filters.startDate && filters.endDate ? (
+          {filters.startDate ? (
             <Badge variant={isAvailableForDates ? "default" : "secondary"}>
               {isAvailableForDates ? "Available for dates" : "Not available"}
             </Badge>
@@ -224,13 +223,13 @@ export function SearchResults({ hosts, isLoading, filters }: SearchResultsProps)
       {/* Results summary */}
       <div className="text-sm text-gray-600">
         Showing {hosts.length} {hosts.length === 1 ? 'result' : 'results'}
-        {filters.startDate && filters.endDate && (
-          <span> for {formatDisplayDate(filters.startDate)} - {formatDisplayDate(filters.endDate)}</span>
+        {filters.startDate && (
+          <span> for {formatDisplayDate(filters.startDate)}</span>
         )}
       </div>
 
       {/* Results grid */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {hosts.map((host) => (
           <ResultCard 
             key={host.id} 

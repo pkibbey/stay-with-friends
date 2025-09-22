@@ -16,11 +16,6 @@ export interface AvailabilityWithHost extends Availability {
 export interface SearchFiltersState {
   query: string
   startDate: string | null
-  endDate: string | null
-  location: string
-  amenities: string[]
-  trustedHostsOnly: boolean
-  guests: number
 }
 
 // For form data and creation/updates (frontend-specific types that extend the generated base types)

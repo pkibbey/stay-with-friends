@@ -1111,12 +1111,46 @@ export default function ManageHostingPage() {
                 )}
 
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Manage Availability</h4>
-                  <AvailabilityManager 
-                    availabilities={hosting.availabilities || getHostAvailabilities(hosting.id)}
-                    onAddAvailability={handleAddAvailability(hosting.id)}
-                    onRemoveAvailability={handleRemoveAvailability}
-                  />
+                  {editingHostIds.includes(hosting.id) ? (
+                    <>
+                      <h4 className="font-semibold mb-3">Manage Availability</h4>
+                      <AvailabilityManager 
+                        availabilities={hosting.availabilities || getHostAvailabilities(hosting.id)}
+                        onAddAvailability={handleAddAvailability(hosting.id)}
+                        onRemoveAvailability={handleRemoveAvailability}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="font-semibold mb-3">Availability</h4>
+                      {(hosting.availabilities && hosting.availabilities.length > 0) ? (
+                        <div className="space-y-2">
+                          {hosting.availabilities.map((availability) => (
+                            <div key={availability.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">
+                                  {new Date(availability.startDate).toLocaleDateString()} - {new Date(availability.endDate).toLocaleDateString()}
+                                </div>
+                                <div className="text-xs text-gray-600 capitalize">
+                                  Status: {availability.status}
+                                </div>
+                                {availability.notes && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {availability.notes}
+                                  </div>
+                                )}
+                              </div>
+                              <Badge variant={availability.status === 'available' ? 'default' : 'secondary'}>
+                                {availability.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No availability periods set. Edit this property to add availability.</p>
+                      )}
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -28,12 +28,7 @@ function SearchPage() {
   // Initialize filters from URL params
   const [filters, setFilters] = useState<SearchFiltersState>({
     query: searchParams.get('q') || '',
-    startDate: searchParams.get('startDate') || null,
-    endDate: searchParams.get('endDate') || null,
-    location: searchParams.get('location') || '',
-    amenities: searchParams.get('amenities')?.split(',').filter(Boolean) || [],
-    trustedHostsOnly: searchParams.get('trustedOnly') === 'true',
-    guests: parseInt(searchParams.get('guests') || '1')
+    startDate: searchParams.get('startDate') || null
   })
 
   // Update URL when filters change
@@ -42,11 +37,6 @@ function SearchPage() {
     
     if (newFilters.query) params.set('q', newFilters.query)
     if (newFilters.startDate) params.set('startDate', newFilters.startDate)
-    if (newFilters.endDate) params.set('endDate', newFilters.endDate)
-    if (newFilters.location) params.set('location', newFilters.location)
-    if (newFilters.amenities.length > 0) params.set('amenities', newFilters.amenities.join(','))
-    if (newFilters.trustedHostsOnly) params.set('trustedOnly', 'true')
-    if (newFilters.guests > 1) params.set('guests', newFilters.guests.toString())
 
     router.replace(`/search?${params.toString()}`, { scroll: false })
   }, [router])
@@ -61,33 +51,18 @@ function SearchPage() {
       let variables: {
         query?: string | null
         startDate?: string | null
-        endDate?: string | null
-        location?: string | null
-        amenities?: string[] | null
-        trustedOnly?: boolean | null
-        guests?: number | null
       } = {}
 
-      if (searchFilters.query || searchFilters.startDate || searchFilters.endDate || searchFilters.location || searchFilters.amenities.length > 0 || searchFilters.trustedHostsOnly || searchFilters.guests > 1) {
+      if (searchFilters.query || searchFilters.startDate) {
         // Advanced search with filters
         query = `
           query SearchHostsAdvanced(
             $query: String
             $startDate: String
-            $endDate: String
-            $location: String
-            $amenities: [String!]
-            $trustedOnly: Boolean
-            $guests: Int
           ) {
             searchHostsAdvanced(
               query: $query
               startDate: $startDate
-              endDate: $endDate
-              location: $location
-              amenities: $amenities
-              trustedOnly: $trustedOnly
-              guests: $guests
             ) {
               id
               name
@@ -126,12 +101,7 @@ function SearchPage() {
         `
         variables = {
           query: searchFilters.query || null,
-          startDate: searchFilters.startDate || null,
-          endDate: searchFilters.endDate || null,
-          location: searchFilters.location || null,
-          amenities: searchFilters.amenities.length > 0 ? searchFilters.amenities : null,
-          trustedOnly: searchFilters.trustedHostsOnly || null,
-          guests: searchFilters.guests > 1 ? searchFilters.guests : null
+          startDate: searchFilters.startDate || null
         }
       } else {
         // Get all hosts when no filters are applied

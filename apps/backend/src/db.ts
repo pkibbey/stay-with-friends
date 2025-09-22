@@ -343,3 +343,15 @@ export const getConnectionBetweenUsers = db.prepare(`
      OR (user_id = ? AND connected_user_id = ?)
   LIMIT 1
 `);
+
+// Search hosts that are available on a specific date
+export const searchHostsAvailableOnDate = db.prepare(`
+  SELECT DISTINCT h.*
+  FROM hosts h
+  INNER JOIN availabilities a ON h.id = a.host_id
+  WHERE a.start_date <= ? 
+    AND a.end_date >= ?
+    AND a.status = 'available'
+    AND (h.name LIKE ? OR h.description LIKE ? OR h.location LIKE ? OR h.city LIKE ? OR h.state LIKE ?)
+  ORDER BY h.name
+`);

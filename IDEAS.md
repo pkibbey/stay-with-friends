@@ -5,14 +5,16 @@ Add Google login as well as magic link login, and do we want email password too?
 
 # For now
 
-Make sure the data updates when making a change to the data. Use something like swr, or similar for data invalidation?
-
-Replace alerts with a proper notification system.
-
-Make search filters work correctly
-
 Make map view work correctly
 
 Improve the layout of the connections page by leaning on some shadcn layout blocks layouts
 
 Go through everything and improve each bit at a time
+
+Remove the redundant image property on the user object
+
+Prevent page flashes when waiting for page authentication
+
+Make it clear what the result of the search filters had on the available items
+
+Add a calendar view to the search page also

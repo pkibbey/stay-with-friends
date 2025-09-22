@@ -92,11 +92,6 @@ export const typeDefs = `#graphql
     searchHostsAdvanced(
       query: String
       startDate: String
-      endDate: String
-      location: String
-      amenities: [String!]
-      trustedOnly: Boolean
-      guests: Int
     ): [Host!]!
     availabilitiesByDate(date: String!): [Availability!]!
     availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
@@ -225,7 +220,7 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers } from './db';
+import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate } from './db';
 // Use generated types from the single source-of-truth
 import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation, Host, Availability, BookingRequest, User, Connection, Invitation } from './generated/types';
 import fs from 'fs';
@@ -350,13 +345,27 @@ export const resolvers = {
     },
     searchHostsAdvanced: (_: any, args: any) => {
       // Advanced search is public
-      // For now, use the basic search - can be enhanced later
-      if (args.query) {
-        const searchTerm = `%${args.query}%`;
-        return searchHosts.all(searchTerm, searchTerm);
+      const searchTerm = args.query ? `%${args.query}%` : '%';
+      
+      if (args.startDate) {
+        // If a date is provided, filter hosts that are available on that specific date
+        return searchHostsAvailableOnDate.all(
+          args.startDate, // start_date <= ?
+          args.startDate, // end_date >= ?
+          searchTerm,     // name LIKE ?
+          searchTerm,     // description LIKE ?
+          searchTerm,     // location LIKE ?
+          searchTerm,     // city LIKE ?
+          searchTerm      // state LIKE ?
+        ) as GeneratedHost[];
+      } else {
+        // If no date filter, use the standard search
+        if (args.query) {
+          return searchHosts.all(searchTerm, searchTerm) as GeneratedHost[];
+        }
+        // If no query, return all hosts
+        return getAllHosts.all() as GeneratedHost[];
       }
-      // If no query, return all hosts
-      return getAllHosts.all();
     },
     availabilitiesByDate: (_: any, { date }: { date: string }): GeneratedAvailability[] => {
       // Availability info is public

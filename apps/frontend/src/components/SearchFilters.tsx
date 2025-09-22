@@ -5,10 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Calendar } from '@/components/ui/calendar'
-import { Badge } from '@/components/ui/badge'
-import { CalendarIcon, MapPin, Users, Star, X, Search } from 'lucide-react'
+import { CalendarIcon, Search } from 'lucide-react'
 import { format } from 'date-fns'
 import { parseLocalDate, formatDateForUrl } from '@/lib/date-utils'
 import { SearchFiltersState } from '@/types'
@@ -19,27 +17,8 @@ interface SearchFiltersProps {
   isLoading: boolean
 }
 
-const COMMON_AMENITIES = [
-  'WiFi',
-  'Kitchen',
-  'Parking',
-  'Air Conditioning',
-  'Heating',
-  'Washer',
-  'Dryer',
-  'TV',
-  'Pool',
-  'Hot Tub',
-  'Pet Friendly',
-  'Gym',
-  'Workspace',
-  'Fireplace',
-  'Garden',
-  'Beach Access'
-]
-
 export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFiltersProps) {
-  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false)
   const [localQuery, setLocalQuery] = useState(filters.query)
 
   const handleFilterChange = (key: keyof SearchFiltersState, value: string | number | boolean | string[] | null) => {
@@ -52,48 +31,15 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
     handleFilterChange('query', localQuery)
   }
 
-  const handleDateSelect = (date: Date | undefined, type: 'start' | 'end') => {
+  const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       const dateString = formatDateForUrl(date)
-      if (type === 'start') {
-        handleFilterChange('startDate', dateString)
-        // If start date is after end date, clear end date
-        if (filters.endDate && new Date(dateString) > new Date(filters.endDate)) {
-          handleFilterChange('endDate', null)
-        }
-      } else {
-        handleFilterChange('endDate', dateString)
-      }
+      handleFilterChange('startDate', dateString)
     } else {
-      handleFilterChange(type === 'start' ? 'startDate' : 'endDate', null)
+      handleFilterChange('startDate', null)
     }
-    setShowDatePicker(null)
+    setShowDatePicker(false)
   }
-
-  const toggleAmenity = (amenity: string) => {
-    const newAmenities = filters.amenities.includes(amenity)
-      ? filters.amenities.filter(a => a !== amenity)
-      : [...filters.amenities, amenity]
-    handleFilterChange('amenities', newAmenities)
-  }
-
-  const clearFilters = () => {
-    const clearedFilters: SearchFiltersState = {
-      query: '',
-      startDate: null,
-      endDate: null,
-      location: '',
-      amenities: [],
-      trustedHostsOnly: false,
-      guests: 1
-    }
-    setLocalQuery('')
-    onFiltersChange(clearedFilters)
-  }
-
-  const hasActiveFilters = filters.query || filters.startDate || filters.endDate || 
-    filters.location || filters.amenities.length > 0 || filters.trustedHostsOnly ||
-    filters.guests > 1
 
   return (
     <div className="space-y-6">
@@ -116,6 +62,19 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
             <Button type="submit" disabled={isLoading} className="w-full">
               Search
             </Button>
+            {filters.query && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setLocalQuery('')
+                  handleFilterChange('query', '')
+                }}
+                className="w-full"
+              >
+                Clear search
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -131,191 +90,44 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Check-in</Label>
+            <Label>Start date</Label>
             <Button
               variant="outline"
-              onClick={() => setShowDatePicker('start')}
+              onClick={() => setShowDatePicker(true)}
               className="w-full justify-start text-left font-normal mt-1"
               disabled={isLoading}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {filters.startDate ? format(parseLocalDate(filters.startDate), 'PPP') : 'Select date'}
+              {filters.startDate ? format(parseLocalDate(filters.startDate), 'PPP') : 'Select start date'}
             </Button>
-            {showDatePicker === 'start' && (
+            {showDatePicker && (
               <div className="mt-2 p-3 border rounded-lg bg-white shadow-lg">
                 <Calendar
                   mode="single"
                   selected={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
-                  onSelect={(date) => handleDateSelect(date, 'start')}
-                  disabled={(date) => date < new Date()}
+                  startMonth={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
+                  onSelect={(date) => handleDateSelect(date)}
+                  // disabled={(date) => date < new Date()}
                   className="rounded-md border-0"
                 />
               </div>
             )}
           </div>
 
-          <div>
-            <Label>Check-out</Label>
-            <Button
-              variant="outline"
-              onClick={() => setShowDatePicker('end')}
-              className="w-full justify-start text-left font-normal mt-1"
-              disabled={isLoading || !filters.startDate}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {filters.endDate ? format(parseLocalDate(filters.endDate), 'PPP') : 'Select date'}
-            </Button>
-            {showDatePicker === 'end' && (
-              <div className="mt-2 p-3 border rounded-lg bg-white shadow-lg">
-                <Calendar
-                  mode="single"
-                  selected={filters.endDate ? parseLocalDate(filters.endDate) : undefined}
-                  onSelect={(date) => handleDateSelect(date, 'end')}
-                  disabled={(date) => !filters.startDate || date <= parseLocalDate(filters.startDate)}
-                  className="rounded-md border-0"
-                />
-              </div>
-            )}
-          </div>
-
-          {(filters.startDate || filters.endDate) && (
+          {filters.startDate && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 handleFilterChange('startDate', null)
-                handleFilterChange('endDate', null)
               }}
               className="w-full"
             >
-              Clear dates
+              Clear date
             </Button>
           )}
         </CardContent>
       </Card>
-
-      {/* Location */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
-            Location
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="City, state, or region"
-            value={filters.location}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
-            disabled={isLoading}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Guests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Guests
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleFilterChange('guests', Math.max(1, filters.guests - 1))}
-              disabled={filters.guests <= 1 || isLoading}
-            >
-              -
-            </Button>
-            <span className="w-8 text-center">{filters.guests}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleFilterChange('guests', filters.guests + 1)}
-              disabled={filters.guests >= 16 || isLoading}
-            >
-              +
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Trusted Hosts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="w-5 h-5" />
-            Host Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="trusted-only"
-              checked={filters.trustedHostsOnly}
-              onCheckedChange={(checked) => handleFilterChange('trustedHostsOnly', checked)}
-              disabled={isLoading}
-            />
-            <Label htmlFor="trusted-only">
-              Show only trusted hosts
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Amenities */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Amenities</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {filters.amenities.map(amenity => (
-                <Badge 
-                  key={amenity} 
-                  variant="default" 
-                  className="cursor-pointer"
-                  onClick={() => toggleAmenity(amenity)}
-                >
-                  {amenity}
-                  <X className="w-3 h-3 ml-1" />
-                </Badge>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              {COMMON_AMENITIES.filter(amenity => !filters.amenities.includes(amenity)).map(amenity => (
-                <Button
-                  key={amenity}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleAmenity(amenity)}
-                  disabled={isLoading}
-                  className="justify-start text-left"
-                >
-                  {amenity}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Clear Filters */}
-      {hasActiveFilters && (
-        <Button
-          variant="outline"
-          onClick={clearFilters}
-          disabled={isLoading}
-          className="w-full"
-        >
-          Clear all filters
-        </Button>
-      )}
     </div>
   )
 }
