@@ -39,12 +39,11 @@ export function AvailabilityCalendar({ selectedDate, onSelect, availabilities = 
       </CardHeader>
       <CardContent>
         <Calendar
-          key={selectedDate?.toISOString()}
           mode="single"
           showOutsideDays={false}
           selected={selectedDate}
           onSelect={onSelect}
-          startMonth={selectedDate}
+          defaultMonth={selectedDate}
           numberOfMonths={MAX_MONTHS_DISPLAYED}
           className="rounded-md border w-full"
           modifiers={{

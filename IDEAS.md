@@ -1,9 +1,5 @@
 Tearing down the app and starting again is useful to discover the user journey. We can limit certain things they see until they list as a host. Focus them on creating a host, but they also don't have to, it's fine, no pressure. They can do two main things - find connections, or create a hosting.
 
-Rename bookings to stays - do much later
-
-Availabilty calendar must be free to move without being locked by selecting a date.
-
 Friend status can be downgraded anonymously by either party, or by an internal automatic rule based system. Friendship upgrade must require confirmation from both parties.
 
 Move photo storage to s3 bucket
