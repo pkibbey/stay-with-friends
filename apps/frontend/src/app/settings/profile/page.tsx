@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { authenticatedGraphQLRequest } from '@/lib/graphql'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,28 +25,24 @@ export default function Profile() {
 
   const fetchUserData = async (email: string) => {
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetUser($email: String!) {
-              user(email: $email) {
-                id
-                email
-                name
-              }
-            }
-          `,
-          variables: { email },
-        }),
-      })
-      const data = await response.json()
-      const userData = data.data?.user
+      const result = await authenticatedGraphQLRequest(`
+        query GetUser($email: String!) {
+          user(email: $email) {
+            id
+            email
+            name
+          }
+        }
+      `, { email })
+      type UserResponse = { user?: { id: string; email?: string; name?: string } }
+      const userData = (result.data || {}) as UserResponse
+      const userObj = userData.user
       if (userData) {
-        console.log('userData: ', userData);
-        setUser(userData)
-        setName(userData.name || '')
+        console.log('userData: ', userObj);
+        if (userObj) {
+          setUser((userObj as unknown) as User)
+          setName(userObj.name || '')
+        }
       }
     } catch (error) {
       console.error('Error fetching user:', error)

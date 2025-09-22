@@ -3,6 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { graphqlRequest } from '@/lib/graphql'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,41 +35,33 @@ export default function AcceptInvitationPage() {
 
     const fetchInvitation = async () => {
       try {
-        const response = await fetch('http://localhost:4000/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: `
-              query GetInvitation($token: String!) {
-                invitation(token: $token) {
-                  id
-                  inviterId
-                  inviteeEmail
-                  message
-                  token
-                  status
-                  expiresAt
-                  createdAt
-                  inviter {
-                    id
-                    name
-                    email
-                  }
-                }
+        const result = await graphqlRequest(`
+          query GetInvitation($token: String!) {
+            invitation(token: $token) {
+              id
+              inviterId
+              inviteeEmail
+              message
+              token
+              status
+              expiresAt
+              createdAt
+              inviter {
+                id
+                name
+                email
               }
-            `,
-            variables: { token },
-          }),
-        })
+            }
+          }
+        `, { token })
 
-        const data = await response.json()
-        if (data.data?.invitation) {
-          setInvitation(data.data.invitation)
+        type InvitationResponse = { invitation?: InvitationWithUser }
+        const invitationData = ((result.data as unknown) as InvitationResponse).invitation
+        if (invitationData) {
+          setInvitation(invitationData)
           // Pre-fill name if available
-          if (data.data.invitation.inviteeEmail) {
-            setUserData(prev => ({ ...prev, email: data.data.invitation.inviteeEmail }))
+          if (invitationData.inviteeEmail) {
+            setUserData(prev => ({ ...prev, email: invitationData.inviteeEmail }))
           }
         } else {
           setError('Invalid invitation token')
@@ -90,50 +83,30 @@ export default function AcceptInvitationPage() {
 
     setAccepting(true)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            mutation AcceptInvitation($token: String!, $userData: AcceptInvitationInput!) {
-              acceptInvitation(token: $token, userData: $userData) {
-                id
-                email
-                name
-                emailVerified
-                createdAt
-              }
-            }
-          `,
-          variables: {
-            token,
-            userData: {
-              name: userData.name || undefined,
-              image: userData.image || undefined
-            }
-          },
-        }),
-      })
+      const result = await graphqlRequest(`
+        mutation AcceptInvitation($token: String!, $userData: AcceptInvitationInput!) {
+          acceptInvitation(token: $token, userData: $userData) {
+            id
+            email
+            name
+            emailVerified
+            createdAt
+          }
+        }
+      `, { token, userData: { name: userData.name || undefined, image: userData.image || undefined } })
 
-      const data = await response.json()
-      if (data.data?.acceptInvitation) {
-        const user = data.data.acceptInvitation
-        // Check if user was existing by looking at createdAt - if it's older than a few seconds, it was existing
-        const userCreatedAt = new Date(user.createdAt)
+      type AcceptInvitationResponse = { acceptInvitation?: { id: string; createdAt?: string } }
+      const acceptedUser = ((result.data as unknown) as AcceptInvitationResponse).acceptInvitation
+      if (acceptedUser) {
+        const userCreatedAt = new Date(acceptedUser.createdAt || '')
         const now = new Date()
-        const wasExisting = (now.getTime() - userCreatedAt.getTime()) > 10000 // More than 10 seconds ago
-        
+        const wasExisting = (now.getTime() - userCreatedAt.getTime()) > 10000
+
         setWasExistingUser(wasExisting)
         setAccepted(true)
-        // Redirect to sign in after a delay
-        setTimeout(() => {
-          router.push('/auth/signin')
-        }, 3000)
+        setTimeout(() => router.push('/auth/signin'), 3000)
       } else {
-        console.error('GraphQL error:', data.errors)
-        setError('Failed to accept invitation: ' + (data.errors?.[0]?.message || 'Unknown error'))
+        setError('Failed to accept invitation')
       }
     } catch (err) {
       console.error('Error accepting invitation:', err)

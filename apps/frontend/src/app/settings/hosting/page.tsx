@@ -16,8 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { AvailabilityManager } from '@/components/AvailabilityManager'
 import { FileUpload } from '@/components/ui/file-upload'
 import { PageLayout } from '@/components/PageLayout'
-import Link from 'next/link'
-import { Plus, Edit, MapPin, Users, Bed, Bath, Clock, Calendar, MessageSquare, Trash2, Navigation } from 'lucide-react'
+import { Plus, Edit, MapPin, Users, Bed, Bath, Clock, Trash2, Navigation } from 'lucide-react'
 import { HostWithAvailabilities, User } from '@/types'
 
 // Use the generated types
@@ -26,7 +25,6 @@ type HostData = HostWithAvailabilities
 export default function ManageHostingPage() {
   const { data: session } = useSession()
   const [showAddForm, setShowAddForm] = useState(false)
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [hostings, setHostings] = useState<HostData[]>([])
   const [loading, setLoading] = useState(true)
   const [editingHostIds, setEditingHostIds] = useState<string[]>([])
@@ -39,57 +37,48 @@ export default function ManageHostingPage() {
 
   const fetchHostings = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetHosts {
-              hosts {
-                id
-                name
-                location
-                description
-                address
-                city
-                state
-                zipCode
-                country
-                latitude
-                longitude
-                amenities
-                houseRules
-                checkInTime
-                checkOutTime
-                maxGuests
-                bedrooms
-                bathrooms
-                photos
-                userId
-                availabilities {
-                  id
-                  startDate
-                  endDate
-                  status
-                  notes
-                }
-              }
+      const result = await authenticatedGraphQLRequest(`
+        query GetHosts {
+          hosts {
+            id
+            name
+            location
+            description
+            address
+            city
+            state
+            zipCode
+            country
+            latitude
+            longitude
+            amenities
+            houseRules
+            checkInTime
+            checkOutTime
+            maxGuests
+            bedrooms
+            bathrooms
+            photos
+            userId
+            availabilities {
+              id
+              startDate
+              endDate
+              status
+              notes
             }
-          `,
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.hosts) {
-        // Filter to only hosts owned by the current signed-in user
-        // session?.user.id may be a string or number, so compare as strings
-        const userId = (session?.user as User | undefined)?.id
-        if (userId) {
-          const filtered = data.data.hosts.filter((h: HostData) => h.userId === userId)
-          setHostings(filtered)
-        } else {
-          // If no session user id available, fall back to empty list
-          setHostings([])
+          }
         }
+      `)
+
+      type HostsResponse = { hosts?: HostData[] }
+      const hosts = ((result.data as unknown) as HostsResponse).hosts || []
+      const userId = (session?.user as User | undefined)?.id
+      if (userId) {
+        const filtered = hosts.filter((h: HostData) => h.userId === userId)
+        setHostings(filtered)
+      } else {
+        setHostings([])
       }
     } catch (error) {
       console.error('Error fetching hostings:', error)
@@ -99,33 +88,7 @@ export default function ManageHostingPage() {
   }, [session?.user])
 
   useEffect(() => {
-    const fetchPendingRequestsCount = async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const userId = (session?.user as any)?.id
-      if (!userId) return
-
-      try {
-        const response = await fetch('http://localhost:4000/graphql', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query GetPendingRequestsCount($userId: ID!) {
-                pendingBookingRequestsCount(userId: $userId)
-              }
-            `,
-            variables: { userId },
-          }),
-        })
-        const data = await response.json()
-        setPendingRequestsCount(data.data?.pendingBookingRequestsCount || 0)
-      } catch (error) {
-        console.error('Error fetching pending requests count:', error)
-      }
-    }
-
     if (session?.user) {
-      fetchPendingRequestsCount()
       fetchHostings()
     }
   }, [fetchHostings, session?.user])
@@ -306,11 +269,7 @@ export default function ManageHostingPage() {
 
   const handleAddAvailability = (hostId: string) => async (startDate: string, endDate: string, notes?: string) => {
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
+      const mutation = `
             mutation CreateAvailability($hostId: ID!, $startDate: String!, $endDate: String!, $notes: String) {
               createAvailability(hostId: $hostId, startDate: $startDate, endDate: $endDate, notes: $notes) {
                 id
@@ -321,12 +280,13 @@ export default function ManageHostingPage() {
                 notes
               }
             }
-          `,
-          variables: { hostId, startDate, endDate, notes },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.createAvailability) {
+          `
+
+      type CreateAvailabilityResponse = { createAvailability?: { id: string; hostId: string; startDate: string; endDate: string; status: string; notes?: string } }
+
+      const result = await authenticatedGraphQLRequest<CreateAvailabilityResponse>(mutation, { hostId, startDate, endDate, notes })
+      const created = (result.data as CreateAvailabilityResponse | undefined)?.createAvailability
+      if (created) {
         // Refresh the hostings data to include the new availability
         await fetchHostings()
       }
@@ -399,11 +359,7 @@ export default function ManageHostingPage() {
       if (editForm.bathrooms !== undefined) input.bathrooms = editForm.bathrooms
       if (editForm.photos !== undefined) input.photos = editForm.photos
 
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
+      const mutation = `
             mutation UpdateHost($id: ID!, $input: UpdateHostInput!) {
               updateHost(id: $id, input: $input) {
                 id
@@ -427,22 +383,19 @@ export default function ManageHostingPage() {
                 photos
               }
             }
-          `,
-          variables: {
-            id: editForm.id,
-            input
-          },
-        }),
-      })
+          `
 
-      const data = await response.json()
-      if (data.data?.updateHost) {
+      type UpdateHostResponse = { updateHost?: HostData }
+
+      const result = await authenticatedGraphQLRequest<UpdateHostResponse>(mutation, { id: editForm.id, input })
+      const updated = (result.data as UpdateHostResponse | undefined)?.updateHost
+      if (updated) {
         // Refresh the hostings data to get the latest updates
         await fetchHostings()
         // Remove this host from editing state
         cancelEdit(hostId)
       } else {
-        console.error('Failed to update host:', data.errors)
+        console.error('Failed to update host:', result)
         alert('Failed to save changes')
       }
     } catch (error) {
@@ -566,26 +519,22 @@ export default function ManageHostingPage() {
   const handleDeleteHost = async (hostId: string) => {
     setDeleting(true)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
+      const mutation = `
             mutation DeleteHost($id: ID!) {
               deleteHost(id: $id)
             }
-          `,
-          variables: { id: hostId },
-        }),
-      })
+          `
 
-      const data = await response.json()
-      if (data.data?.deleteHost) {
+      type DeleteHostResponse = { deleteHost?: boolean }
+
+      const result = await authenticatedGraphQLRequest<DeleteHostResponse>(mutation, { id: hostId })
+      const ok = (result.data as DeleteHostResponse | undefined)?.deleteHost
+      if (ok) {
         // Remove the host from local state
         setHostings(hostings.filter(h => h.id !== hostId))
         setDeleteConfirmId(null)
       } else {
-        console.error('Failed to delete host:', data.errors)
+        console.error('Failed to delete host:', result)
         alert('Failed to delete host')
       }
     } catch (error) {
@@ -620,37 +569,6 @@ export default function ManageHostingPage() {
       title="Manage Your Hosting" 
       subtitle="Add and manage your properties for friends to stay"
     >
-      {/* Booking Requests Summary */}
-      <Card className="mb-6">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-blue-500" />
-              <div>
-                <h3 className="font-medium">Booking Requests</h3>
-                <p className="text-sm text-gray-600">
-                  {pendingRequestsCount > 0 
-                    ? `You have ${pendingRequestsCount} pending request${pendingRequestsCount !== 1 ? 's' : ''}`
-                    : 'No pending requests'
-                  }
-                </p>
-              </div>
-            </div>
-            <Link href="/settings/bookings">
-              <Button variant="outline" size="sm">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                View All Requests
-                {pendingRequestsCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 px-1 py-0 text-xs min-w-[1.2rem] h-5">
-                    {pendingRequestsCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
       {showAddForm && (
         <Card className="mb-8">
           <CardHeader>

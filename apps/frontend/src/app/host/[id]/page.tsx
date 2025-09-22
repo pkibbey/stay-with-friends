@@ -17,6 +17,7 @@ import Link from 'next/link'
 import * as React from "react"
 import { parseDateFromUrl, formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
 import { useSession } from 'next-auth/react'
+import { graphqlRequest, authenticatedGraphQLRequest } from '@/lib/graphql'
 import type { HostWithAvailabilities, BookingRequest } from '@/types'
 
 export default function HostDetailPage() {
@@ -69,50 +70,42 @@ export default function HostDetailPage() {
   useEffect(() => {
     const fetchHostDetails = async () => {
       try {
-        const response = await fetch('http://localhost:4000/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: `
-            query GetHost($id: ID!) {
-              host(id: $id) {
+        const result = await graphqlRequest(`
+          query GetHost($id: ID!) {
+            host(id: $id) {
+              id
+              name
+              location
+              description
+              address
+              city
+              state
+              zipCode
+              country
+              latitude
+              longitude
+              amenities
+              houseRules
+              checkInTime
+              checkOutTime
+              maxGuests
+              bedrooms
+              bathrooms
+              photos
+              availabilities {
                 id
-                name
-                location
-                description
-                address
-                city
-                state
-                zipCode
-                country
-                latitude
-                longitude
-                amenities
-                houseRules
-                checkInTime
-                checkOutTime
-                maxGuests
-                bedrooms
-                bathrooms
-                photos
-                availabilities {
-                  id
-                  startDate
-                  endDate
-                  status
-                  notes
-                }
+                startDate
+                endDate
+                status
+                notes
               }
             }
-          `,
-            variables: { id: hostId },
-          }),
-        })
+          }
+        `, { id: hostId })
 
-        const data = await response.json()
-        setHost(data.data?.host || null)
+  type HostResponse = { host?: HostWithAvailabilities }
+  const hostData = (result.data || {}) as HostResponse
+  setHost(hostData.host || null)
       } catch (error) {
         console.error('Failed to fetch host details:', error)
       } finally {
@@ -124,42 +117,31 @@ export default function HostDetailPage() {
       if (!userId) return
 
       try {
-        const response = await fetch('http://localhost:4000/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: `
-            query GetBookingRequestsByRequester($requesterId: ID!) {
-              bookingRequestsByRequester(requesterId: $requesterId) {
+        const result = await authenticatedGraphQLRequest(`
+          query GetBookingRequestsByRequester($requesterId: ID!) {
+            bookingRequestsByRequester(requesterId: $requesterId) {
+              id
+              hostId
+              requesterId
+              startDate
+              endDate
+              guests
+              message
+              status
+              responseMessage
+              respondedAt
+              createdAt
+              host {
                 id
-                hostId
-                requesterId
-                startDate
-                endDate
-                guests
-                message
-                status
-                responseMessage
-                respondedAt
-                createdAt
-                host {
-                  id
-                  name
-                }
+                name
               }
             }
-          `,
-            variables: { requesterId: userId },
-          }),
-        })
+          }
+        `, { requesterId: userId })
 
-        const data = await response.json()
-        // Filter for requests to this specific host
-        const hostRequests = data.data?.bookingRequestsByRequester?.filter(
-          (request: BookingRequest) => request.hostId === hostId
-        ) || []
+  type BookingRequestsResponse = { bookingRequestsByRequester?: BookingRequest[] }
+  const bookingData = ((result.data || {}) as BookingRequestsResponse).bookingRequestsByRequester || []
+  const hostRequests = bookingData.filter((request: BookingRequest) => request.hostId === hostId)
         setBookingRequests(hostRequests)
       } catch (error) {
         console.error('Failed to fetch booking requests:', error)

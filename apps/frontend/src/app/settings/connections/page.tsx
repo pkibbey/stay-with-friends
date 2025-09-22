@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { authenticatedGraphQLRequest } from '@/lib/graphql'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
 import { ConnectionWithUser, Invitation } from '@/types'
-
 
 export default function Connections() {
   const { data: session } = useSession()
@@ -25,29 +25,25 @@ export default function Connections() {
     const userId = (session?.user as any)?.id
     if (!userId) return
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetConnections($userId: ID!) {
-              connections(userId: $userId) {
-                id
-                connectedUser {
-                  id
-                  email
-                  name
-                  image
-                }
-                status
-              }
+      const result = await authenticatedGraphQLRequest(`
+        query GetConnections($userId: ID!) {
+          connections(userId: $userId) {
+            id
+            connectedUser {
+              id
+              email
+              name
+              image
             }
-          `,
-          variables: { userId },
-        }),
-      })
-      const data = await response.json()
-      setConnections(data.data?.connections || [])
+            status
+          }
+        }
+      `, { userId })
+
+      type ConnectionsResponse = { connections?: ConnectionWithUser[] }
+      const authenticatedConnections = ((result.data as unknown) as ConnectionsResponse).connections
+
+      setConnections(authenticatedConnections || [])
     } catch (error) {
       console.error('Error fetching connections:', error)
     }
@@ -58,29 +54,24 @@ export default function Connections() {
     const userId = (session?.user as any)?.id
     if (!userId) return
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetConnectionRequests($userId: ID!) {
-              connectionRequests(userId: $userId) {
-                id
-                connectedUser {
-                  id
-                  email
-                  name
-                  image
-                }
-                status
-              }
+      const result = await authenticatedGraphQLRequest(`
+        query GetConnectionRequests($userId: ID!) {
+          connectionRequests(userId: $userId) {
+            id
+            connectedUser {
+              id
+              email
+              name
+              image
             }
-          `,
-          variables: { userId },
-        }),
-      })
-      const data = await response.json()
-      setRequests(data.data?.connectionRequests || [])
+            status
+          }
+        }
+      `, { userId })
+
+      type RequestsResponse = { connectionRequests?: ConnectionWithUser[] }
+      const requestsData = ((result.data as unknown) as RequestsResponse).connectionRequests
+      setRequests(requestsData || [])
     } catch (error) {
       console.error('Error fetching requests:', error)
     }
@@ -91,26 +82,21 @@ export default function Connections() {
     const inviterId = (session?.user as any)?.id
     if (!inviterId) return
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetInvitations($inviterId: ID!) {
-              invitations(inviterId: $inviterId) {
-                id
-                inviteeEmail
-                message
-                status
-                createdAt
-              }
-            }
-          `,
-          variables: { inviterId },
-        }),
-      })
-      const data = await response.json()
-      setInvitations(data.data?.invitations || [])
+      const result = await authenticatedGraphQLRequest(`
+        query GetInvitations($inviterId: ID!) {
+          invitations(inviterId: $inviterId) {
+            id
+            inviteeEmail
+            message
+            status
+            createdAt
+          }
+        }
+      `, { inviterId })
+
+      type InvitationsResponse = { invitations?: Invitation[] }
+      const invitationsData = ((result.data as unknown) as InvitationsResponse).invitations
+      setInvitations(invitationsData || [])
     } catch (error) {
       console.error('Error fetching invitations:', error)
     }
@@ -127,23 +113,16 @@ export default function Connections() {
 
   const handleUpdateConnectionStatus = async (connectionId: string, status: string) => {
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation UpdateConnectionStatus($connectionId: ID!, $status: String!) {
-              updateConnectionStatus(connectionId: $connectionId, status: $status) {
-                id
-                status
-              }
-            }
-          `,
-          variables: { connectionId, status },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.updateConnectionStatus) {
+      const result = await authenticatedGraphQLRequest(`
+        mutation UpdateConnectionStatus($connectionId: ID!, $status: String!) {
+          updateConnectionStatus(connectionId: $connectionId, status: $status) {
+            id
+            status
+          }
+        }
+      `, { connectionId, status })
+
+      if ((result.data as { updateConnectionStatus?: { id: string } })?.updateConnectionStatus) {
         fetchConnections()
         fetchRequests()
       }
@@ -158,20 +137,13 @@ export default function Connections() {
     }
     
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation DeleteConnection($connectionId: ID!) {
-              deleteConnection(connectionId: $connectionId)
-            }
-          `,
-          variables: { connectionId },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.deleteConnection) {
+      const result = await authenticatedGraphQLRequest(`
+        mutation DeleteConnection($connectionId: ID!) {
+          deleteConnection(connectionId: $connectionId)
+        }
+      `, { connectionId })
+
+      if ((result.data as { deleteConnection?: boolean })?.deleteConnection) {
         fetchConnections()
       } else {
         alert('Failed to remove connection')
@@ -188,20 +160,13 @@ export default function Connections() {
     }
     
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation DeleteInvitation($invitationId: ID!) {
-              deleteInvitation(invitationId: $invitationId)
-            }
-          `,
-          variables: { invitationId },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.deleteInvitation) {
+      const result = await authenticatedGraphQLRequest(`
+        mutation DeleteInvitation($invitationId: ID!) {
+          deleteInvitation(invitationId: $invitationId)
+        }
+      `, { invitationId })
+
+      if ((result.data as { deleteInvitation?: boolean })?.deleteInvitation) {
         fetchInvitations()
       } else {
         alert('Failed to delete invitation')
@@ -220,43 +185,29 @@ export default function Connections() {
     if (!userId || !newInvitationEmail) return
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
-              createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
-                id
-                inviteeEmail
-                message
-                status
-                createdAt
-                token
-              }
-            }
-          `,
-          variables: { 
-            inviterId: userId, 
-            inviteeEmail: newInvitationEmail,
-            message: newInvitationMessage || undefined
-          },
-        }),
-      })
-      const data = await response.json()
-      if (data.data?.createInvitation) {
-        const invitation = data.data.createInvitation
-        
+      const result = await authenticatedGraphQLRequest(`
+        mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
+          createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
+            id
+            inviteeEmail
+            message
+            status
+            createdAt
+            token
+          }
+        }
+      `, { inviterId: userId, inviteeEmail: newInvitationEmail, message: newInvitationMessage || undefined })
+
+      type CreateInvitationResponse = { createInvitation?: { id: string; status?: string; token?: string } }
+      const invitation = ((result.data as unknown) as CreateInvitationResponse).createInvitation
+      if (invitation) {
         if (invitation.status === 'connection-sent') {
-          // Connection request was sent to existing user
           alert('Connection request sent! The user is already registered, so a connection request has been sent instead.')
           setNewInvitationEmail('')
           setNewInvitationMessage('')
-          // Refresh connections data since we may have sent a connection request
           fetchConnections()
           fetchRequests()
         } else {
-          // Normal invitation created
           const invitationUrl = `http://localhost:3000/invite/${invitation.token}`
           setLastInvitationUrl(invitationUrl)
           setNewInvitationEmail('')
@@ -264,8 +215,8 @@ export default function Connections() {
           fetchInvitations()
         }
       } else {
-        console.error('GraphQL error:', data.errors)
-        alert('Failed to send invitation. ' + (data.errors?.[0]?.message || 'Unknown error'))
+        console.error('GraphQL error:', ((result as unknown) as { errors?: { message: string }[] }).errors)
+        alert('Failed to send invitation. ' + (((result as unknown) as { errors?: { message: string }[] }).errors?.[0]?.message || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error creating invitation:', error)

@@ -236,7 +236,7 @@ function SearchPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden"
+                className="md:hidden"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
@@ -262,9 +262,9 @@ function SearchPage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
           {/* Filters Sidebar */}
-          <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 space-y-6`}>
+          <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 space-y-6`}>
             <SearchFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}

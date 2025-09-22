@@ -1,6 +1,7 @@
-'use client'
+"use client"
 
 import { useSession } from 'next-auth/react'
+import { authenticatedGraphQLRequest } from '@/lib/graphql'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,94 +35,86 @@ export default function BookingsPage() {
       console.log('Making GraphQL request for booking requests...')
       
       // Fetch requests made by this user (as guest)
-      const myRequestsResponse = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetMyBookingRequests($requesterId: ID!) {
-              bookingRequestsByRequester(requesterId: $requesterId) {
-                id
-                hostId
-                requesterId
-                startDate
-                endDate
-                guests
-                message
-                status
-                responseMessage
-                respondedAt
-                createdAt
-                host {
-                  id
-                  name
-                  location
-                }
-                requester {
-                  id
-                  email
-                  name
-                }
-              }
+  // Fetch requests made by this user (as guest)
+  const myRequestsResult = await authenticatedGraphQLRequest(`
+        query GetMyBookingRequests($requesterId: ID!) {
+          bookingRequestsByRequester(requesterId: $requesterId) {
+            id
+            hostId
+            requesterId
+            startDate
+            endDate
+            guests
+            message
+            status
+            responseMessage
+            respondedAt
+            createdAt
+            host {
+              id
+              name
+              location
             }
-          `,
-          variables: { requesterId: userId },
-        }),
-      })
-      
-      const myRequestsData = await myRequestsResponse.json()
+            requester {
+              id
+              email
+              name
+            }
+          }
+        }
+      `, { requesterId: userId })
+
+      const myRequestsData = myRequestsResult.data || {}
       console.log('myRequestsData: ', myRequestsData);
-      
-      if (myRequestsData.errors) {
-        console.error('GraphQL errors in my requests:', myRequestsData.errors)
+
+      type LocalGraphQLError = { message: string };
+      if ((myRequestsData as { errors?: LocalGraphQLError[] }).errors) {
+        console.error('GraphQL errors in my requests:', (myRequestsData as { errors?: LocalGraphQLError[] }).errors)
       }
-      
-      setMyRequests(myRequestsData.data?.bookingRequestsByRequester || [])
+
+      type MyRequestsResponse = { bookingRequestsByRequester?: BookingRequestWithRelations[] }
+      const typedMyRequests = myRequestsData as MyRequestsResponse
+      setMyRequests(typedMyRequests.bookingRequestsByRequester || [])
 
       // Fetch requests for hosts owned by this user
-      const incomingRequestsResponse = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetIncomingBookingRequests($userId: ID!) {
-              bookingRequestsByHostUser(userId: $userId) {
-                id
-                hostId
-                requesterId
-                startDate
-                endDate
-                guests
-                message
-                status
-                responseMessage
-                respondedAt
-                createdAt
-                host {
-                  id
-                  name
-                  location
-                }
-                requester {
-                  id
-                  email
-                  name
-                  image
-                }
-              }
+  const incomingRequestsResult = await authenticatedGraphQLRequest(`
+        query GetIncomingBookingRequests($userId: ID!) {
+          bookingRequestsByHostUser(userId: $userId) {
+            id
+            hostId
+            requesterId
+            startDate
+            endDate
+            guests
+            message
+            status
+            responseMessage
+            respondedAt
+            createdAt
+            host {
+              id
+              name
+              location
             }
-          `,
-          variables: { userId },
-        }),
-      })
-      
-      const incomingRequestsData = await incomingRequestsResponse.json()
-      
-      if (incomingRequestsData.errors) {
-        console.error('GraphQL errors in incoming requests:', incomingRequestsData.errors)
+            requester {
+              id
+              email
+              name
+              image
+            }
+          }
+        }
+      `, { userId })
+
+      const incomingRequestsData = incomingRequestsResult.data || {}
+
+      if ((incomingRequestsData as { errors?: LocalGraphQLError[] }).errors) {
+        console.error('GraphQL errors in incoming requests:', (incomingRequestsData as { errors?: LocalGraphQLError[] }).errors)
       }
-      
-      setIncomingRequests(incomingRequestsData.data?.bookingRequestsByHostUser || [])
+
+      type IncomingRequestsResponse = { bookingRequestsByHostUser?: BookingRequestWithRelations[] }
+      const typedIncoming = incomingRequestsData as IncomingRequestsResponse
+      setIncomingRequests(typedIncoming.bookingRequestsByHostUser || [])
     } catch (error) {
       console.error('Error fetching booking requests:', error)
       setError(`Failed to load booking requests: ${error}`)
@@ -144,27 +137,19 @@ export default function BookingsPage() {
 
   const handleStatusUpdate = async (requestId: string, status: string, responseMessage?: string) => {
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation UpdateBookingRequestStatus($id: ID!, $status: String!, $responseMessage: String) {
-              updateBookingRequestStatus(id: $id, status: $status, responseMessage: $responseMessage) {
-                id
-                status
-                responseMessage
-                respondedAt
-              }
-            }
-          `,
-          variables: { id: requestId, status, responseMessage },
-        }),
-      })
-      
-      const data = await response.json()
-      if (data.data?.updateBookingRequestStatus) {
-        // Refresh the booking requests
+      const result = await authenticatedGraphQLRequest(`
+        mutation UpdateBookingRequestStatus($id: ID!, $status: String!, $responseMessage: String) {
+          updateBookingRequestStatus(id: $id, status: $status, responseMessage: $responseMessage) {
+            id
+            status
+            responseMessage
+            respondedAt
+          }
+        }
+      `, { id: requestId, status, responseMessage })
+
+      const updated = (result.data as { updateBookingRequestStatus?: { id: string } })?.updateBookingRequestStatus
+      if (updated) {
         fetchBookingRequests()
       }
     } catch (error) {
@@ -179,7 +164,7 @@ export default function BookingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <PageLayout title="Booking Requests" showHeader={false}>
+      <PageLayout title="Stays" showHeader={false}>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
@@ -189,7 +174,7 @@ export default function BookingsPage() {
 
   if (error) {
     return (
-      <PageLayout title="Booking Requests" showHeader={false}>
+      <PageLayout title="Stays" showHeader={false}>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Card>
             <CardHeader>
@@ -217,7 +202,7 @@ export default function BookingsPage() {
 
   if (!session) {
     return (
-      <PageLayout title="Booking Requests" showHeader={false}>
+      <PageLayout title="Stays" showHeader={false}>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Card>
             <CardHeader>
@@ -235,7 +220,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <PageLayout title="Booking Requests" subtitle="Manage your stay requests and hosting">
+    <PageLayout title="Stays" subtitle="Manage your stay requests and hosting">
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">

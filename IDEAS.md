@@ -23,3 +23,5 @@ Make search filters work correctly
 Make map view work correctly
 
 Improve the layout of the connections page by leaning on some shadcn layout blocks layouts
+
+Go through everything and improve each bit at a time

@@ -3,6 +3,7 @@
 import { getMonthDateRange, formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
 import * as React from "react"
 import { useState, useEffect, useCallback } from "react"
+import { graphqlRequest } from '@/lib/graphql'
 import { HeroSection } from "@/components/HeroSection"
 import { Suspense } from "react"
 import type { HostSummary, AvailabilityWithHost } from '@/types'
@@ -41,28 +42,19 @@ function Home() {
 
     setIsSearching(true)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            query SearchHosts($query: String!) {
-              searchHosts(query: $query) {
-                id
-                name
-                location
-                description
-              }
-            }
-          `,
-          variables: { query },
-        }),
-      })
+      const result = await graphqlRequest(`
+        query SearchHosts($query: String!) {
+          searchHosts(query: $query) {
+            id
+            name
+            location
+            description
+          }
+        }
+      `, { query })
 
-      const data = await response.json()
-      setSearchResults(data.data?.searchHosts || [])
+      type SearchHostsResponse = { searchHosts?: HostSummary[] }
+      setSearchResults(((result.data as unknown) as SearchHostsResponse).searchHosts || [])
     } catch (error) {
       console.error('Search failed:', error)
       setSearchResults([])
@@ -76,35 +68,26 @@ function Home() {
     try {
       const { startDate, endDate } = getMonthDateRange(month)
 
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            query GetAvailabilitiesByDateRange($startDate: String!, $endDate: String!) {
-              availabilitiesByDateRange(startDate: $startDate, endDate: $endDate) {
-                id
-                startDate
-                endDate
-                status
-                notes
-                host {
-                  id
-                  name
-                  location
-                  description
-                }
-              }
+      const result = await graphqlRequest(`
+        query GetAvailabilitiesByDateRange($startDate: String!, $endDate: String!) {
+          availabilitiesByDateRange(startDate: $startDate, endDate: $endDate) {
+            id
+            startDate
+            endDate
+            status
+            notes
+            host {
+              id
+              name
+              location
+              description
             }
-          `,
-          variables: { startDate, endDate },
-        }),
-      })
+          }
+        }
+      `, { startDate, endDate })
 
-      const data = await response.json()
-      const allAvailabilitiesData = data.data?.availabilitiesByDateRange || []
+      type AvailabilitiesResponse = { availabilitiesByDateRange?: AvailabilityWithHost[] }
+      const allAvailabilitiesData = ((result.data as unknown) as AvailabilitiesResponse).availabilitiesByDateRange || []
 
       // Filter out availabilities that are already shown in the "Available on" section
       const filteredAvailabilities = allAvailabilitiesData.filter((availability: AvailabilityWithHost) => {

@@ -62,7 +62,7 @@ export function Header() {
                       <NavigationMenuContent>
                         <NavigationMenuLink href="/settings/profile">Profile</NavigationMenuLink>
                         <NavigationMenuLink href="/settings/connections">Connections</NavigationMenuLink>
-                        <NavigationMenuLink href="/settings/bookings">Bookings {pendingRequestsCount ? pendingRequestsCount : null}</NavigationMenuLink>
+                        <NavigationMenuLink href="/settings/stays">Stays {pendingRequestsCount ? pendingRequestsCount : null}</NavigationMenuLink>
                         <NavigationMenuLink href="/settings/hosting">Hosting</NavigationMenuLink>
                         <NavigationMenuLink className="cursor-pointer" onClick={() => signOut()}>
                             Sign Out
