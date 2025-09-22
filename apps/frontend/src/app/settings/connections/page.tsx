@@ -1,6 +1,7 @@
-'use client'
+"use client"
 
 import { useSession } from 'next-auth/react'
+import { toast } from 'sonner'
 import { authenticatedGraphQLRequest } from '@/lib/graphql'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
@@ -146,11 +147,11 @@ export default function Connections() {
       if ((result.data as { deleteConnection?: boolean })?.deleteConnection) {
         fetchConnections()
       } else {
-        alert('Failed to remove connection')
+        toast.error('Failed to remove connection')
       }
     } catch (error) {
       console.error('Error deleting connection:', error)
-      alert('Failed to remove connection')
+      toast.error('Failed to remove connection')
     }
   }
 
@@ -169,11 +170,11 @@ export default function Connections() {
       if ((result.data as { deleteInvitation?: boolean })?.deleteInvitation) {
         fetchInvitations()
       } else {
-        alert('Failed to delete invitation')
+        toast.error('Failed to delete invitation')
       }
     } catch (error) {
       console.error('Error deleting invitation:', error)
-      alert('Failed to delete invitation')
+      toast.error('Failed to delete invitation')
     }
   }
 
@@ -202,7 +203,7 @@ export default function Connections() {
       const invitation = ((result.data as unknown) as CreateInvitationResponse).createInvitation
       if (invitation) {
         if (invitation.status === 'connection-sent') {
-          alert('Connection request sent! The user is already registered, so a connection request has been sent instead.')
+            toast.success('Connection request sent! The user is already registered, so a connection request has been sent instead.')
           setNewInvitationEmail('')
           setNewInvitationMessage('')
           fetchConnections()
@@ -215,12 +216,12 @@ export default function Connections() {
           fetchInvitations()
         }
       } else {
-        console.error('GraphQL error:', ((result as unknown) as { errors?: { message: string }[] }).errors)
-        alert('Failed to send invitation. ' + (((result as unknown) as { errors?: { message: string }[] }).errors?.[0]?.message || 'Unknown error'))
+  console.error('GraphQL error:', ((result as unknown) as { errors?: { message: string }[] }).errors)
+  toast.error('Failed to send invitation. ' + (((result as unknown) as { errors?: { message: string }[] }).errors?.[0]?.message || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error creating invitation:', error)
-      alert('Failed to send invitation')
+      toast.error('Failed to send invitation')
     } finally {
       setLoading(false)
     }

@@ -66,41 +66,12 @@ export const authOptions = {
     verifyRequest: '/auth/verify-request',
   },
   callbacks: {
-    async signIn({ user, account }: { user: any; account: any; profile?: any }) {
+  async signIn() {
       // Create user in our database if not exists
-      if (account?.provider === 'email' && user.email) {
-        try {
-          // Call backend to create user
-          const response = await fetch('http://localhost:4000/graphql', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              query: `
-                mutation CreateUser($email: String!, $name: String) {
-                  createUser(email: $email, name: $name) {
-                    id
-                    email
-                    name
-                  }
-                }
-              `,
-              variables: { email: user.email, name: user.name },
-            }),
-          })
-          if (!response.ok) {
-            console.error('Backend response not ok:', response.status)
-            return true // Continue anyway
-          }
-          const data = await response.json()
-          if (data.errors) {
-            console.error('GraphQL errors:', data.errors)
-            // If user already exists, that's fine
-          }
-        } catch (error) {
-          console.error('Error in signIn callback:', error)
-          // Don't fail the sign-in if backend is unavailable
-        }
-      }
+      // We no longer create the backend user here because the JWT callback
+      // will ensure an authenticated call to the backend to fetch/create the
+      // corresponding backend user. Keep signIn fast and non-blocking.
+      // Leaving signIn to always succeed.
       return true
     },
     async session({ session, token }: { session: any; token: any }) {
@@ -132,43 +103,11 @@ export const authOptions = {
     },
     async jwt({ token, user, account }: { token: any; user?: any; account?: any }) {
       console.log('JWT callback called with:', { token: token.sub, user: user?.email, account: account?.provider })
-      
-      // On sign in, fetch the backend user ID
-      if (account?.provider === 'email' && user?.email) {
-        try {
-          console.log('Fetching backend user ID for email:', user.email)
-          const response = await fetch('http://localhost:4000/graphql', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              query: `
-                query GetUser($email: String!) {
-                  user(email: $email) {
-                    id
-                    email
-                    name
-                  }
-                }
-              `,
-              variables: { email: user.email },
-            }),
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            if (data.data?.user?.id) {
-              token.backendUserId = data.data.user.id
-              console.log('Stored backend user ID in token:', token.backendUserId)
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching backend user ID in JWT callback:', error)
-        }
-      }
-
-      // Generate API token for backend authentication
-      if (token.backendUserId || token.sub) {
-        const apiToken = jwt.sign(
+      // We'll create a temporary API token (may not include backendUserId yet)
+      // to perform authenticated backend calls. After we fetch/create the
+      // backend user we re-sign the API token so it includes backendUserId.
+      if (token.sub) {
+        const tempApiToken = jwt.sign(
           {
             sub: token.sub,
             email: token.email,
@@ -178,7 +117,86 @@ export const authOptions = {
           JWT_SECRET,
           { expiresIn: '7d' }
         )
-        token.apiToken = apiToken
+        token.apiToken = tempApiToken
+
+        if (account?.provider === 'email' && user?.email) {
+          try {
+            console.log('Fetching backend user ID for email (authenticated):', user.email)
+            const response = await fetch('http://localhost:4000/graphql', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.apiToken}` },
+              body: JSON.stringify({
+                query: `
+                  query GetUser($email: String!) {
+                    user(email: $email) {
+                      id
+                      email
+                      name
+                    }
+                  }
+                `,
+                variables: { email: user.email },
+              }),
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              if (data.data?.user?.id) {
+                token.backendUserId = data.data.user.id
+                // Propagate name/email from backend user into the token so
+                // the session callback can expose them to the client.
+                if (data.data.user.name) token.name = data.data.user.name
+                if (data.data.user.email) token.email = data.data.user.email
+                console.log('Stored backend user ID in token:', token.backendUserId)
+              } else {
+                // No user found, attempt to create one (authenticated)
+                console.log('No backend user found; creating user for email:', user.email)
+                const createResp = await fetch('http://localhost:4000/graphql', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.apiToken}` },
+                  body: JSON.stringify({
+                    query: `
+                      mutation CreateUser($email: String!, $name: String) {
+                        createUser(email: $email, name: $name) {
+                          id
+                          email
+                          name
+                        }
+                      }
+                    `,
+                    variables: { email: user.email, name: user.name },
+                  }),
+                })
+
+                if (createResp.ok) {
+                  const createData = await createResp.json()
+                  if (createData.data?.createUser?.id) {
+                    token.backendUserId = createData.data.createUser.id
+                    // Also propagate newly created user's name/email into token
+                    if (createData.data.createUser.name) token.name = createData.data.createUser.name
+                    if (createData.data.createUser.email) token.email = createData.data.createUser.email
+                    console.log('Created backend user and stored id in token:', token.backendUserId)
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching/creating backend user in JWT callback:', error)
+          }
+        }
+
+        // Re-sign the API token so it includes backendUserId (if found/created).
+        const finalApiToken = jwt.sign(
+          {
+            sub: token.sub,
+            email: token.email,
+            name: token.name,
+            backendUserId: token.backendUserId,
+          },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        )
+        token.apiToken = finalApiToken
       }
 
       // Propagate basic profile fields from the provider/user into the token

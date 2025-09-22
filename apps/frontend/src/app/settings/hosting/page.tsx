@@ -1,6 +1,7 @@
 "use client"
 
 import Image from 'next/image'
+import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -143,7 +144,7 @@ export default function ManageHostingPage() {
       // Get userId from session
       const userId = (session?.user as User | undefined)?.id
       if (!userId) {
-        alert('You must be signed in to create a hosting')
+        toast.error('You must be signed in to create a hosting')
         setSaving(false)
         return
       }
@@ -257,11 +258,11 @@ export default function ManageHostingPage() {
         setShowAddForm(false)
       } else {
         console.error('Failed to create host:', result)
-        alert('Failed to create hosting. Please check your inputs and try again.')
+        toast.error('Failed to create hosting. Please check your inputs and try again.')
       }
     } catch (error) {
       console.error('Error creating host:', error)
-      alert('Failed to create hosting. Please try again.')
+      toast.error('Failed to create hosting. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -396,11 +397,11 @@ export default function ManageHostingPage() {
         cancelEdit(hostId)
       } else {
         console.error('Failed to update host:', result)
-        alert('Failed to save changes')
+        toast.error('Failed to save changes')
       }
     } catch (error) {
       console.error('Error saving host:', error)
-      alert('Failed to save changes')
+      toast.error('Failed to save changes')
     } finally {
       setSaving(false)
     }
@@ -411,12 +412,12 @@ export default function ManageHostingPage() {
     if (!file) return
     // Client-side validation: type and size
     if (!file.type || !file.type.startsWith('image/')) {
-      alert('Please upload a valid image file')
+      toast.error('Please upload a valid image file')
       return
     }
     const maxBytes = 5 * 1024 * 1024 // 5MB
     if (file.size > maxBytes) {
-      alert('Image is too large. Maximum size is 5 MB.')
+      toast.error('Image is too large. Maximum size is 5 MB.')
       return
     }
     try {
@@ -434,11 +435,11 @@ export default function ManageHostingPage() {
         updateEditForm(hostId, 'photos', [...currentPhotos, data.url])
       } else {
         console.error('Upload failed', data)
-        alert('Failed to upload image')
+        toast.error('Failed to upload image')
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('Failed to upload image')
+      toast.error('Failed to upload image')
     }
   }
 
@@ -535,11 +536,11 @@ export default function ManageHostingPage() {
         setDeleteConfirmId(null)
       } else {
         console.error('Failed to delete host:', result)
-        alert('Failed to delete host')
+        toast.error('Failed to delete host')
       }
     } catch (error) {
       console.error('Error deleting host:', error)
-      alert('Failed to delete host')
+      toast.error('Failed to delete host')
     } finally {
       setDeleting(false)
     }

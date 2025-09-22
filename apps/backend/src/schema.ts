@@ -1005,8 +1005,19 @@ export const resolvers = {
       }
       
       // Ensure user can only update their own profile
+      // Allow update if the authenticated user's id matches the target id
+      // OR if the authenticated user's email matches the target user's email.
       if (context.user.id !== id) {
-        throw new Error('Unauthorized: Can only update your own profile');
+        // Try email-based match as a fallback (useful when token contains email but not backendUserId)
+        try {
+          const targetUser: any = getUserById.get(id);
+          const authenticatedEmail = context.user.email || '';
+          if (!targetUser || !authenticatedEmail || targetUser.email !== authenticatedEmail) {
+            throw new Error('Unauthorized: Can only update your own profile');
+          }
+        } catch {
+          throw new Error('Unauthorized: Can only update your own profile');
+        }
       }
       
       updateUser.run(name, image, id);
