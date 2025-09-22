@@ -71,7 +71,7 @@ describe('Invitation Flow Integration', () => {
           const newUserId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
           db.prepare('INSERT INTO users (id, email, name, email_verified, image) VALUES (?, ?, ?, ?, ?)')
-            .run(newUserId, invitation.invitee_email, userData.name, new Date().toISOString(), userData.image);
+            .run(newUserId, invitation.invitee_email, userData.name, new Date().toISOString(), userData.avatar);
 
           db.prepare('UPDATE invitations SET status = ?, accepted_at = ? WHERE id = ?').run('accepted', new Date().toISOString(), invitation.id);
 
@@ -85,7 +85,7 @@ describe('Invitation Flow Integration', () => {
             id: newUserId,
             email: invitation.invitee_email,
             name: userData.name,
-            image: userData.image,
+            image: userData.avatar,
             emailVerified: new Date().toISOString(),
             createdAt: new Date().toISOString(),
           };
@@ -170,7 +170,7 @@ describe('Invitation Flow Integration', () => {
         query: acceptMutation,
         variables: {
           token: created.token,
-          userData: { name: 'New User', image: null }
+          userData: { name: 'New User', avatar: null }
         }
       });
 

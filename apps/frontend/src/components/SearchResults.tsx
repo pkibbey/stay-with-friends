@@ -200,33 +200,113 @@ export function SearchResults({ hosts, isLoading, filters }: SearchResultsProps)
   }
 
   if (hosts.length === 0) {
+    const hasFilters = filters.query || filters.startDate
+    
     return (
       <Card className="text-center py-12">
         <CardContent>
           <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
-          <p className="text-gray-600 mb-6">
-            Try adjusting your search criteria or filters to find more results.
-          </p>
-          <div className="space-y-2 text-sm text-gray-500">
-            <p>• Try a different location or remove location filter</p>
-            <p>• Adjust your date range or remove date filters</p>
-            <p>• Remove some amenity requirements</p>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {hasFilters ? 'No matching hosts found' : 'No hosts available'}
+          </h3>
+          {hasFilters ? (
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                No hosts match your current search criteria:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {filters.query && (
+                  <Badge variant="outline" className="text-sm">
+                    Query: &ldquo;{filters.query}&rdquo;
+                  </Badge>
+                )}
+                {filters.startDate && (
+                  <Badge variant="outline" className="text-sm">
+                    Date: {formatDisplayDate(filters.startDate)}
+                  </Badge>
+                )}
+              </div>
+              <div className="space-y-2 text-sm text-gray-500 mt-6">
+                <p className="font-medium">Try adjusting your search:</p>
+                <p>• Modify your search terms or try different keywords</p>
+                <p>• Try a different date or remove the date filter</p>
+                <p>• Clear all filters to see all available hosts</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-gray-600 mb-6">
+                There are currently no hosts available in the system.
+              </p>
+              <div className="space-y-2 text-sm text-gray-500">
+                <p>• Check back later for new host listings</p>
+                <p>• Contact support if you believe this is an error</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     )
   }
 
+  // Build filter summary message
+  const getFilterSummary = () => {
+    const appliedFilters = []
+    
+    if (filters.query) {
+      appliedFilters.push(`matching "${filters.query}"`)
+    }
+    
+    if (filters.startDate) {
+      appliedFilters.push(`available on ${formatDisplayDate(filters.startDate)}`)
+    }
+    
+    const hostText = hosts.length === 1 ? 'host' : 'hosts'
+    
+    if (appliedFilters.length === 0) {
+      return `Showing all ${hosts.length} ${hostText}`
+    } else if (appliedFilters.length === 1) {
+      return `Found ${hosts.length} ${hostText} ${appliedFilters[0]}`
+    } else {
+      const lastFilter = appliedFilters.pop()
+      return `Found ${hosts.length} ${hostText} ${appliedFilters.join(', ')} and ${lastFilter}`
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Results summary */}
-      <div className="text-sm text-gray-600">
-        Showing {hosts.length} {hosts.length === 1 ? 'result' : 'results'}
-        {filters.startDate && (
-          <span> for {formatDisplayDate(filters.startDate)}</span>
-        )}
-      </div>
+      {/* Enhanced Results summary */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardContent className="pt-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-1">
+                {getFilterSummary()}
+              </h3>
+              {(filters.query || filters.startDate) && (
+                <div className="text-sm text-gray-600">
+                  <span>Search filters applied: </span>
+                  {filters.query && (
+                    <Badge variant="secondary" className="mr-2 text-xs">
+                      Query: &ldquo;{filters.query}&rdquo;
+                    </Badge>
+                  )}
+                  {filters.startDate && (
+                    <Badge variant="secondary" className="text-xs">
+                      Date: {formatDisplayDate(filters.startDate)}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              {!filters.query && !filters.startDate && (
+                <p className="text-sm text-gray-600">
+                  Use the filters on the left to refine your search
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Results grid */}
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">

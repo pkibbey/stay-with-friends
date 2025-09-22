@@ -355,3 +355,6 @@ export const searchHostsAvailableOnDate = db.prepare(`
     AND (h.name LIKE ? OR h.description LIKE ? OR h.location LIKE ? OR h.city LIKE ? OR h.state LIKE ?)
   ORDER BY h.name
 `);
+
+// Export the shared database connection for use in other modules
+export { db };

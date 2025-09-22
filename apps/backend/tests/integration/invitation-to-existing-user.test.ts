@@ -24,7 +24,7 @@ describe('Invitation to existing user flow', () => {
     db.exec('DELETE FROM hosts');
     db.exec('DELETE FROM users');
     
-  // No sqlite_sequence reset needed for TEXT primary keys
+    // No sqlite_sequence reset needed for TEXT primary keys
 
     // Create an inviter user
     inviterId = 'test-inviter-1';

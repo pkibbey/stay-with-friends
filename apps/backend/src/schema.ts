@@ -220,15 +220,13 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate } from './db';
+import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate, db } from './db';
 // Use generated types from the single source-of-truth
 import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation, Host, Availability, BookingRequest, User, Connection, Invitation } from './generated/types';
 import fs from 'fs';
 import path from 'path';
 import Crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import BetterSqlite3 from 'better-sqlite3';
-import Path from 'path';
 
 // Authentication context interface
 interface AuthContext {
@@ -707,27 +705,19 @@ export const resolvers = {
         } else {
           // Update existing availability periods to booked status
           // This is a simplified approach - in production you might want more sophisticated availability management
-          const Database = BetterSqlite3;
-          const dbPath = Path.join(__dirname, '..', 'database.db');
-          const tempDb = new Database(dbPath);
-          
-          try {
-            tempDb.prepare(`
-              UPDATE availabilities 
-              SET status = 'booked', notes = ?
-              WHERE host_id = ? 
-              AND start_date <= ? 
-              AND end_date >= ?
-              AND status = 'available'
-            `).run(
-              `Booked by ${bookingRequest.requester_name || bookingRequest.requester_email}`,
-              bookingRequest.host_id,
-              bookingRequest.end_date,
-              bookingRequest.start_date
-            );
-          } finally {
-            tempDb.close();
-          }
+          db.prepare(`
+            UPDATE availabilities 
+            SET status = 'booked', notes = ?
+            WHERE host_id = ? 
+            AND start_date <= ? 
+            AND end_date >= ?
+            AND status = 'available'
+          `).run(
+            `Booked by ${bookingRequest.requester_name || bookingRequest.requester_email}`,
+            bookingRequest.host_id,
+            bookingRequest.end_date,
+            bookingRequest.start_date
+          );
         }
       }
 
@@ -761,8 +751,6 @@ export const resolvers = {
         throw new Error('Unauthorized: Can only update your own hosts');
       }
       
-      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
-
       try {
         // Validate fields if provided
         if (input.name !== undefined) validateName(input.name);
@@ -952,8 +940,6 @@ export const resolvers = {
           throw new Error('A host with this email already exists');
         }
         throw error;
-      } finally {
-        db.close()
       }
     },
     deleteHost: (_: any, { id }: { id: string }, context: AuthContext) => {
@@ -968,8 +954,6 @@ export const resolvers = {
         throw new Error('Unauthorized: Can only delete your own hosts');
       }
       
-      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
-
       try {
         // Delete availabilities first (foreign key constraint)
         db.prepare('DELETE FROM availabilities WHERE host_id = ?').run(id)
@@ -984,8 +968,6 @@ export const resolvers = {
       } catch (error) {
         console.log('error: ', error);      
         return false
-      } finally {
-        db.close()
       }
     },
     createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }, context: AuthContext): GeneratedUser => {
@@ -1079,9 +1061,7 @@ export const resolvers = {
       validateStatus(status, ['pending', 'accepted', 'declined', 'cancelled']);
 
       // Check if user is part of this connection
-      const db = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
       const connection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId) as any;
-      db.close();
       
       if (!connection) {
         throw new Error('Connection not found');
@@ -1094,9 +1074,7 @@ export const resolvers = {
       const result = updateConnectionStatus.run(status, connectionId);
       console.log('result: ', result);
       // Return the updated connection
-      const db2 = BetterSqlite3(Path.join(__dirname, '..', 'database.db'));
-      const updatedConnection = db2.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
-      db2.close();
+      const updatedConnection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
       return updatedConnection as GeneratedConnection | undefined;
     },
     deleteConnection: (_: any, { connectionId }: { connectionId: string }, context: AuthContext) => {

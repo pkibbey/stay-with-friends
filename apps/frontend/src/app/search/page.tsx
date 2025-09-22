@@ -188,6 +188,32 @@ function SearchPage() {
     }
   }
 
+  // Generate descriptive header text
+  const getHeaderDescription = () => {
+    if (isLoading) return 'Searching...'
+    
+    const hasFilters = filters.query || filters.startDate
+    const hostText = hosts.length === 1 ? 'host' : 'hosts'
+    
+    if (hosts.length === 0) {
+      if (hasFilters) {
+        return 'No hosts match your search criteria'
+      } else {
+        return 'No hosts available'
+      }
+    }
+    
+    if (!hasFilters) {
+      return `${hosts.length} ${hostText} available`
+    }
+    
+    const filterDescriptions = []
+    if (filters.query) filterDescriptions.push(`matching "${filters.query}"`)
+    if (filters.startDate) filterDescriptions.push(`available ${filters.startDate}`)
+    
+    return `${hosts.length} ${hostText} ${filterDescriptions.join(' and ')}`
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -197,7 +223,7 @@ function SearchPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Search Hosts</h1>
               <p className="text-gray-600 mt-1">
-                {hosts.length} {hosts.length === 1 ? 'host' : 'hosts'} available
+                {getHeaderDescription()}
               </p>
             </div>
             

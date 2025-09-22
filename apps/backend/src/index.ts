@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
+import sharp from 'sharp';
 import { resolvers, typeDefs } from './schema';
 
 // Initialize database by importing db.ts (tables are created on import)
@@ -33,6 +34,11 @@ const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
+// Ensure avatars directory exists and serve it statically
+const avatarsDir = path.join(__dirname, '..', 'public', 'avatars');
+fs.mkdirSync(avatarsDir, { recursive: true });
+app.use('/avatars', express.static(avatarsDir));
+
 // Authentication context interface
 interface AuthContext {
   user?: {
@@ -53,6 +59,7 @@ const getAuthContext = (req: Request): AuthContext => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('decoded: ', decoded);
     return {
       user: {
         id: decoded.backendUserId || decoded.sub || '',
@@ -93,37 +100,6 @@ app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from REST API' });
 });
 
-// Reset database - FOR DEVELOPMENT ONLY
-app.post('/api/reset', (req: Request, res: Response) => {
-  try {
-    const dbPath = path.join(__dirname, '..', 'database.db');
-    
-    // Delete the database file
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-    }
-    
-    // Delete uploaded files
-    const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
-    if (fs.existsSync(uploadsDir)) {
-      const files = fs.readdirSync(uploadsDir);
-      for (const file of files) {
-        if (file.match(/\.(jpg|jpeg|png|gif)$/i)) {
-          fs.unlinkSync(path.join(uploadsDir, file));
-        }
-      }
-    }
-    
-    res.json({ 
-      message: 'Database and uploads cleared successfully. Restart the server to reinitialize.',
-      note: 'Please restart the backend server to recreate the database schema.'
-    });
-  } catch (error) {
-    console.error('Reset error:', error);
-    res.status(500).json({ error: 'Failed to reset database' });
-  }
-});
-
 const server = new ApolloServer<AuthContext>({
   typeDefs,
   resolvers,
@@ -147,6 +123,67 @@ async function startServer() {
 
     const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
     res.json({ url })
+  })
+
+  // Avatar upload endpoint with image resizing
+  app.post('/api/upload-avatar', upload.single('avatar'), async (req: Request, res: Response) => {
+    try {
+      // Check authentication
+      const authContext = getAuthContext(req);
+      if (!authContext.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const file: any = (req as any).file;
+      if (!file) {
+        return res.status(400).json({ error: 'No avatar file uploaded' });
+      }
+
+      // Generate unique filename for avatar
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const avatarFilename = `avatar-${authContext.user.id}-${uniqueSuffix}.jpg`;
+      const avatarPath = path.join(avatarsDir, avatarFilename);
+
+      // Process image with Sharp: resize to 256x256 and convert to JPEG
+      await sharp(file.path)
+        .resize(256, 256, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({
+          quality: 85,
+          progressive: true
+        })
+        .toFile(avatarPath);
+
+      // Delete the temporary uploaded file
+      fs.unlinkSync(file.path);
+
+      // Generate URL for the processed avatar
+      const avatarUrl = `${req.protocol}://${req.get('host')}/avatars/${avatarFilename}`;
+
+      res.json({ 
+        url: avatarUrl,
+        filename: avatarFilename,
+        message: 'Avatar uploaded and resized successfully'
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      
+      // Clean up temporary file if it exists
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const file: any = (req as any).file;
+        if (file && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      } catch (cleanupError) {
+        console.error('Failed to clean up temporary file:', cleanupError);
+      }
+
+      res.status(500).json({ error: 'Failed to process avatar image' });
+    }
   })
 
   app.listen(port, () => {
