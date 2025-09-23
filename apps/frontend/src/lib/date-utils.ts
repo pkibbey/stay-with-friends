@@ -1,4 +1,3 @@
-import { MAX_MONTHS_DISPLAYED } from '@/app/page'
 import { format, startOfDay } from 'date-fns'
 
 /**
@@ -48,19 +47,6 @@ export const formatDateRange = (startDate: string, endDate: string): string => {
 
   // Different years, show full format
   return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`
-}
-
-/**
- * Get the start and end dates for a month in local timezone
- */
-export const getMonthDateRange = (month: Date): { startDate: string, endDate: string } => {
-  const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1)
-  const endOfSecondMonth = new Date(month.getFullYear(), month.getMonth() + MAX_MONTHS_DISPLAYED + 2, 0)
-
-  return {
-    startDate: format(startOfMonth, 'yyyy-MM-dd'),
-    endDate: format(endOfSecondMonth, 'yyyy-MM-dd')
-  }
 }
 
 /**

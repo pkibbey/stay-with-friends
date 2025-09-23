@@ -2,7 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar } from "@/components/ui/calendar"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { parseLocalDate } from '@/lib/date-utils'
-import { MAX_MONTHS_DISPLAYED } from "@/app/page"
 
 interface AvailabilityCalendarProps {
   selectedDate: Date | undefined
@@ -44,7 +43,6 @@ export function AvailabilityCalendar({ selectedDate, onSelect, availabilities = 
           selected={selectedDate}
           onSelect={onSelect}
           defaultMonth={selectedDate}
-          numberOfMonths={MAX_MONTHS_DISPLAYED}
           className="rounded-md border w-full"
           modifiers={{
             available: availableDates,

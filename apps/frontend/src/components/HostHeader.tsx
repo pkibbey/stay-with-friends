@@ -2,15 +2,13 @@ import { Button } from "@/components/ui/button"
 import { Host } from "@/types"
 import { ArrowLeft, Users } from "lucide-react"
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 
 interface HostHeaderProps {
   host: Host
+  dateParam?: string | null
 }
 
-export function HostHeader({ host }: HostHeaderProps) {
-  const searchParams = useSearchParams()
-  const dateParam = searchParams.get('date')
+export function HostHeader({ host, dateParam }: HostHeaderProps) {
   const backUrl = dateParam ? `/?date=${dateParam}` : '/'
 
   return (

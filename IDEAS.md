@@ -9,6 +9,6 @@ Go through everything and improve each bit at a time
 
 Prevent page flashes when waiting for page authentication
 
-Save uploaded images as UUIDs instead of their file names, to prevent naming conflicts
-
 Add tests when the site needs it later
+
+I would want to make the graphql calls neater, maybe they exist in their own files/folders?
