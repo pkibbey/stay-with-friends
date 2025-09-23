@@ -9,7 +9,7 @@ import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature } from 'ol'
 import { Point } from 'ol/geom'
-import { Style, Icon, Text, Fill, Stroke } from 'ol/style'
+import { Style, Icon } from 'ol/style'
 import Overlay from 'ol/Overlay'
 import { MapPin } from 'lucide-react'
 import 'ol/ol.css'
@@ -122,6 +122,14 @@ export function MapComponent({
       map.removeLayer(markerLayerRef.current)
     }
 
+    // Clear existing overlays (except popup)
+    const existingOverlays = map.getOverlays().getArray().slice()
+    existingOverlays.forEach(overlay => {
+      if (overlay !== popupOverlayRef.current) {
+        map.removeOverlay(overlay)
+      }
+    })
+
     const features: Feature[] = []
     const bounds: number[][] = []
 
@@ -159,81 +167,66 @@ export function MapComponent({
       const coordinates = fromLonLat([lon, lat])
       bounds.push([lon, lat])
 
-      // Create marker feature
-      const marker = new Feature({
-        geometry: new Point(coordinates),
-        host: host, // Store host data for popup
-      })
-
-      // Style the marker with price
-      const markerStyle = new Style({
-        image: new Icon({
-          src: 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2C13.38 2 8 7.38 8 14c0 8.75 12 30 12 30s12-21.25 12-30c0-6.62-5.38-12-12-12z" fill="#dc2626" stroke="#fff" stroke-width="2"/>
-              <circle cx="20" cy="14" r="6" fill="#fff"/>
-            </svg>
-          `),
-          scale: 0.8,
-          anchor: [0.5, 1],
-        }),
-        text: new Text({
-          text: 'Free',
-          font: 'bold 11px sans-serif',
-          fill: new Fill({ color: '#fff' }),
-          stroke: new Stroke({ color: '#dc2626', width: 2 }),
-          offsetY: -25,
-          backgroundFill: new Fill({ color: '#dc2626' }),
-          padding: [2, 4, 2, 4],
-        }),
-      })
-
-      marker.setStyle(markerStyle)
-      features.push(marker)
-    }
-
-    // Create vector source and layer
-    const vectorSource = new VectorSource({
-      features: features,
-    })
-
-    const vectorLayer = new VectorLayer({
-      source: vectorSource,
-    })
-
-    map.addLayer(vectorLayer)
-    markerLayerRef.current = vectorLayer
-
-    // Fit map to show all markers
-    if (bounds.length > 0) {
-      const extent = vectorSource.getExtent()
-      map.getView().fit(extent, { 
-        padding: [50, 50, 50, 50],
-        maxZoom: 15 
-      })
-    }
-
-    // Add click listener for popups
-    map.on('click', (event) => {
-      const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature)
+      // Create marker element
+      const markerElement = document.createElement('div')
+      markerElement.className = 'map-pin-marker'
       
-      if (feature && feature.get('host')) {
-        const host = feature.get('host') as HostProfileData
-        const coordinates = (feature.getGeometry() as Point).getCoordinates()
+      // Create compact host info card
+      const hostName = host.name?.length > 20 ? host.name.substring(0, 17) + '...' : (host.name || 'Unnamed Host')
+      const guestInfo = host.maxGuests ? `${host.maxGuests} guests` : ''
+      const locationInfo = host.city ? (host.city.length > 15 ? host.city.substring(0, 12) + '...' : host.city) : (host.state || '')
+      
+      markerElement.innerHTML = `
+        <div class="host-pin-card">
+          <div class="host-pin-name">${hostName}</div>
+          <div class="host-pin-details">
+            <span class="host-pin-location">${locationInfo}</span>
+            ${guestInfo ? `<span class="host-pin-guests">${guestInfo}</span>` : ''}
+          </div>
+          <div class="host-pin-arrow"></div>
+        </div>
+      `
+
+      // Add styles to the marker element
+      markerElement.style.cssText = `
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        position: relative;
+        cursor: pointer;
+        transform: translate(-50%, -100%);
+      `
+
+      // Create overlay for the marker
+      const markerOverlay = new Overlay({
+        element: markerElement,
+        position: coordinates,
+        positioning: 'center-center',
+        stopEvent: false,
+      })
+
+      map.addOverlay(markerOverlay)
+
+      // Add click handler to the marker element
+      markerElement.addEventListener('click', (event) => {
+        event.stopPropagation()
         
         if (popupRef.current && popupOverlayRef.current) {
           // Update popup content
+          const location = [host.city, host.state].filter(Boolean).join(', ') || 'Location not specified'
+          const description = host.description 
+            ? (host.description.length > 100 ? host.description.substring(0, 100) + '...' : host.description)
+            : 'No description available'
+          
           popupRef.current.innerHTML = `
             <div class="max-w-sm">
               <div class="mb-2">
-                <h3 class="font-semibold text-sm line-clamp-2">${host.name}</h3>
-                <p class="text-xs text-gray-600">${host.city}, ${host.state}</p>
+                <h3 class="font-semibold text-sm line-clamp-2">${host.name || 'Unnamed Host'}</h3>
+                <p class="text-xs text-gray-600">${location}</p>
               </div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-500">${host.maxGuests} guests</span>
+                <span class="text-xs text-gray-500">${host.maxGuests ? `${host.maxGuests} guests` : 'Guest capacity not specified'}</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">
-                Host: ${host.description || 'No description available'}
+                ${description}
               </div>
               <a href="/host/${host.id}" class="text-xs text-blue-600 hover:text-blue-800">
                 View Details →
@@ -243,17 +236,122 @@ export function MapComponent({
           popupOverlayRef.current.setPosition(coordinates)
           popupRef.current.style.display = 'block'
         }
-      } else {
-        // Hide popup if clicking elsewhere
-        if (popupRef.current) {
-          popupRef.current.style.display = 'none'
-        }
+      })
+
+      // Create invisible feature for bounds calculation
+      const marker = new Feature({
+        geometry: new Point(coordinates),
+        host: host,
+      })
+
+      features.push(marker)
+    }
+
+    // Create vector source and layer for bounds calculation only
+    const vectorSource = new VectorSource({
+      features: features,
+    })
+
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+      style: new Style(), // Empty style - invisible layer, just for bounds
+    })
+
+    map.addLayer(vectorLayer)
+    markerLayerRef.current = vectorLayer
+
+    // Fit map to show all markers
+    if (bounds.length > 0) {
+      const extent = vectorSource.getExtent()
+      map.getView().fit(extent, { 
+        padding: [80, 80, 80, 80],
+        maxZoom: 15 
+      })
+    }
+
+    // Add global click listener for hiding popup
+    map.on('click', (event) => {
+      // Check if click was on a marker element
+      const element = event.originalEvent.target as HTMLElement
+      if (!element.closest('.host-pin-card') && popupRef.current) {
+        popupRef.current.style.display = 'none'
       }
     })
   }, [])
 
   useEffect(() => {
     if (!mapRef.current || olMapRef.current) return
+
+    // Add CSS styles for host pin cards
+    const style = document.createElement('style')
+    style.textContent = `
+      .host-pin-card {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: white;
+        border: 2px solid #dc2626;
+        border-radius: 8px;
+        padding: 8px 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        min-width: 140px;
+        max-width: 180px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+      }
+      
+      .host-pin-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        border-color: #991b1b;
+      }
+      
+      .host-pin-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 3px;
+        line-height: 1.2;
+      }
+      
+      .host-pin-details {
+        font-size: 10px;
+        color: #6b7280;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+      }
+      
+      .host-pin-location {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .host-pin-guests {
+        background: #f3f4f6;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-weight: 500;
+        white-space: nowrap;
+        font-size: 9px;
+      }
+      
+      .host-pin-arrow {
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid #dc2626;
+      }
+    `
+    document.head.appendChild(style)
 
     // Create popup element
     const popupElement = document.createElement('div')
@@ -307,6 +405,10 @@ export function MapComponent({
       }
       if (popupOverlayRef.current) {
         popupOverlayRef.current = null
+      }
+      // Remove added styles
+      if (style.parentNode) {
+        style.parentNode.removeChild(style)
       }
     }
   }, [])

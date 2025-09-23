@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar as CalendarIcon, Home, MapPin, Users, BedDouble, Bath } from 'lucide-react'
+import { Calendar as CalendarIcon, Home, MapPin, Users, Bed, Bath } from 'lucide-react'
 import { convertAvailabilityDates } from '@/lib/date-utils'
 import Link from 'next/link'
 import type { HostProfileData } from '@/types'
@@ -219,7 +219,7 @@ export function SearchCalendarView({ hosts, isLoading }: SearchCalendarViewProps
                               )}
                               {host.bedrooms && (
                                 <div className="flex items-center gap-1">
-                                  <BedDouble className="w-4 h-4" />
+                                  <Bed className="w-4 h-4" />
                                   <span>{host.bedrooms} bed{host.bedrooms !== 1 ? 's' : ''}</span>
                                 </div>
                               )}

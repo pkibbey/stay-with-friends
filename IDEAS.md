@@ -9,9 +9,6 @@ Go through everything and improve each bit at a time
 
 Prevent page flashes when waiting for page authentication
 
-
-Improve map pin UI
-
 Save uploaded images as UUIDs instead of their file names, to prevent naming conflicts
 
 Add tests when the site needs it later
