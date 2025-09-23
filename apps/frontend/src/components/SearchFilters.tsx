@@ -1,12 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
-import { CalendarIcon, Search } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { parseLocalDate, formatDateForUrl } from '@/lib/date-utils'
 import { SearchFiltersState } from '@/types'
@@ -42,92 +40,70 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center w-full">
       {/* Search Query */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="w-5 h-5" />
+      <div className="flex-1 max-w-md">
+        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+          <Input
+            placeholder="Search by title, description, location..."
+            value={localQuery}
+            onChange={(e) => setLocalQuery(e.target.value)}
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button type="submit" disabled={isLoading} size="sm">
             Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearchSubmit} className="space-y-3">
-            <Input
-              placeholder="Search by title, description, location..."
-              value={localQuery}
-              onChange={(e) => setLocalQuery(e.target.value)}
-              disabled={isLoading}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-              Search
-            </Button>
-            {filters.query && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setLocalQuery('')
-                  handleFilterChange('query', '')
-                }}
-                className="w-full"
-              >
-                Clear search
-              </Button>
-            )}
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Dates */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
-            Dates
-          </CardTitle>
-          <CardDescription>When do you want to stay?</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Start date</Label>
-            <Button
-              variant="outline"
-              onClick={() => setShowDatePicker(true)}
-              className="w-full justify-start text-left font-normal mt-1"
-              disabled={isLoading}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {filters.startDate ? format(parseLocalDate(filters.startDate), 'PPP') : 'Select start date'}
-            </Button>
-            {showDatePicker && (
-              <div className="mt-2 p-3 border rounded-lg bg-white shadow-lg">
-                <Calendar
-                  mode="single"
-                  selected={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
-                  startMonth={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
-                  onSelect={(date) => handleDateSelect(date)}
-                  // disabled={(date) => date < new Date()}
-                  className="rounded-md border-0"
-                />
-              </div>
-            )}
-          </div>
-
-          {filters.startDate && (
+          </Button>
+          {filters.query && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
-                handleFilterChange('startDate', null)
+                setLocalQuery('')
+                handleFilterChange('query', '')
               }}
-              className="w-full"
             >
-              Clear date
+              Clear
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </form>
+      </div>
+
+      {/* Dates */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setShowDatePicker(true)}
+          className="justify-start text-left font-normal"
+          disabled={isLoading}
+          size="sm"
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {filters.startDate ? format(parseLocalDate(filters.startDate), 'MMM d') : 'Select date'}
+        </Button>
+        {showDatePicker && (
+          <div className="absolute top-full mt-2 p-3 border rounded-lg bg-white shadow-lg z-10">
+            <Calendar
+              mode="single"
+              selected={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
+              startMonth={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
+              onSelect={(date) => handleDateSelect(date)}
+              className="rounded-md border-0"
+            />
+          </div>
+        )}
+        {filters.startDate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              handleFilterChange('startDate', null)
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

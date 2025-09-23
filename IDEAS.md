@@ -3,12 +3,34 @@ Move photo storage to s3 bucket
 
 Add Google login as well as magic link login, and do we want email password too? Can we enforce only good secure logins like magic link?
 
-# For now
+Add more test coverage
 
-Go through everything and improve each bit at a time
+Make tests more complete
 
-Prevent page flashes when waiting for page authentication
+Make the graphql calls neater, maybe they exist in their own files/folders
 
-Add tests when the site needs it later
+We lost the database again
 
-I would want to make the graphql calls neater, maybe they exist in their own files/folders?
+
+# New notes
+
+Home 
+- I'm not really sure what to do with the homepage for now.
+
+Search
+- The search filters could go up in between the text and the tabs
+- The select date popover appears too far down the page, not right next to the select date trigger
+- The search field and the submit field are two different heights - are we using standardized components for each of these?
+- The Map under the map tab should take up even more vertical space
+- When searching, there is a big flash of loading skeletons which look jarring. Either we need a loading animation, or preferrably just don't show the new results until they have finished loading, or stream them.
+
+Host
+- layout could be a bit more balanced still
+
+Profile
+- It doesn't look like the profile image is being saved
+
+Hosting
+- Allow multiple hostings to be added/managed
+
+

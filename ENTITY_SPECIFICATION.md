@@ -263,7 +263,7 @@ CREATE TABLE connections (
 
 ### 6. Invitation Entity
 
-**Purpose**: Represents invitations sent by existing users to invite friends to join the platform.
+**Purpose**: Represents invitations sent by existing users to invite connections to join the platform.
 
 **Properties**:
 - `id` (string): Unique identifier for the invitation

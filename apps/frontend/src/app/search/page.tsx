@@ -7,7 +7,7 @@ import { SearchCalendarView } from '@/components/SearchCalendarView'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Map, List, Filter, Calendar } from 'lucide-react'
+import { Map, List, Calendar } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
 import { HostProfileData, SearchFiltersState } from '@/types'
@@ -24,7 +24,6 @@ function SearchPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map' | 'calendar'>('list')
-  const [showFilters, setShowFilters] = useState(false)
   
   // Initialize filters from URL params
   const [filters, setFilters] = useState<SearchFiltersState>({
@@ -220,7 +219,7 @@ function SearchPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Search Hosts</h1>
               <p className="text-gray-600 mt-1">
@@ -229,16 +228,6 @@ function SearchPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Filters Toggle */}
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="md:hidden"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-              
               {/* View Toggle */}
               <Tabs value={view} onValueChange={(value: string) => handleViewChange(value as 'list' | 'map' | 'calendar')}>
                 <TabsList>
@@ -258,60 +247,57 @@ function SearchPage() {
               </Tabs>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Filters Sidebar */}
-          <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 space-y-6`}>
+          {/* Filters in Header */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <SearchFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}
               isLoading={isLoading}
             />
           </div>
+        </div>
+      </div>
 
-          {/* Results Area */}
-          <div className="flex-1 min-w-0">
-            {error && (
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <div className="text-center text-red-600">
-                    <p>{error}</p>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => searchHosts(filters)}
-                      className="mt-3"
-                    >
-                      Try Again
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="space-y-6">
+          {error && (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="text-center text-red-600">
+                  <p>{error}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => searchHosts(filters)}
+                    className="mt-3"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {view === 'list' ? (
-              <SearchResults
-                hosts={hosts}
-                isLoading={isLoading}
-                filters={filters}
-              />
-            ) : view === 'map' ? (
-              <div className="h-[600px] lg:h-[700px]">
-                <MapComponent 
-                  hosts={hosts}
-                  isLoading={isLoading}
-                />
-              </div>
-            ) : (
-              <SearchCalendarView 
+          {view === 'list' ? (
+            <SearchResults
+              hosts={hosts}
+              isLoading={isLoading}
+              filters={filters}
+            />
+          ) : view === 'map' ? (
+            <div className="h-[800px] lg:h-[900px]">
+              <MapComponent 
                 hosts={hosts}
                 isLoading={isLoading}
               />
-            )}
-          </div>
+            </div>
+          ) : (
+            <SearchCalendarView 
+              hosts={hosts}
+              isLoading={isLoading}
+            />
+          )}
         </div>
       </div>
     </div>

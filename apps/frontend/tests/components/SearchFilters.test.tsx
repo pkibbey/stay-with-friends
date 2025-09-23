@@ -57,8 +57,7 @@ describe('SearchFilters Component', () => {
   it('renders date picker', () => {
     render(<SearchFilters {...defaultProps} />);
     
-    // Check for date section
-    expect(screen.getByText(/dates/i)).toBeInTheDocument();
-    expect(screen.getByText(/when do you want to stay/i)).toBeInTheDocument();
+    // Check for date picker button
+    expect(screen.getByText(/select date/i)).toBeInTheDocument();
   });
 });

@@ -8,11 +8,13 @@ import { BookingRequestsDisplay } from '@/components/BookingRequestsDisplay'
 interface BookingRequestsManagerProps {
   initialMyRequests: BookingRequestWithRelations[]
   initialIncomingRequests: BookingRequestWithRelations[]
+  activeTab?: string
 }
 
 export function BookingRequestsManager({
   initialMyRequests,
-  initialIncomingRequests
+  initialIncomingRequests,
+  activeTab
 }: BookingRequestsManagerProps) {
   const [myRequests, setMyRequests] = useState<BookingRequestWithRelations[]>(initialMyRequests)
   const [incomingRequests, setIncomingRequests] = useState<BookingRequestWithRelations[]>(initialIncomingRequests)
@@ -59,6 +61,7 @@ export function BookingRequestsManager({
       myRequests={myRequests}
       incomingRequests={incomingRequests}
       onStatusUpdate={handleStatusUpdate}
+      activeTab={activeTab}
     />
   )
 }

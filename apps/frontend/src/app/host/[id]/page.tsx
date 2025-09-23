@@ -120,9 +120,9 @@ export default async function HostDetailPage({ params, searchParams }: HostDetai
       <HostHeader host={host} dateParam={searchParams.date} />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-6">
             <HostDetailClient
               host={host}
               selectedDate={selectedDate}

@@ -94,9 +94,9 @@ export function SearchCalendarView({ hosts, isLoading }: SearchCalendarViewProps
   }
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 h-[600px] lg:h-[700px]">
+    <div className="flex flex-col md:flex-row gap-6 h-[600px] lg:h-[700px]">
       {/* Calendar Section */}
-      <div className="xl:w-96 flex-shrink-0">
+      <div className="md:w-96 flex-shrink-0">
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

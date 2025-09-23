@@ -4,6 +4,8 @@ import { PageLayout } from '@/components/PageLayout'
 import { BookingRequestWithRelations } from '@/types'
 import { BookingRequestsManager } from '@/components/BookingRequestsManager'
 import { serverAuthenticatedGraphQLRequest } from '@/lib/graphql-server'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Send, Inbox } from 'lucide-react'
 
 async function getMyBookingRequests(userId: string): Promise<BookingRequestWithRelations[]> {
   try {
@@ -104,11 +106,37 @@ export default async function BookingsPage() {
   ])
 
   return (
-    <PageLayout title="Stays" subtitle="Manage your stay requests and hosting">
-      <BookingRequestsManager
-        initialMyRequests={myRequests}
-        initialIncomingRequests={incomingRequests}
-      />
-    </PageLayout>
+    <Tabs defaultValue="my-requests" className="space-y-6">
+      <PageLayout
+        title="Stays"
+        subtitle="Manage your stay requests and hosting"
+        headerActions={
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="my-requests" className="flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              My Requests ({myRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="incoming" className="flex items-center gap-2">
+              <Inbox className="w-4 h-4" />
+              Incoming Requests ({incomingRequests.length})
+            </TabsTrigger>
+          </TabsList>
+        }>
+        <TabsContent value="my-requests" className="space-y-4">
+          <BookingRequestsManager
+            initialMyRequests={myRequests}
+            initialIncomingRequests={incomingRequests}
+            activeTab="my-requests"
+          />
+        </TabsContent>
+        <TabsContent value="incoming" className="space-y-4">
+          <BookingRequestsManager
+            initialMyRequests={myRequests}
+            initialIncomingRequests={incomingRequests}
+            activeTab="incoming"
+          />
+        </TabsContent>
+      </PageLayout>
+    </Tabs>
   )
 }

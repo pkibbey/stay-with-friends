@@ -63,18 +63,18 @@ export function Header() {
                       <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <NavigationMenuLink asChild>
-                          <Link href="/settings/profile">Profile</Link>
+                          <Link className="px-3 py-2" href="/settings/profile">Profile</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink asChild>
-                          <Link href="/settings/connections">Connections</Link>
+                          <Link className="px-3 py-2" href="/settings/connections">Connections</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink asChild>
-                          <Link href="/settings/stays">Bookings {pendingRequestsCount ? pendingRequestsCount : null}</Link>
+                          <Link className="px-3 py-2" href="/settings/stays">Stays {pendingRequestsCount ? pendingRequestsCount : null}</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink asChild>
-                          <Link href="/settings/hosting">Hosting</Link>
+                          <Link className="px-3 py-2" href="/settings/hosting">Hosting</Link>
                         </NavigationMenuLink>
-                        <NavigationMenuLink className="cursor-pointer" onClick={() => signOut()}>
+                        <NavigationMenuLink className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-sm transition-colors mb-1" onClick={() => signOut()}>
                             Sign Out
                         </NavigationMenuLink>
                       </NavigationMenuContent>

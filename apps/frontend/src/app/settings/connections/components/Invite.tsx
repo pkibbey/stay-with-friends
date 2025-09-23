@@ -75,14 +75,14 @@ export default function Invite() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Invite Friends
+            Invite Connections
           </CardTitle>
-          <CardDescription>Send invitations to friends to join the platform, or connection requests to existing users</CardDescription>
+          <CardDescription>Send invitations to connections to others who may like to join the platform, or make requests to existing users</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="invitation-email">Friend&apos;s Email</Label>
+              <Label htmlFor="invitation-email">Connection&apos;s Email</Label>
               <Input
                 id="invitation-email"
                 type="email"
