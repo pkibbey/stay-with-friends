@@ -7,6 +7,7 @@ import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 import { resolvers, typeDefs } from './schema';
 
 // Initialize database by importing db.ts (tables are created on import)
@@ -77,10 +78,11 @@ const getAuthContext = (req: Request): AuthContext => {
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadsDir),
   filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    // keep original extension
+    // Generate UUID-based filename to prevent naming conflicts
+    const uuid = uuidv4()
+    // Keep original extension
     const ext = path.extname(file.originalname)
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`)
+    cb(null, `${uuid}${ext}`)
   }
 })
 
@@ -140,9 +142,9 @@ async function startServer() {
         return res.status(400).json({ error: 'No avatar file uploaded' });
       }
 
-      // Generate unique filename for avatar
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const avatarFilename = `avatar-${authContext.user.id}-${uniqueSuffix}.jpg`;
+      // Generate UUID-based filename for avatar to prevent naming conflicts
+      const uuid = uuidv4()
+      const avatarFilename = `avatar-${authContext.user.id}-${uuid}.jpg`;
       const avatarPath = path.join(avatarsDir, avatarFilename);
 
       // Process image with Sharp: resize to 256x256 and convert to JPEG

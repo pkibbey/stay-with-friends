@@ -8,7 +8,8 @@ Endpoint
 
 Server-side behavior
 
-- Files are saved to `apps/backend/public/uploads`.
+- Files are saved to `apps/backend/public/uploads` with UUID-based filenames to prevent naming conflicts.
+- File naming format: `<uuid>.<extension>` (e.g., `a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg`)
 - Multer is configured with a 5 MB size limit and basic mimetype checking (`image/*`).
 - When a host is updated via `updateHost`, the server will attempt to delete any files that were removed from the host's `photos` array, but only if their URL includes `/uploads/` (to avoid removing external URLs).
 - File deletion is best-effort and failures are logged without failing the mutation.
