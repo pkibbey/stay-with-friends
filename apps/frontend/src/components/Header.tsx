@@ -55,15 +55,25 @@ export function Header() {
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
-                      <NavigationMenuLink href="/search" className='font-medium px-4'>Search</NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link href="/search" className='font-medium px-4'>Search</Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
                       <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
                       <NavigationMenuContent>
-                        <NavigationMenuLink href="/settings/profile">Profile</NavigationMenuLink>
-                        <NavigationMenuLink href="/settings/connections">Connections</NavigationMenuLink>
-                        <NavigationMenuLink href="/settings/stays">Stays {pendingRequestsCount ? pendingRequestsCount : null}</NavigationMenuLink>
-                        <NavigationMenuLink href="/settings/hosting">Hosting</NavigationMenuLink>
+                        <NavigationMenuLink asChild>
+                          <Link href="/settings/profile">Profile</Link>
+                        </NavigationMenuLink>
+                        <NavigationMenuLink asChild>
+                          <Link href="/settings/connections">Connections</Link>
+                        </NavigationMenuLink>
+                        <NavigationMenuLink asChild>
+                          <Link href="/settings/stays">Bookings {pendingRequestsCount ? pendingRequestsCount : null}</Link>
+                        </NavigationMenuLink>
+                        <NavigationMenuLink asChild>
+                          <Link href="/settings/hosting">Hosting</Link>
+                        </NavigationMenuLink>
                         <NavigationMenuLink className="cursor-pointer" onClick={() => signOut()}>
                             Sign Out
                         </NavigationMenuLink>
