@@ -276,37 +276,33 @@ export function SearchResults({ hosts, isLoading, filters }: SearchResultsProps)
   return (
     <div className="space-y-6">
       {/* Enhanced Results summary */}
-      <Card className="border-l-4 border-l-blue-500">
-        <CardContent className="pt-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-medium text-gray-900 mb-1">
-                {getFilterSummary()}
-              </h3>
-              {(filters.query || filters.startDate) && (
-                <div className="text-sm text-gray-600">
-                  <span>Search filters applied: </span>
-                  {filters.query && (
-                    <Badge variant="secondary" className="mr-2 text-xs">
-                      Query: &ldquo;{filters.query}&rdquo;
-                    </Badge>
-                  )}
-                  {filters.startDate && (
-                    <Badge variant="secondary" className="text-xs">
-                      Date: {formatDisplayDate(filters.startDate)}
-                    </Badge>
-                  )}
-                </div>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="font-medium text-gray-900 mb-1">
+            {getFilterSummary()}
+          </h3>
+          {(filters.query || filters.startDate) && (
+            <div className="text-sm text-gray-600">
+              <span>Search filters applied: </span>
+              {filters.query && (
+                <Badge variant="secondary" className="mr-2 text-xs">
+                  Query: &ldquo;{filters.query}&rdquo;
+                </Badge>
               )}
-              {!filters.query && !filters.startDate && (
-                <p className="text-sm text-gray-600">
-                  Use the filters on the left to refine your search
-                </p>
+              {filters.startDate && (
+                <Badge variant="secondary" className="text-xs">
+                  Date: {formatDisplayDate(filters.startDate)}
+                </Badge>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+          {!filters.query && !filters.startDate && (
+            <p className="text-sm text-gray-600">
+              Use the filters on the left to refine your search
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* Results grid */}
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">

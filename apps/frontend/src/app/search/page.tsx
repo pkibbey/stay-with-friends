@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapComponent } from '@/components/MapComponent'
+import { SearchCalendarView } from '@/components/SearchCalendarView'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Map, List, Filter } from 'lucide-react'
+import { Map, List, Filter, Calendar } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
 import { HostProfileData, SearchFiltersState } from '@/types'
@@ -22,7 +23,7 @@ function SearchPage() {
   const [hosts, setHosts] = useState<HostProfileData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'list' | 'map'>('list')
+  const [view, setView] = useState<'list' | 'map' | 'calendar'>('list')
   const [showFilters, setShowFilters] = useState(false)
   
   // Initialize filters from URL params
@@ -174,7 +175,7 @@ function SearchPage() {
   }, [filters, searchHosts])
 
   // Handle view change
-  const handleViewChange = (newView: 'list' | 'map') => {
+  const handleViewChange = (newView: 'list' | 'map' | 'calendar') => {
     setView(newView)
     if (newView === 'map' && hosts.length > 0) {
       // Ensure we have lat/lng data for map view
@@ -239,7 +240,7 @@ function SearchPage() {
               </Button>
               
               {/* View Toggle */}
-              <Tabs value={view} onValueChange={(value: string) => handleViewChange(value as 'list' | 'map')}>
+              <Tabs value={view} onValueChange={(value: string) => handleViewChange(value as 'list' | 'map' | 'calendar')}>
                 <TabsList>
                   <TabsTrigger value="list" className="flex items-center gap-2">
                     <List className="w-4 h-4" />
@@ -248,6 +249,10 @@ function SearchPage() {
                   <TabsTrigger value="map" className="flex items-center gap-2">
                     <Map className="w-4 h-4" />
                     Map
+                  </TabsTrigger>
+                  <TabsTrigger value="calendar" className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Calendar
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -293,13 +298,18 @@ function SearchPage() {
                 isLoading={isLoading}
                 filters={filters}
               />
-            ) : (
+            ) : view === 'map' ? (
               <div className="h-[600px] lg:h-[700px]">
                 <MapComponent 
                   hosts={hosts}
                   isLoading={isLoading}
                 />
               </div>
+            ) : (
+              <SearchCalendarView 
+                hosts={hosts}
+                isLoading={isLoading}
+              />
             )}
           </div>
         </div>

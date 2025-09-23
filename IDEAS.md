@@ -9,7 +9,6 @@ Go through everything and improve each bit at a time
 
 Prevent page flashes when waiting for page authentication
 
-Add a calendar view to the search page also
 
 Improve map pin UI
 
