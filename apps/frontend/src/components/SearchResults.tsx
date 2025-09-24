@@ -12,7 +12,6 @@ import { HostProfileData, SearchFiltersState } from '@/types'
 
 interface SearchResultsProps {
   hosts: HostProfileData[]
-  isLoading: boolean
   filters: SearchFiltersState
 }
 
@@ -172,33 +171,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
   )
 }
 
-export function SearchResults({ hosts, isLoading, filters }: SearchResultsProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="overflow-hidden">
-            <div className="aspect-video bg-gray-200 animate-pulse" />
-            <CardHeader>
-              <div className="h-6 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
-                <div className="flex gap-2">
-                  <div className="h-8 bg-gray-200 rounded animate-pulse flex-1" />
-                  <div className="h-8 bg-gray-200 rounded animate-pulse flex-1" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
-
+export function SearchResults({ hosts, filters }: SearchResultsProps) {
   if (hosts.length === 0) {
     const hasFilters = filters.query || filters.startDate
     

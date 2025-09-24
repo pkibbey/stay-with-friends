@@ -19,7 +19,7 @@ interface ProfileClientProps {
   }
 }
 
-export function ProfileClient({ initialUser, userEmail, sessionData }: ProfileClientProps) {
+export function ProfileClient({ initialUser, sessionData }: ProfileClientProps) {
   const [user, setUser] = useState<User>(initialUser)
 
   const handleUserUpdate = (updatedUser: User) => {

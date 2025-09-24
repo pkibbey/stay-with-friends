@@ -46,14 +46,6 @@ describe('SearchFilters Component', () => {
     });
   });
 
-  it('displays loading state', () => {
-    render(<SearchFilters {...defaultProps} isLoading={true} />);
-    
-    // The button should show loading state
-    const searchButton = screen.getByRole('button', { name: /search/i });
-    expect(searchButton).toBeDisabled();
-  });
-
   it('renders date picker', () => {
     render(<SearchFilters {...defaultProps} />);
     

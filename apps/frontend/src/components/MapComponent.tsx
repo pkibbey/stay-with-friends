@@ -25,7 +25,6 @@ interface MapComponentProps {
   location?: string
   className?: string
   hosts?: HostProfileData[]
-  isLoading?: boolean
 }
 
 export function MapComponent({
@@ -35,9 +34,8 @@ export function MapComponent({
   zipCode,
   country,
   location,
-  className = "h-64",
+  className = "h-100",
   hosts = [],
-  isLoading = false
 }: MapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const olMapRef = useRef<Map | null>(null)
@@ -429,17 +427,6 @@ export function MapComponent({
 
     addHostsToMap(hosts, olMapRef.current)
   }, [hosts, addHostsToMap])
-
-  if (isLoading) {
-    return (
-      <div className={`w-full rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center ${className}`}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading map...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="relative pt-6">

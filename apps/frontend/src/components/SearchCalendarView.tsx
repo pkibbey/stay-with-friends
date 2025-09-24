@@ -11,10 +11,9 @@ import type { HostProfileData } from '@/types'
 
 interface SearchCalendarViewProps {
   hosts: HostProfileData[]
-  isLoading: boolean
 }
 
-export function SearchCalendarView({ hosts, isLoading }: SearchCalendarViewProps) {
+export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
 
@@ -65,33 +64,6 @@ export function SearchCalendarView({ hosts, isLoading }: SearchCalendarViewProps
   const handleDateSelect = useCallback((date: Date | undefined) => {
     setSelectedDate(date)
   }, [])
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
-        <div className="lg:w-96 animate-pulse">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5" />
-                Availability Calendar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 bg-gray-200 rounded"></div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="flex-1 animate-pulse">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="h-96 bg-gray-200 rounded"></div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col md:flex-row gap-6 h-[600px] lg:h-[700px]">

@@ -106,6 +106,10 @@ export const typeDefs = `#graphql
     pendingBookingRequestsCount(userId: ID!): Int!
     invitation(token: String!): Invitation
     invitations(inviterId: ID!): [Invitation!]!
+    # Community stats
+    totalHostsCount: Int!
+    totalConnectionsCount: Int!
+    totalBookingsCount: Int!
   }
 
   type Mutation {
@@ -220,7 +224,7 @@ export const typeDefs = `#graphql
   }
 `;
 
-import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate, db } from './db';
+import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate, db, getTotalBookingsCount, getTotalConnectionsCount, getTotalHostsCount } from './db';
 // Use generated types from the single source-of-truth
 import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation, Host, Availability, BookingRequest, User, Connection, Invitation } from './generated/types';
 import fs from 'fs';
@@ -476,6 +480,19 @@ export const resolvers = {
         throw new Error('Unauthorized: Can only view your own pending requests count');
       }
       const result = getPendingBookingRequestsCountByHostUser.get(userId) as any;
+      return result?.count || 0;
+    },
+    // Community stats - public queries
+    totalHostsCount: (): number => {
+      const result = getTotalHostsCount.get() as any;
+      return result?.count || 0;
+    },
+    totalConnectionsCount: (): number => {
+      const result = getTotalConnectionsCount.get() as any;
+      return result?.count || 0;
+    },
+    totalBookingsCount: (): number => {
+      const result = getTotalBookingsCount.get() as any;
       return result?.count || 0;
     },
   },

@@ -21,7 +21,6 @@ function SearchPage() {
   
   // Search state
   const [hosts, setHosts] = useState<HostProfileData[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map' | 'calendar'>('list')
   
@@ -43,7 +42,6 @@ function SearchPage() {
 
   // Search function
   const searchHosts = useCallback(async (searchFilters: SearchFiltersState) => {
-    setIsLoading(true)
     setError(null)
 
     try {
@@ -153,8 +151,6 @@ function SearchPage() {
       console.error('Search error:', err)
       setError(err instanceof Error ? err.message : 'Failed to search hosts')
       setHosts([])
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
@@ -190,8 +186,6 @@ function SearchPage() {
 
   // Generate descriptive header text
   const getHeaderDescription = () => {
-    if (isLoading) return 'Searching...'
-    
     const hasFilters = filters.query || filters.startDate
     const hostText = hosts.length === 1 ? 'host' : 'hosts'
     
@@ -253,7 +247,6 @@ function SearchPage() {
             <SearchFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}
-              isLoading={isLoading}
             />
           </div>
         </div>
@@ -282,20 +275,17 @@ function SearchPage() {
           {view === 'list' ? (
             <SearchResults
               hosts={hosts}
-              isLoading={isLoading}
               filters={filters}
             />
           ) : view === 'map' ? (
             <div className="h-[800px] lg:h-[900px]">
               <MapComponent 
                 hosts={hosts}
-                isLoading={isLoading}
               />
             </div>
           ) : (
             <SearchCalendarView 
               hosts={hosts}
-              isLoading={isLoading}
             />
           )}
         </div>

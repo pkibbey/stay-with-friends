@@ -13,10 +13,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 interface SearchFiltersProps {
   filters: SearchFiltersState
   onFiltersChange: (filters: SearchFiltersState) => void
-  isLoading: boolean
 }
 
-export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFiltersProps) {
+export function SearchFilters({ filters, onFiltersChange }: SearchFiltersProps) {
   const [open, setOpen] = useState<boolean>(false)
   const [localQuery, setLocalQuery] = useState(filters.query)
 
@@ -44,15 +43,15 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center w-full">
       {/* Search Query */}
       <div className="flex-1 max-w-md">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
-          <Input
+        <form onSubmit={handleSearchSubmit} className="flex gap-2 items-center">
+          <Input          
+            id="query"
             placeholder="Search by title, description, location..."
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
-            disabled={isLoading}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading} size="sm">
+          <Button type="submit" size="sm">
             Search
           </Button>
           {filters.query && (
@@ -77,7 +76,6 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
             <Button
               variant="outline"
               className="justify-start text-left font-normal"
-              disabled={isLoading}
               size="sm"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />

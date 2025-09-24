@@ -358,5 +358,17 @@ export const searchHostsAvailableOnDate = db.prepare(`
   ORDER BY h.name
 `);
 
+export const getTotalHostsCount = db.prepare(`
+  SELECT COUNT(*) as count FROM hosts
+`);
+
+export const getTotalConnectionsCount = db.prepare(`
+  SELECT COUNT(*) as count FROM connections WHERE status = 'accepted'
+`);
+
+export const getTotalBookingsCount = db.prepare(`
+  SELECT COUNT(*) as count FROM booking_requests WHERE status = 'approved'
+`);
+
 // Export the shared database connection for use in other modules
 export { db };
