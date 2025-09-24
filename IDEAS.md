@@ -30,7 +30,8 @@ Host
 Profile
 - It doesn't look like the profile image is being saved
 
+Menu
+- the selected page should have a different visual treatment in the menu
+
 Hosting
-- Allow multiple hostings to be added/managed
-
-
+- the photos cannot be removed from the hosting

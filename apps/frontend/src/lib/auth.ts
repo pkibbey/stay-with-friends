@@ -74,18 +74,14 @@ export const authOptions = {
       // Leaving signIn to always succeed.
       return true
     },
-    async session({ session, token }: { session: any; token: any }) {
-      console.log('Session callback called with token:', token.sub, 'backendUserId:', token.backendUserId)
-      
+    async session({ session, token }: { session: any; token: any }) {      
       if (token?.backendUserId) {
         if (!session.user) session.user = {}
         session.user.id = token.backendUserId
-        console.log('Set session.user.id to:', session.user.id)
       } else if (token?.sub) {
         // Fallback to NextAuth user ID if no backend user ID
         if (!session.user) session.user = {}
         session.user.id = token.sub
-        console.log('Using NextAuth user ID as fallback:', session.user.id)
       }
       // Ensure email, name and image are available on the client session
       if (!session.user) session.user = {}
@@ -98,11 +94,9 @@ export const authOptions = {
         session.apiToken = token.apiToken
       }
       
-      console.log('Returning session with user:', session.user)
       return session
     },
     async jwt({ token, user, account }: { token: any; user?: any; account?: any }) {
-      console.log('JWT callback called with:', { token: token.sub, user: user?.email, account: account?.provider })
       // We'll create a temporary API token (may not include backendUserId yet)
       // to perform authenticated backend calls. After we fetch/create the
       // backend user we re-sign the API token so it includes backendUserId.

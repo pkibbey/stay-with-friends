@@ -117,7 +117,7 @@ export default async function HostDetailPage({ params, searchParams }: HostDetai
 
   return (
     <div className="min-h-screen">
-      <HostHeader host={host} dateParam={searchParams.date} />
+      <HostHeader host={host} />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-3">

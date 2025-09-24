@@ -60,7 +60,6 @@ const getAuthContext = (req: Request): AuthContext => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    console.log('decoded: ', decoded);
     return {
       user: {
         id: decoded.backendUserId || decoded.sub || '',

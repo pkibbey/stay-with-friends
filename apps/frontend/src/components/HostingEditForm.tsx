@@ -11,9 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Navigation } from 'lucide-react'
+import { Navigation, Upload, X } from 'lucide-react'
 import { User } from '@/types'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 // Zod schema for the add-hosting form
 const AddHostingSchema = z.object({
@@ -39,16 +40,99 @@ const AddHostingSchema = z.object({
 interface HostingEditFormProps {
   onSuccess: () => void
   onCancel: () => void
+  initialData?: {
+    id: string
+    name: string
+    description?: string | null
+    location?: string | null
+    address?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    maxGuests: number
+    bedrooms: number
+    bathrooms: number
+    checkInTime?: string | null
+    checkOutTime?: string | null
+    amenities?: string[] | null
+    houseRules?: string | null
+    photos?: string[] | null
+  }
 }
 
-export function HostingEditForm({ onSuccess, onCancel }: HostingEditFormProps) {
+export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEditFormProps) {
   const { data: session } = useSession()
   const [saving, setSaving] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [photos, setPhotos] = useState<string[]>(initialData?.photos || [])
+
+  const isEditing = !!initialData
+
+  // Image upload function
+  const uploadImage = async (file: File) => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('http://localhost:4000/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Upload failed')
+      }
+
+      const data = await response.json()
+      setPhotos(prev => [...prev, data.url])
+      toast.success('Image uploaded successfully')
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Failed to upload image')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      uploadImage(file)
+    }
+    // Reset input
+    event.target.value = ''
+  }
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(AddHostingSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      name: initialData.name || '',
+      description: initialData.description || '',
+      location: initialData.location || '',
+      address: initialData.address || '',
+      city: initialData.city || '',
+      state: initialData.state || '',
+      zipCode: initialData.zipCode || '',
+      country: initialData.country || '',
+      latitude: initialData.latitude ? initialData.latitude.toString() : '',
+      longitude: initialData.longitude ? initialData.longitude.toString() : '',
+      maxGuests: initialData.maxGuests || 2,
+      bedrooms: initialData.bedrooms || 1,
+      bathrooms: initialData.bathrooms || 1,
+      checkInTime: initialData.checkInTime || '3:00 PM',
+      checkOutTime: initialData.checkOutTime || '11:00 AM',
+      amenities: initialData.amenities ? initialData.amenities.join(', ') : '',
+      houseRules: initialData.houseRules || ''
+    } : {
       name: '',
       description: '',
       location: '',
@@ -87,109 +171,174 @@ export function HostingEditForm({ onSuccess, onCancel }: HostingEditFormProps) {
       // Build amenities array
       const amenities = ((values.amenities as string) || '').split(',').map((a: string) => a.trim()).filter((a: string) => a)
 
-      // Call the GraphQL createHost mutation using the authenticated helper
-      const mutation = `
-            mutation CreateHost(
-              $userId: ID!
-              $name: String!
-              $location: String
-              $description: String
-              $address: String
-              $city: String
-              $state: String
-              $zipCode: String
-              $country: String
-              $latitude: Float
-              $longitude: Float
-              $amenities: [String!]
-              $houseRules: String
-              $checkInTime: String
-              $checkOutTime: String
-              $maxGuests: Int
-              $bedrooms: Int
-              $bathrooms: Int
-              $photos: [String!]
-            ) {
-              createHost(
-                userId: $userId
-                name: $name
-                location: $location
-                description: $description
-                address: $address
-                city: $city
-                state: $state
-                zipCode: $zipCode
-                country: $country
-                latitude: $latitude
-                longitude: $longitude
-                amenities: $amenities
-                houseRules: $houseRules
-                checkInTime: $checkInTime
-                checkOutTime: $checkOutTime
-                maxGuests: $maxGuests
-                bedrooms: $bedrooms
-                bathrooms: $bathrooms
-                photos: $photos
-              ) {
-                id
-                name
-                location
-                description
-                address
-                city
-                state
-                zipCode
-                country
-                latitude
-                longitude
-                amenities
-                houseRules
-                checkInTime
-                checkOutTime
-                maxGuests
-                bedrooms
-                bathrooms
-                photos
-                createdAt
-                updatedAt
-                userId
-              }
+      if (isEditing && initialData) {
+        // Update existing host
+        const mutation = `
+          mutation UpdateHost($id: ID!, $input: UpdateHostInput!) {
+            updateHost(id: $id, input: $input) {
+              id
+              name
+              location
+              description
+              address
+              city
+              state
+              zipCode
+              country
+              latitude
+              longitude
+              amenities
+              houseRules
+              checkInTime
+              checkOutTime
+              maxGuests
+              bedrooms
+              bathrooms
+              photos
+              createdAt
+              updatedAt
+              userId
             }
-          `
+          }
+        `
 
-      const variables = {
-        userId: userId,
-        name: values.name,
-        location: values.location || undefined,
-        description: values.description || undefined,
-        address: values.address || undefined,
-        city: values.city || undefined,
-        state: values.state || undefined,
-        zipCode: values.zipCode || undefined,
-        country: values.country || undefined,
-        latitude,
-        longitude,
-        amenities,
-        houseRules: values.houseRules || undefined,
-        checkInTime: values.checkInTime || undefined,
-        checkOutTime: values.checkOutTime || undefined,
-        maxGuests: values.maxGuests,
-        bedrooms: values.bedrooms,
-        bathrooms: values.bathrooms,
-        photos: []
-      }
+        const variables = {
+          id: initialData.id,
+          input: {
+            name: values.name,
+            location: values.location || undefined,
+            description: values.description || undefined,
+            address: values.address || undefined,
+            city: values.city || undefined,
+            state: values.state || undefined,
+            zipCode: values.zipCode || undefined,
+            country: values.country || undefined,
+            latitude,
+            longitude,
+            amenities,
+            houseRules: values.houseRules || undefined,
+            checkInTime: values.checkInTime || undefined,
+            checkOutTime: values.checkOutTime || undefined,
+            maxGuests: values.maxGuests,
+            bedrooms: values.bedrooms,
+            bathrooms: values.bathrooms,
+            photos: photos.length > 0 ? photos : undefined
+          }
+        }
 
-      const result = await authenticatedGraphQLRequest(mutation, variables)
+        const result = await authenticatedGraphQLRequest(mutation, variables)
 
-      if (result.data?.createHost) {
-        onSuccess()
+        if (result.data?.updateHost) {
+          onSuccess()
+        } else {
+          console.error('Failed to update host:', result)
+          toast.error('Failed to update hosting. Please check your inputs and try again.')
+        }
       } else {
-        console.error('Failed to create host:', result)
-        toast.error('Failed to create hosting. Please check your inputs and try again.')
+        // Create new host
+        const mutation = `
+          mutation CreateHost(
+            $userId: ID!
+            $name: String!
+            $location: String
+            $description: String
+            $address: String
+            $city: String
+            $state: String
+            $zipCode: String
+            $country: String
+            $latitude: Float
+            $longitude: Float
+            $amenities: [String!]
+            $houseRules: String
+            $checkInTime: String
+            $checkOutTime: String
+            $maxGuests: Int
+            $bedrooms: Int
+            $bathrooms: Int
+            $photos: [String!]
+          ) {
+            createHost(
+              userId: $userId
+              name: $name
+              location: $location
+              description: $description
+              address: $address
+              city: $city
+              state: $state
+              zipCode: $zipCode
+              country: $country
+              latitude: $latitude
+              longitude: $longitude
+              amenities: $amenities
+              houseRules: $houseRules
+              checkInTime: $checkInTime
+              checkOutTime: $checkOutTime
+              maxGuests: $maxGuests
+              bedrooms: $bedrooms
+              bathrooms: $bathrooms
+              photos: $photos
+            ) {
+              id
+              name
+              location
+              description
+              address
+              city
+              state
+              zipCode
+              country
+              latitude
+              longitude
+              amenities
+              houseRules
+              checkInTime
+              checkOutTime
+              maxGuests
+              bedrooms
+              bathrooms
+              photos
+              createdAt
+              updatedAt
+              userId
+            }
+          }
+        `
+
+        const variables = {
+          userId: userId,
+          name: values.name,
+          location: values.location || undefined,
+          description: values.description || undefined,
+          address: values.address || undefined,
+          city: values.city || undefined,
+          state: values.state || undefined,
+          zipCode: values.zipCode || undefined,
+          country: values.country || undefined,
+          latitude,
+          longitude,
+          amenities,
+          houseRules: values.houseRules || undefined,
+          checkInTime: values.checkInTime || undefined,
+          checkOutTime: values.checkOutTime || undefined,
+          maxGuests: values.maxGuests,
+          bedrooms: values.bedrooms,
+          bathrooms: values.bathrooms,
+          photos: photos.length > 0 ? photos : []
+        }
+
+        const result = await authenticatedGraphQLRequest(mutation, variables)
+
+        if (result.data?.createHost) {
+          onSuccess()
+        } else {
+          console.error('Failed to create host:', result)
+          toast.error('Failed to create hosting. Please check your inputs and try again.')
+        }
       }
     } catch (error) {
-      console.error('Error creating host:', error)
-      toast.error('Failed to create hosting. Please try again.')
+      console.error('Error saving host:', error)
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} hosting. Please try again.`)
     } finally {
       setSaving(false)
     }
@@ -247,8 +396,8 @@ export function HostingEditForm({ onSuccess, onCancel }: HostingEditFormProps) {
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle>Add New Hosting</CardTitle>
-        <CardDescription>Create a new hosting opportunity for your friends</CardDescription>
+        <CardTitle>{isEditing ? 'Edit Hosting' : 'Add New Hosting'}</CardTitle>
+        <CardDescription>{isEditing ? 'Update your hosting information' : 'Create a new hosting opportunity for your friends'}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit(handleAddHosting)} className="space-y-4">
@@ -359,9 +508,67 @@ export function HostingEditForm({ onSuccess, onCancel }: HostingEditFormProps) {
             <Textarea id="houseRules" {...register('houseRules')} placeholder="e.g., No smoking, quiet hours after 10pm" rows={2} />
           </div>
 
+          {/* Photos Section */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Photos</h4>
+            
+            {/* Photo Grid */}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      <Image
+                        unoptimized
+                        src={photo}
+                        alt={`Photo ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload Button */}
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="photo-upload"
+                disabled={uploading}
+              />
+              <Label htmlFor="photo-upload">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="cursor-pointer"
+                  disabled={uploading}
+                  asChild
+                >
+                  <span>
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Add Photo'}
+                  </span>
+                </Button>
+              </Label>
+              <p className="text-xs text-gray-500 mt-1">Upload images of your hosting space (max 5MB each)</p>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <Button type="submit" disabled={isSubmitting || saving || !watch('name') || (!watch('location') && !watch('city'))}>
-              {saving || isSubmitting ? 'Creating...' : 'Add Hosting'}
+              {saving || isSubmitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Hosting' : 'Add Hosting')}
             </Button>
             <Button variant="outline" onClick={onCancel} type="button">
               Cancel

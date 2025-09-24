@@ -1,27 +1,14 @@
-import { Button } from "@/components/ui/button"
 import { Host } from "@/types"
-import { ArrowLeft, Users } from "lucide-react"
-import Link from 'next/link'
+import {  Users } from "lucide-react"
 
 interface HostHeaderProps {
   host: Host
-  dateParam?: string | null
 }
 
-export function HostHeader({ host, dateParam }: HostHeaderProps) {
-  const backUrl = dateParam ? `/?date=${dateParam}` : '/'
-
+export function HostHeader({ host }: HostHeaderProps) {
   return (
     <div className="bg-white dark:bg-gray-800 shadow-sm">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <Link href={backUrl}>
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Search
-            </Button>
-          </Link>
-        </div>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
             <Users className="w-8 h-8 text-blue-600" />

@@ -1,8 +1,11 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-import { HostWithAvailabilities } from '@/types'
-import { HostingManager } from '@/components/HostingManager'
+import { HostWithAvailabilities, User } from '@/types'
+import { HostingDisplay } from '@/components/HostingDisplay'
 
 async function getHostings(userId: string): Promise<HostWithAvailabilities[]> {
   try {
@@ -69,10 +72,26 @@ async function getHostings(userId: string): Promise<HostWithAvailabilities[]> {
   }
 }
 
-export default async function ManageHostingPage() {
-  const session = await getServerSession(authOptions)
+export default function ManageHostingPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [hostings, setHostings] = useState<HostWithAvailabilities[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!session?.user?.id) {
+  const userId = (session?.user as User | undefined)?.id
+
+  useEffect(() => {
+    if (userId) {
+      getHostings(userId).then((data) => {
+        setHostings(data)
+        setLoading(false)
+      })
+    } else {
+      setLoading(false)
+    }
+  }, [userId])
+
+  if (!userId) {
     return (
       <PageLayout title="Hosting" showHeader={false}>
         <div className="text-center">
@@ -83,14 +102,33 @@ export default async function ManageHostingPage() {
     )
   }
 
-  const hostings = await getHostings(session.user.id)
+  if (loading) {
+    return (
+      <PageLayout title="Hosting" showHeader={false}>
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </PageLayout>
+    )
+  }
+
+  const handleRefresh = () => {
+    // Refetch hostings
+    if (userId) {
+      getHostings(userId).then(setHostings)
+    }
+  }
 
   return (
     <PageLayout
       title="Manage Your Hosting"
       subtitle="Add and manage your properties for friends to stay"
     >
-      <HostingManager initialHostings={hostings} />
+      <HostingDisplay
+        hostings={hostings}
+        onRefresh={handleRefresh}
+        onAddNew={() => router.push('/settings/hosting/add')}
+      />
     </PageLayout>
   )
 }
