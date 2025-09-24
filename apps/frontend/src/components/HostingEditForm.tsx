@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Navigation, Upload, X } from 'lucide-react'
+import { Navigation, Upload, Trash2 } from 'lucide-react'
 import { User } from '@/types'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -70,6 +70,9 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
   const [uploading, setUploading] = useState(false)
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || [])
 
+  console.log('HostingEditForm initialData.photos:', initialData?.photos)
+  console.log('HostingEditForm photos state:', photos)
+
   const isEditing = !!initialData
 
   // Image upload function
@@ -100,7 +103,20 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
   }
 
   const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index))
+    const confirmed = confirm('Are you sure you want to delete this photo? This image will be permanently deleted once the form is submitted.')
+    if (confirmed) {
+      setPhotos(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  const makeFeaturedPhoto = (index: number) => {
+    if (index === 0) return // Already featured
+    setPhotos(prev => {
+      const newPhotos = [...prev]
+      const [featuredPhoto] = newPhotos.splice(index, 1)
+      newPhotos.unshift(featuredPhoto)
+      return newPhotos
+    })
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -517,21 +533,36 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <div 
+                      className={`aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer transition-all ${
+                        index === 0 ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-2'
+                      }`}
+                      onClick={() => makeFeaturedPhoto(index)}
+                    >
                       <Image
                         unoptimized
                         src={photo}
                         alt={`Photo ${index + 1}`}
-                        fill
-                        className="object-cover"
+                        width={200}
+                        height={200}
+                        className="object-cover w-full h-full"
+                        onError={(e) => console.log('Image load error for', photo, e)}
+                        onLoad={() => console.log('Image loaded successfully for', photo)}
                       />
+                      {/* Featured indicator */}
+                      {index === 0 && (
+                        <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                          Featured
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                      title="Remove photo"
                     >
-                      <X className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}

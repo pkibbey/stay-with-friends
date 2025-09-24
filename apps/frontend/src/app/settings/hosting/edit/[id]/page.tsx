@@ -88,6 +88,8 @@ export default function EditHostingPage() {
   useEffect(() => {
     if (hostingId) {
       getHosting(hostingId).then((data) => {
+        console.log('Fetched hosting data:', data)
+        console.log('Hosting photos:', data?.photos)
         setHosting(data)
         setLoading(false)
       })
@@ -158,7 +160,8 @@ export default function EditHostingPage() {
           checkInTime: hosting.checkInTime,
           checkOutTime: hosting.checkOutTime,
           amenities: hosting.amenities,
-          houseRules: hosting.houseRules
+          houseRules: hosting.houseRules,
+          photos: hosting.photos
         }}
         onSuccess={handleEditSuccess}
         onCancel={() => router.push('/settings/hosting')}
