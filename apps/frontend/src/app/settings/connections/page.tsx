@@ -11,7 +11,7 @@ export default function Connections() {
   return (
     <Tabs defaultValue="invite" className="space-y-6">
       <PageLayout
-        title="Connections"
+        title="Invite people to connect"
         subtitle="Manage your trusted network"
         headerActions={
           <TabsList className="grid w-full grid-cols-3">

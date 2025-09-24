@@ -113,7 +113,7 @@ export function BookingRequestsDisplay({
                 <CardContent className="py-8 text-center">
                   <p className="text-gray-500">No incoming requests</p>
                   <Button asChild className="mt-4">
-                    <Link href="/settings/hosting">
+                    <Link href="/hosting">
                       Manage Your Hosting
                     </Link>
                   </Button>
@@ -227,7 +227,7 @@ export function BookingRequestsDisplay({
               <CardContent className="py-8 text-center">
                 <p className="text-gray-500">No incoming requests</p>
                 <Button asChild className="mt-4">
-                  <Link href="/settings/hosting">
+                  <Link href="/hosting">
                     Manage Your Hosting
                   </Link>
                 </Button>

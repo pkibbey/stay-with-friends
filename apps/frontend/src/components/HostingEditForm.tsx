@@ -70,9 +70,6 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
   const [uploading, setUploading] = useState(false)
   const [photos, setPhotos] = useState<string[]>(initialData?.photos || [])
 
-  console.log('HostingEditForm initialData.photos:', initialData?.photos)
-  console.log('HostingEditForm photos state:', photos)
-
   const isEditing = !!initialData
 
   // Image upload function

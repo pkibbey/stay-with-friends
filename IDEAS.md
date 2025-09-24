@@ -18,14 +18,7 @@ Home
 - I'm not really sure what to do with the homepage for now.
 
 Search
-- The search filters could go up in between the text and the tabs
 - The select date popover appears too far down the page, not right next to the select date trigger
 - The search field and the submit field are two different heights - are we using standardized components for each of these?
 - The Map under the map tab should take up even more vertical space
 - When searching, there is a big flash of loading skeletons which look jarring. Either we need a loading animation, or preferrably just don't show the new results until they have finished loading, or stream them.
-
-Menu
-- the selected page should have a different visual treatment in the menu
-
-Hosting
-- the photos cannot be removed from the hosting

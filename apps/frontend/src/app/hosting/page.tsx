@@ -116,13 +116,13 @@ export default function ManageHostingPage() {
 
   return (
     <PageLayout
-      title="Manage Your Hosting"
+      title="Describe your space"
       subtitle="Add and manage your properties for friends to stay"
     >
       <HostingDisplay
         hostings={hostings}
         onRefresh={handleRefresh}
-        onAddNew={() => router.push('/settings/hosting/add')}
+        onAddNew={() => router.push('/hosting/add')}
       />
     </PageLayout>
   )

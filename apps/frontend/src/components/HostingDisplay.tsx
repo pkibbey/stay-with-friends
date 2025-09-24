@@ -18,7 +18,6 @@ interface HostingDisplayProps {
 }
 
 export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplayProps) {
-  console.log('hostings: ', hostings);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -133,7 +132,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                           View Page
                         </Button>
                       </Link>
-                      <Link href={`/settings/hosting/edit/${hosting.id}`}>
+                      <Link href={`/hosting/edit/${hosting.id}`}>
                         <Button
                           variant="secondary"
                           size="sm"

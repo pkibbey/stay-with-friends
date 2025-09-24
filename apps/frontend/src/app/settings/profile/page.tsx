@@ -44,14 +44,10 @@ export default async function Profile() {
   }
 
   return (
-    <PageLayout title="Profile" subtitle="Manage your account information">
+    <PageLayout title="Edit Profile" subtitle="Manage your account information">
       <div>
         <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Manage your account information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent>
             <ProfileClient 
               initialUser={user} 
               userEmail={session.user.email}

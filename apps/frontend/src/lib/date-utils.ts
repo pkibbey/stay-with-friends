@@ -29,27 +29,6 @@ export const formatDisplayDate = (date: Date | string): string => {
 }
 
 /**
- * Format a date range for display
- */
-export const formatDateRange = (startDate: string, endDate: string): string => {
-  const start = parseLocalDate(startDate)
-  const end = parseLocalDate(endDate)
-
-  // If same month and year, show "Nov 19-24, 2025"
-  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
-    return `${format(start, 'MMM d')}-${format(end, 'd, yyyy')}`
-  }
-
-  // If same year, show "Nov 19 - Dec 24, 2025"
-  if (start.getFullYear() === end.getFullYear()) {
-    return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`
-  }
-
-  // Different years, show full format
-  return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`
-}
-
-/**
  * Format a date for URL parameters (YYYY-MM-DD format in local timezone)
  * This ensures consistent URL state regardless of user's timezone
  */

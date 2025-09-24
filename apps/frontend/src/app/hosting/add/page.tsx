@@ -10,7 +10,7 @@ export default function AddHostingPage() {
 
   const handleAddSuccess = () => {
     // Redirect back to the main hosting page
-    router.push('/settings/hosting')
+    router.push('/hosting')
   }
 
   return (
@@ -20,7 +20,7 @@ export default function AddHostingPage() {
     >
       <HostingEditForm
         onSuccess={handleAddSuccess}
-        onCancel={() => router.push('/settings/hosting')}
+        onCancel={() => router.push('/hosting')}
       />
     </PageLayout>
   )

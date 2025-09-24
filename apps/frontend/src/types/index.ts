@@ -5,16 +5,11 @@ export * from '../generated/transformers';
 // Additional utility types
 import type { Host, Availability, Invitation, User, BookingRequest, Connection } from '../generated/types';
 
-export type PartialHost = Partial<Host>;
 export type HostWithAvailabilities = Host & { 
   availabilities: Availability[]
   user?: User
 };
 
-// Extended type for availability with host data
-export interface AvailabilityWithHost extends Availability {
-  host?: Host
-}
 
 export interface SearchFiltersState {
   query: string
@@ -32,14 +27,6 @@ export interface HostProfileData extends Omit<Host, 'id' | 'createdAt' | 'update
     notes?: string;
   }>;
   user?: User;
-}
-
-// For search results and simplified displays
-export interface HostSummary {
-  id: string;
-  name: string;
-  location?: string;
-  description?: string;
 }
 
 // Extended type for component-specific data (includes nested inviter data from GraphQL)

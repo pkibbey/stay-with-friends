@@ -108,7 +108,7 @@ export default async function BookingsPage() {
   return (
     <Tabs defaultValue="my-requests" className="space-y-6">
       <PageLayout
-        title="Stays"
+        title="Encourage friends to visit"
         subtitle="Manage your stay requests and hosting"
         headerActions={
           <TabsList className="grid w-full grid-cols-2">

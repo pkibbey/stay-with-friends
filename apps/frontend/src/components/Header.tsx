@@ -5,11 +5,20 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { TextLogo } from './TextLogo'
 
 export function Header() {
   const { data: session, status } = useSession()
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+  const pathname = usePathname()
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return pathname === '/'
+    }
+    return pathname.startsWith(path)
+  }
 
   useEffect(() => {
     const fetchPendingRequestsCount = async () => {
@@ -45,7 +54,7 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between h-14">
-        <Link href="/" className="text-xl font-bold">
+        <Link href="/" className="text-xl font-semibold">
           <TextLogo className="text-lg md:text-xl" />
         </Link>
         <nav className="flex items-center gap-6">
@@ -56,23 +65,29 @@ export function Header() {
                   <NavigationMenuList>
                     <NavigationMenuItem>
                       <NavigationMenuLink asChild>
-                        <Link href="/search" className='font-medium px-4'>Search</Link>
+                        <Link href="/search" className={`px-4 ${isActive('/search') && "font-semibold"}`}>Search</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/stays" className={`px-4 ${isActive('/stays') && "font-semibold"}`}>Stays {pendingRequestsCount ? pendingRequestsCount : null}</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link href="/hosting" className={`px-4 ${isActive('/hosting') && "font-semibold"}`}>Hosting</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                     <NavigationMenuItem>
                       <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
                       <NavigationMenuContent>
                         <NavigationMenuLink asChild>
-                          <Link className="px-3 py-2" href="/settings/profile">Profile</Link>
+                          <Link className={`px-3 py-2 ${isActive('/settings/profile') && "font-semibold"}`} href="/settings/profile">Profile</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink asChild>
-                          <Link className="px-3 py-2" href="/settings/connections">Connections</Link>
-                        </NavigationMenuLink>
-                        <NavigationMenuLink asChild>
-                          <Link className="px-3 py-2" href="/settings/stays">Stays {pendingRequestsCount ? pendingRequestsCount : null}</Link>
-                        </NavigationMenuLink>
-                        <NavigationMenuLink asChild>
-                          <Link className="px-3 py-2" href="/settings/hosting">Hosting</Link>
+                          <Link className={
+                            `px-3 py-2 ${isActive('/settings/connections') && "font-semibold"}`
+                            } href="/settings/connections">Connections</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-sm transition-colors mb-1" onClick={() => signOut()}>
                             Sign Out
@@ -86,9 +101,6 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link href="/search" className="text-gray-600 hover:text-gray-900 font-medium">
-                Search
-              </Link>
               <Button onClick={() => signIn()}>
                 Sign In
               </Button>

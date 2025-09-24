@@ -96,7 +96,7 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at)`);
 } catch (error) {
-  console.log('Users indexes already exist or error:', error);
+  console.error('Users indexes already exist or error:', error);
 }
 
 // Hosts table constraints and indexes
@@ -116,7 +116,7 @@ try {
   // Invitations table partial unique constraint
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_pending_unique ON invitations(inviter_id, invitee_email) WHERE status = 'pending'`);
 } catch (error) {
-  console.log('Hosts indexes already exist or error:', error);
+  console.error('Hosts indexes already exist or error:', error);
 }
 
 // Availabilities table constraints and indexes
@@ -126,7 +126,7 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_availabilities_status ON availabilities(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_availabilities_host_status ON availabilities(host_id, status)`);
 } catch (error) {
-  console.log('Availabilities indexes already exist or error:', error);
+  console.error('Availabilities indexes already exist or error:', error);
 }
 
 // Booking requests table constraints and indexes
@@ -137,7 +137,7 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_booking_requests_dates ON booking_requests(start_date, end_date)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_booking_requests_created_at ON booking_requests(created_at)`);
 } catch (error) {
-  console.log('Booking requests indexes already exist or error:', error);
+  console.error('Booking requests indexes already exist or error:', error);
 }
 
 // Connections table constraints and indexes  
@@ -147,7 +147,7 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_status ON connections(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_relationship ON connections(relationship)`);
 } catch (error) {
-  console.log('Connections indexes already exist or error:', error);
+  console.error('Connections indexes already exist or error:', error);
 }
 
 // Invitations table constraints and indexes
@@ -158,7 +158,7 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_invitations_status ON invitations(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_invitations_expires_at ON invitations(expires_at)`);
 } catch (error) {
-  console.log('Invitations indexes already exist or error:', error);
+  console.error('Invitations indexes already exist or error:', error);
 }
 
 // Prepare statements

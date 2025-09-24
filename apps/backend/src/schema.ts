@@ -966,7 +966,7 @@ export const resolvers = {
 
         return result.changes > 0
       } catch (error) {
-        console.log('error: ', error);      
+        console.error('error: ', error);      
         return false
       }
     },
@@ -1071,8 +1071,7 @@ export const resolvers = {
         throw new Error('Unauthorized: Can only update connections you are part of');
       }
 
-      const result = updateConnectionStatus.run(status, connectionId);
-      console.log('result: ', result);
+      updateConnectionStatus.run(status, connectionId);
       // Return the updated connection
       const updatedConnection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
       return updatedConnection as GeneratedConnection | undefined;

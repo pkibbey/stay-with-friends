@@ -133,7 +133,7 @@ export default function EditHostingPage() {
 
   const handleEditSuccess = () => {
     // Redirect back to the main hosting page
-    router.push('/settings/hosting')
+    router.push('/hosting')
   }
 
   return (
@@ -164,7 +164,7 @@ export default function EditHostingPage() {
           photos: hosting.photos
         }}
         onSuccess={handleEditSuccess}
-        onCancel={() => router.push('/settings/hosting')}
+        onCancel={() => router.push('/hosting')}
       />
     </PageLayout>
   )
