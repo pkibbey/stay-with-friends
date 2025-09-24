@@ -6,7 +6,10 @@ export * from '../generated/transformers';
 import type { Host, Availability, Invitation, User, BookingRequest, Connection } from '../generated/types';
 
 export type PartialHost = Partial<Host>;
-export type HostWithAvailabilities = Host & { availabilities: Availability[] };
+export type HostWithAvailabilities = Host & { 
+  availabilities: Availability[]
+  user?: User
+};
 
 // Extended type for availability with host data
 export interface AvailabilityWithHost extends Availability {

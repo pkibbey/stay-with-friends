@@ -27,7 +27,7 @@ export function ProfileClient({ initialUser, userEmail, sessionData }: ProfileCl
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 sm:flex-row flex-col">
       {/* Profile Image Section */}
       <div className="flex flex-col items-center space-y-2 py-4 px-6">
         <ProfileAvatar user={user} onUserUpdate={handleUserUpdate} sessionData={sessionData} />

@@ -38,6 +38,12 @@ async function getHosting(id: string): Promise<HostWithAvailabilities | null> {
               bathrooms
               photos
               userId
+              user {
+                id
+                name
+                email
+                image
+              }
               availabilities {
                 id
                 startDate

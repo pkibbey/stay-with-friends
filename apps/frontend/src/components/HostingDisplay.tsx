@@ -18,6 +18,7 @@ interface HostingDisplayProps {
 }
 
 export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplayProps) {
+  console.log('hostings: ', hostings);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -88,9 +89,32 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                 <CardHeader>
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {hosting.name}
-                      </CardTitle>
+                      <div className="flex items-center gap-3 mb-2">
+                        {hosting.user?.image ? (
+                          <Image
+                            unoptimized
+                            src={hosting.user.image}
+                            alt={`${hosting.user.name || 'User'} avatar`}
+                            width={32}
+                            height={32}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-xs text-gray-600">
+                              {(hosting.user?.name || hosting.name || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {hosting.name}
+                          </CardTitle>
+                          <p className="text-sm text-gray-600">
+                            Hosted by {hosting.user?.name || 'Unknown User'}
+                          </p>
+                        </div>
+                      </div>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <MapPin className="w-4 h-4" />
                         {hosting.address ?

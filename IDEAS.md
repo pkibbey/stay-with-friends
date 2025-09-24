@@ -24,9 +24,6 @@ Search
 - The Map under the map tab should take up even more vertical space
 - When searching, there is a big flash of loading skeletons which look jarring. Either we need a loading animation, or preferrably just don't show the new results until they have finished loading, or stream them.
 
-Profile
-- It doesn't look like the profile image is being saved
-
 Menu
 - the selected page should have a different visual treatment in the menu
 
