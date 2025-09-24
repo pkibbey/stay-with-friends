@@ -27,14 +27,14 @@ export function ProfileClient({ initialUser, userEmail, sessionData }: ProfileCl
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="flex gap-6">
       {/* Profile Image Section */}
-      <div className="flex flex-col items-center space-y-2">
+      <div className="flex flex-col items-center space-y-2 py-4 px-6">
         <ProfileAvatar user={user} onUserUpdate={handleUserUpdate} sessionData={sessionData} />
       </div>
       
       {/* Profile Form Section */}
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1">
         {/* Email Field (Static) */}
         <div>
           <label htmlFor="email" className="text-sm font-medium">Email</label>

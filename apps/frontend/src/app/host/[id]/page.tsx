@@ -128,15 +128,15 @@ export default async function HostDetailPage({ params, searchParams }: HostDetai
               selectedDate={selectedDate}
               bookingRequests={bookingRequests}
             />
+            <HostLocation host={host} />
           </div>
           
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            <HostPhotos host={host} />
             <HostAbout host={host} />
+            <HostPhotos host={host} />
             <HostAmenities host={host} />
             <HostHouseRules host={host} />
-            <HostLocation host={host} />
           </div>
         </div>
       </div>
