@@ -97,17 +97,6 @@ export default function ManageHostingPage() {
     }
   }, [userId])
 
-  if (!userId) {
-    return (
-      <PageLayout title="Hosting" showHeader={false}>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to manage your hosting</h1>
-          <p className="text-gray-600">You need to be signed in to access hosting management features.</p>
-        </div>
-      </PageLayout>
-    )
-  }
-
   if (loading) {
     return (
       <PageLayout title="Hosting" showHeader={false}>

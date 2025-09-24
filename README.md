@@ -30,14 +30,18 @@ A monorepo web app built with Turborepo, featuring a NextJS frontend and a TypeS
 - **Availability Highlighting**: Available dates are highlighted in blue on the calendar for easy identification.
 - **URL Persistence**: Selected dates are reflected in the URL query parameters for shareable links.
 
-## Build
+## Package Management
+
+### Updating Dependencies
+
+To check for and update packages to their latest versions:
 
 ```bash
-npm run build
+# Check for outdated packages (safe)
+npm run update-packages
+
+# Update all packages to latest versions
+npm run update-packages -- --update
 ```
 
-## Lint
-
-```bash
-npm run lint
-```
+This script uses `npm-check-updates` to check and update packages in both the frontend and backend apps.
