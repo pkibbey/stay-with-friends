@@ -1,7 +1,9 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.join(__dirname, '..', 'database.db');
+const dbPath = process.env.NODE_ENV === 'test' 
+  ? path.join(__dirname, '..', 'database.test.db')
+  : path.join(__dirname, '..', 'database.db');
 const db = new Database(dbPath);
 
 // Create tables first to ensure migrations that inspect/alter tables won't fail when the file is new

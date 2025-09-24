@@ -67,6 +67,9 @@
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/tests/jest.setup.ts"
-    ]
+    ],
+    "testEnvironmentOptions": {
+      "NODE_ENV": "test"
+    }
   }
 }

@@ -21,8 +21,6 @@ export default function Invite() {
   const handleCreateInvitation = async (email: string, message: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (session?.user as any)?.id
-    const userEmail = session?.user?.email || undefined
-    console.log('email: ', userEmail);
     if (!userId || !email) return
     try {
       const result = await authenticatedGraphQLRequest(`

@@ -159,6 +159,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                     <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
                       <Image
                         unoptimized
+                        priority
                         src={hosting.photos[0]}
                         alt={`${hosting.name} featured`}
                         fill

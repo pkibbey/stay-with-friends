@@ -976,12 +976,12 @@ export const resolvers = {
         throw new Error('Authentication required');
       }
       
-      // Generate a unique string ID for the new user
-  const newUserId = uuidv4();
+      // Use the authenticated user's ID as the database ID to ensure consistency
+      const userId = context.user.id;
       
-  insertUser.run(newUserId, email, name, null, image);
+      insertUser.run(userId, email, name, null, image);
       const created: GeneratedUser = {
-        id: newUserId,
+        id: userId,
         email,
         name,
         image,
@@ -1271,8 +1271,8 @@ export const resolvers = {
       }
 
       // Create new user (original logic)
-      // Generate a unique string ID for the new user
-      const newUserId = uuidv4();
+      // Use the authenticated user's ID as the database ID to ensure consistency
+      const newUserId = context.user.id;
       
       insertUser.run(
         newUserId,

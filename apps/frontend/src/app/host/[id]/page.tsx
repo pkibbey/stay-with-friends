@@ -13,11 +13,13 @@ import { authOptions } from '@/lib/auth'
 import type { HostWithAvailabilities, BookingRequest } from '@/types'
 
 interface HostDetailPageProps {
-  params: { id: string }
-  searchParams: { date?: string }
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ date?: string }>
 }
 
-export default async function HostDetailPage({ params, searchParams }: HostDetailPageProps) {
+export default async function HostDetailPage(props: HostDetailPageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const hostId = params.id
   const session = await getServerSession(authOptions)
   const userId = (session?.user as { id?: string })?.id
@@ -48,6 +50,12 @@ export default async function HostDetailPage({ params, searchParams }: HostDetai
         bedrooms
         bathrooms
         photos
+        user {
+          id
+          name
+          email
+          image
+        }
         availabilities {
           id
           startDate
