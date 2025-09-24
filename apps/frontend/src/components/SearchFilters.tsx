@@ -8,6 +8,7 @@ import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { parseLocalDate, formatDateForUrl } from '@/lib/date-utils'
 import { SearchFiltersState } from '@/types'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 interface SearchFiltersProps {
   filters: SearchFiltersState
@@ -16,7 +17,7 @@ interface SearchFiltersProps {
 }
 
 export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFiltersProps) {
-  const [showDatePicker, setShowDatePicker] = useState<boolean>(false)
+  const [open, setOpen] = useState<boolean>(false)
   const [localQuery, setLocalQuery] = useState(filters.query)
 
   const handleFilterChange = (key: keyof SearchFiltersState, value: string | number | boolean | string[] | null) => {
@@ -36,7 +37,7 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
     } else {
       handleFilterChange('startDate', null)
     }
-    setShowDatePicker(false)
+    setOpen(false)
   }
 
   return (
@@ -71,18 +72,19 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
 
       {/* Dates */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          onClick={() => setShowDatePicker(true)}
-          className="justify-start text-left font-normal"
-          disabled={isLoading}
-          size="sm"
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {filters.startDate ? format(parseLocalDate(filters.startDate), 'MMM d') : 'Select date'}
-        </Button>
-        {showDatePicker && (
-          <div className="absolute top-full mt-2 p-3 border rounded-lg bg-white shadow-lg z-10">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="justify-start text-left font-normal"
+              disabled={isLoading}
+              size="sm"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {filters.startDate ? format(parseLocalDate(filters.startDate), 'MMM d') : 'Select date'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
               selected={filters.startDate ? parseLocalDate(filters.startDate) : undefined}
@@ -90,8 +92,8 @@ export function SearchFilters({ filters, onFiltersChange, isLoading }: SearchFil
               onSelect={(date) => handleDateSelect(date)}
               className="rounded-md border-0"
             />
-          </div>
-        )}
+          </PopoverContent>
+        </Popover>
         {filters.startDate && (
           <Button
             variant="ghost"

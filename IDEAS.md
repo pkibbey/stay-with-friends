@@ -9,8 +9,6 @@ Make tests more complete
 
 Make the graphql calls neater, maybe they exist in their own files/folders
 
-We lost the database again
-
 
 # New notes
 
