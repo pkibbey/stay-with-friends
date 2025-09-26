@@ -183,7 +183,6 @@ export function FeaturedHostsSection({ limit = 6 }: FeaturedHostsSectionProps) {
             }
           }
         `
-
         const result = await graphqlRequest(query)
         const fetchedHosts = (result.data as { hosts: HostProfileData[] })?.hosts || []
         setHosts(fetchedHosts.slice(0, limit))

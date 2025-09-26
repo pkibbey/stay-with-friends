@@ -3,15 +3,17 @@
 import NextAuth from 'next-auth/next'
 import EmailProvider from 'next-auth/providers/email'
 import { createTransport } from 'nodemailer'
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
-import { db } from "./db"
 import jwt from 'jsonwebtoken'
+import { createMinimalAuthAdapter } from './minimal-auth-adapter'
 
 // Use the same JWT secret as the backend
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export const authOptions = {
-  adapter: DrizzleAdapter(db),
+  // Minimal adapter: ONLY handles verification tokens for magic links
+  // Users and sessions still use JWT (no persistence)
+  // This is required because magic links need temporary token storage
+  adapter: createMinimalAuthAdapter('./verification-tokens.db'),
   session: {
     strategy: "jwt" as const, // Force JWT strategy to make session callback work properly
   },
