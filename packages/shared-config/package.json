@@ -1,0 +1,23 @@
+{
+  "name": "@stay-with-friends/shared-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared configuration files for Stay With Friends",
+  "main": "index.js",
+  "exports": {
+    "./eslint": "./eslint.js",
+    "./typescript": "./typescript.json",
+    "./jest": "./jest.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1",
+    "globals": "^16.4.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0"
+  }
+}

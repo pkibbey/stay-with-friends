@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
-import { ENTITIES, SCHEMAS } from '../schema/entities.js';
+import { ENTITIES, SCHEMAS } from '../packages/shared-types/src/entities.js';
 
 /**
  * ZOD-FIRST TYPE GENERATION (TypeScript)

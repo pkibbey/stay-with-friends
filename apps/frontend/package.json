@@ -20,6 +20,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
+    "@stay-with-friends/shared-types": "*",
+    "@stay-with-friends/shared-utils": "*",
     "@tabler/icons-react": "^3.35.0",
     "@types/ol": "^7.0.0",
     "better-sqlite3": "^12.4.1",
@@ -44,6 +46,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.55.1",
+    "@stay-with-friends/shared-config": "*",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",

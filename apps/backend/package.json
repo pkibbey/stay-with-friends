@@ -16,6 +16,8 @@
   "dependencies": {
     "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.2",
+    "@stay-with-friends/shared-types": "*",
+    "@stay-with-friends/shared-utils": "*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/jsonwebtoken": "^9.0.10",
     "better-sqlite3": "^12.4.1",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@stay-with-friends/shared-config": "*",
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
