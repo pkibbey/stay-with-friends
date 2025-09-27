@@ -1,8 +1,5 @@
-// Re-export generated types (now with built-in validation and transformers)
-export * from '../generated/types';
-
 // Additional utility types (using enhanced generated types with validation)
-import type { Host, Availability, Invitation, User, BookingRequest, Connection } from '../generated/types';
+import type { Host, Availability, Invitation, User, BookingRequest, Connection } from '@stay-with-friends/shared-types';
 
 export type HostWithAvailabilities = Host & { 
   availabilities: Availability[]

@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import Crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { Availability, BookingRequest, Connection, Host, Invitation, User } from './generated/types';
+import { Availability, BookingRequest, Connection, Host, Invitation, User } from '@stay-with-friends/shared-types';
 
 // Authentication context interface
 interface AuthContext {
@@ -1169,20 +1169,26 @@ export const resolvers = {
     amenities: (parent: Host) => {
       if (!parent.amenities) return [];
       if (Array.isArray(parent.amenities)) return parent.amenities;
-      try {
-        return JSON.parse(parent.amenities);
-      } catch {
-        return [];
+      if (typeof parent.amenities === 'string') {
+        try {
+          return JSON.parse(parent.amenities);
+        } catch {
+          return [];
+        }
       }
+      return [];
     },
     photos: (parent: Host) => {
       if (!parent.photos) return [];
       if (Array.isArray(parent.photos)) return parent.photos;
-      try {
-        return JSON.parse(parent.photos);
-      } catch {
-        return [];
+      if (typeof parent.photos === 'string') {
+        try {
+          return JSON.parse(parent.photos);
+        } catch {
+          return [];
+        }
       }
+      return [];
     },
   },
   Availability: {
