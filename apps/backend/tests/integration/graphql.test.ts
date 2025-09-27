@@ -3,7 +3,7 @@ import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
 import express from 'express';
 import cors from 'cors';
-import { typeDefs } from '../../src/schema';
+import { typeDefs } from '../../src/generated/typedefs';
 import { setupTestDatabase, teardownTestDatabase, getTestDatabase } from '../setup';
 import request from 'supertest';
 

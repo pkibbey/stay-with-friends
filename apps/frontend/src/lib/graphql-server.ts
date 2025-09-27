@@ -77,7 +77,7 @@ export async function serverAuthenticatedGraphQLRequest<T = Record<string, unkno
 }
 
 // Server-side function to fetch user data
-export async function fetchUserData(email: string): Promise<{ id: string; email?: string; name?: string; image?: string } | null> {
+export async function fetchUserData(email: string): Promise<{ id: string; email?: string; name?: string; image?: string; createdAt?: string } | null> {
   try {
     const result = await serverAuthenticatedGraphQLRequest(`
       query GetUser($email: String!) {
@@ -86,11 +86,12 @@ export async function fetchUserData(email: string): Promise<{ id: string; email?
           email
           name
           image
+          createdAt
         }
       }
     `, { email })
     
-    type UserResponse = { user?: { id: string; email?: string; name?: string; image?: string } }
+    type UserResponse = { user?: { id: string; email?: string; name?: string; image?: string; createdAt?: string } }
     const userData = (result.data || {}) as UserResponse
     let userObj = userData.user
 
@@ -104,11 +105,12 @@ export async function fetchUserData(email: string): Promise<{ id: string; email?
               email
               name
               image
+              createdAt
             }
           }
         `
-        const createResult = await serverAuthenticatedGraphQLRequest<{ createUser?: { id: string; email?: string; name?: string; image?: string } }>(createMutation, { email, name: undefined })
-        const created = (createResult.data as { createUser?: { id: string; email?: string; name?: string; image?: string } } | undefined)?.createUser
+        const createResult = await serverAuthenticatedGraphQLRequest<{ createUser?: { id: string; email: string; name: string; image: string; createdAt: string } }>(createMutation, { email, name: undefined })
+        const created = (createResult.data as { createUser?: { id: string; email: string; name: string; image: string; createdAt: string } } | undefined)?.createUser
         if (created) {
           userObj = created
           console.log('Created backend user:', created)

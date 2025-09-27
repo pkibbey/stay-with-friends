@@ -4,7 +4,7 @@ import { expressMiddleware } from '@as-integrations/express5';
 import express from 'express';
 import cors from 'cors';
 import request from 'supertest';
-import { typeDefs } from '../../src/schema';
+import { typeDefs } from '../../src/generated/typedefs'; 
 import { setupTestDatabase, teardownTestDatabase, getTestDatabase, createTestUser } from '../setup';
 import Crypto from 'crypto';
 

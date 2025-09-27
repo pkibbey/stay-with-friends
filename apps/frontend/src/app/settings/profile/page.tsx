@@ -35,12 +35,14 @@ export default async function Profile() {
     id: userData.id,
     email: userData.email || session.user.email || '',
     name: userData.name || session.user.name || '',
-    image: userData.image || session.user.image || null
+    image: userData.image || session.user.image || null,
+    createdAt: userData.createdAt || new Date().toISOString(),
   } : {
     id: session.user.id || '',
     email: session.user.email || '',
     name: session.user.name || '',
-    image: session.user.image || null
+    image: session.user.image || null,
+    createdAt: new Date().toISOString()
   }
 
   return (

@@ -1,5 +1,6 @@
-# Generated from Zod schemas - do not edit
+// Generated GraphQL TypeDefs from Zod schemas - do not edit
 
+export const typeDefs = `#graphql
 type User {
   id: ID!
   email: String!
@@ -161,3 +162,4 @@ input AcceptInvitationInput {
   name: String
   image: String
 }
+`;

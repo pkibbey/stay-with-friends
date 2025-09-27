@@ -1,8 +1,7 @@
-// Re-export generated types
+// Re-export generated types (now with built-in validation and transformers)
 export * from '../generated/types';
-export * from '../generated/transformers';
 
-// Additional utility types
+// Additional utility types (using enhanced generated types with validation)
 import type { Host, Availability, Invitation, User, BookingRequest, Connection } from '../generated/types';
 
 export type HostWithAvailabilities = Host & { 

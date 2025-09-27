@@ -1,236 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const typeDefs = `#graphql
-  type Host {
-    id: ID!
-    name: String!
-    location: String
-    description: String
-    address: String
-    city: String
-    state: String
-    zipCode: String
-    country: String
-    latitude: Float
-    longitude: Float
-    amenities: [String!]
-    houseRules: String
-    checkInTime: String
-    checkOutTime: String
-    maxGuests: Int
-    bedrooms: Int
-    bathrooms: Int
-    photos: [String!]
-    availabilities: [Availability!]!
-    createdAt: String!
-    updatedAt: String!
-    userId: ID!
-    user: User!
-  }
-
-  type Availability {
-    id: ID!
-    hostId: ID!
-    startDate: String!
-    endDate: String!
-    status: String!
-    notes: String
-    host: Host!
-  }
-
-  type BookingRequest {
-    id: ID!
-    hostId: ID!
-    requesterId: ID!
-    startDate: String!
-    endDate: String!
-    guests: Int!
-    message: String
-    status: String!
-    responseMessage: String
-    respondedAt: String
-    createdAt: String!
-    host: Host!
-    requester: User!
-  }
-
-  type User {
-    id: ID!
-    email: String!
-    name: String
-    emailVerified: String
-    image: String
-    createdAt: String!
-  }
-
-  type Connection {
-    id: ID!
-    userId: ID!
-    connectedUserId: ID!
-    relationship: String
-    status: String!
-    createdAt: String!
-    connectedUser: User!
-  }
-
-  type Invitation {
-    id: ID!
-    inviterId: ID!
-    inviteeEmail: String!
-    message: String
-    token: String!
-    status: String!
-    expiresAt: String!
-    acceptedAt: String
-    createdAt: String!
-    inviter: User!
-  }
-
-  type Query {
-    hosts: [Host!]!
-    searchHosts(query: String!): [Host!]!
-    host(id: ID!): Host
-    searchHostsAdvanced(
-      query: String
-      startDate: String
-    ): [Host!]!
-    availabilitiesByDate(date: String!): [Availability!]!
-    availabilitiesByDateRange(startDate: String!, endDate: String!): [Availability!]!
-    hostAvailabilities(hostId: ID!): [Availability!]!
-    availabilityDates(startDate: String!, endDate: String!): [String!]!
-    user(email: String!): User
-    connections(userId: ID!): [Connection!]!
-    connectionRequests(userId: ID!): [Connection!]!
-    bookingRequestsByHost(hostId: ID!): [BookingRequest!]!
-    bookingRequestsByRequester(requesterId: ID!): [BookingRequest!]!
-    bookingRequestsByHostUser(userId: ID!): [BookingRequest!]!
-    pendingBookingRequestsCount(userId: ID!): Int!
-    invitation(token: String!): Invitation
-    invitations(inviterId: ID!): [Invitation!]!
-    # Community stats
-    totalHostsCount: Int!
-    totalConnectionsCount: Int!
-    totalBookingsCount: Int!
-  }
-
-  type Mutation {
-    createHost(
-      userId: ID!
-      name: String!
-      location: String
-      description: String
-      address: String
-      city: String
-      state: String
-      zipCode: String
-      country: String
-      latitude: Float
-      longitude: Float
-      amenities: [String!]
-      houseRules: String
-      checkInTime: String
-      checkOutTime: String
-      maxGuests: Int
-      bedrooms: Int
-      bathrooms: Int
-      photos: [String!]
-    ): Host!
-    createAvailability(
-      hostId: ID!
-      startDate: String!
-      endDate: String!
-      status: String
-      notes: String
-    ): Availability!
-    createBookingRequest(
-      hostId: ID!
-      requesterId: ID!
-      startDate: String!
-      endDate: String!
-      guests: Int!
-      message: String
-    ): BookingRequest!
-    updateBookingRequestStatus(
-      id: ID!
-      status: String!
-      responseMessage: String
-    ): BookingRequest!
-    checkEmailExists(email: String!): Boolean!
-    sendInvitationEmail(email: String!, invitationUrl: String!): String!
-    updateHost(id: ID!, input: UpdateHostInput!): Host!
-    deleteHost(id: ID!): Boolean!
-    createUser(email: String!, name: String, image: String): User!
-    updateUser(id: ID!, name: String, image: String): User!
-    createConnection(userId: ID!, connectedUserEmail: String!, relationship: String): Connection!
-    updateConnectionStatus(connectionId: ID!, status: String!): Connection!
-  deleteConnection(connectionId: ID!): Boolean!
-    createInvitation(inviterId: ID!, inviteeEmail: String!, message: String): Invitation!
-    acceptInvitation(token: String!, userData: AcceptInvitationInput!): User!
-    cancelInvitation(invitationId: ID!): Boolean!
-    deleteInvitation(invitationId: ID!): Boolean!
-  }
-
-  input CreateListingInput {
-    name: String!
-    description: String!
-    address: String!
-    city: String!
-    state: String!
-    zipCode: String!
-    country: String!
-    latitude: Float
-    longitude: Float
-    maxGuests: Int
-    bedrooms: Int
-    bathrooms: Int
-    amenities: [String!]
-    houseRules: String
-    checkInTime: String
-    checkOutTime: String
-    photos: [String!]
-  }
-
-  input UpdateHostInput {
-    name: String
-    location: String    
-    description: String
-    address: String
-    city: String
-    state: String
-    zipCode: String
-    country: String
-    latitude: Float
-    longitude: Float
-    amenities: [String!]
-    houseRules: String
-    checkInTime: String
-    checkOutTime: String
-    maxGuests: Int
-    bedrooms: Int
-    bathrooms: Int
-    photos: [String!]
-    availabilities: [AvailabilityInput!]
-  }
-
-  input AvailabilityInput {
-    startDate: String!
-    endDate: String!
-    status: String
-    notes: String
-  }
-
-  input AcceptInvitationInput {
-    name: String
-    image: String
-  }
-`;
-
 import { getAllHosts, getHostById, searchHosts, insertHost, getHostAvailabilities, getAvailabilitiesByDateRange, insertAvailability, getAvailabilityDates, insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById, getPendingBookingRequestsCountByHostUser, getUserByEmail, getUserById, insertUser, updateUser, getConnections, getConnectionRequests, insertConnection, updateConnectionStatus, insertInvitation, getInvitationByToken, getInvitationById, getInvitationsByInviter, updateInvitationStatus, getInvitationByEmail, getConnectionById, deleteConnectionsBetweenUsers, deleteInvitation, getConnectionBetweenUsers, searchHostsAvailableOnDate, db, getTotalBookingsCount, getTotalConnectionsCount, getTotalHostsCount } from './db';
-// Use generated types from the single source-of-truth
-import type { User as GeneratedUser, Host as GeneratedHost, Connection as GeneratedConnection, Availability as GeneratedAvailability, BookingRequest as GeneratedBookingRequest, Invitation as GeneratedInvitation, Host, Availability, BookingRequest, User, Connection, Invitation } from './generated/types';
 import fs from 'fs';
 import path from 'path';
 import Crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+import { Availability, BookingRequest, Connection, Host, Invitation, User } from './generated/types';
 
 // Authentication context interface
 interface AuthContext {
@@ -332,18 +106,18 @@ const validateStatus = (status: string, validStatuses: string[]): void => {
 
 export const resolvers = {
   Query: {
-    hosts: (): GeneratedHost[] => {
+    hosts: (): Host[] => {
       // Hosts query is public - anyone can view available hosts
-      return getAllHosts.all() as GeneratedHost[];
+      return getAllHosts.all() as Host[];
     },
-    searchHosts: (_: any, { query }: { query: string }): GeneratedHost[] => {
+    searchHosts: (_: any, { query }: { query: string }): Host[] => {
       // Search is public
       const searchTerm = `%${query}%`;
-      return searchHosts.all(searchTerm, searchTerm) as GeneratedHost[];
+      return searchHosts.all(searchTerm, searchTerm) as Host[];
     },
-    host: (_: any, { id }: { id: string }): GeneratedHost | undefined => {
+    host: (_: any, { id }: { id: string }): Host | undefined => {
       // Host details are public
-      return getHostById.get(id) as GeneratedHost | undefined;
+      return getHostById.get(id) as Host | undefined;
     },
     searchHostsAdvanced: (_: any, args: any) => {
       // Advanced search is public
@@ -359,27 +133,27 @@ export const resolvers = {
           searchTerm,     // location LIKE ?
           searchTerm,     // city LIKE ?
           searchTerm      // state LIKE ?
-        ) as GeneratedHost[];
+        ) as Host[];
       } else {
         // If no date filter, use the standard search
         if (args.query) {
-          return searchHosts.all(searchTerm, searchTerm) as GeneratedHost[];
+          return searchHosts.all(searchTerm, searchTerm) as Host[];
         }
         // If no query, return all hosts
-        return getAllHosts.all() as GeneratedHost[];
+        return getAllHosts.all() as Host[];
       }
     },
-    availabilitiesByDate: (_: any, { date }: { date: string }): GeneratedAvailability[] => {
+    availabilitiesByDate: (_: any, { date }: { date: string }): Availability[] => {
       // Availability info is public
-      return getAvailabilitiesByDateRange.all(date, date) as GeneratedAvailability[];
+      return getAvailabilitiesByDateRange.all(date, date) as Availability[];
     },
-    availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }): GeneratedAvailability[] => {
+    availabilitiesByDateRange: (_: any, { startDate, endDate }: { startDate: string, endDate: string }): Availability[] => {
       // Availability info is public
-      return getAvailabilitiesByDateRange.all(endDate, startDate) as GeneratedAvailability[];
+      return getAvailabilitiesByDateRange.all(endDate, startDate) as Availability[];
     },
-    hostAvailabilities: (_: any, { hostId }: { hostId: string }): GeneratedAvailability[] => {
+    hostAvailabilities: (_: any, { hostId }: { hostId: string }): Availability[] => {
       // Availability info is public
-      return getHostAvailabilities.all(hostId) as GeneratedAvailability[];
+      return getHostAvailabilities.all(hostId) as Availability[];
     },
     availabilityDates: (_: any, { startDate, endDate }: { startDate: string, endDate: string }) => {
       // Availability info is public
@@ -393,9 +167,9 @@ export const resolvers = {
       }
       // Return typed user based on generated types
       const row = getUserByEmail.get(email) as any;
-      return row as GeneratedUser | undefined;
+      return row as User | undefined;
     },
-    connections: (_: any, { userId }: { userId: string }, context: AuthContext): GeneratedConnection[] => {
+    connections: (_: any, { userId }: { userId: string }, context: AuthContext): Connection[] => {
       // Connections require authentication and user can only see their own connections
       if (!context.user) {
         throw new Error('Authentication required');
@@ -403,9 +177,9 @@ export const resolvers = {
       if (context.user.id !== userId) {
         throw new Error('Unauthorized: Can only view your own connections');
       }
-      return getConnections.all(userId, userId, userId) as GeneratedConnection[];
+      return getConnections.all(userId, userId, userId) as Connection[];
     },
-    connectionRequests: (_: any, { userId }: { userId: string }, context: AuthContext): GeneratedConnection[] => {
+    connectionRequests: (_: any, { userId }: { userId: string }, context: AuthContext): Connection[] => {
       // Connection requests require authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -413,13 +187,13 @@ export const resolvers = {
       if (context.user.id !== userId) {
         throw new Error('Unauthorized: Can only view your own connection requests');
       }
-      return getConnectionRequests.all(userId) as GeneratedConnection[];
+      return getConnectionRequests.all(userId) as Connection[];
     },
-    invitation: (_: any, { token }: { token: string }): GeneratedInvitation | undefined => {
+    invitation: (_: any, { token }: { token: string }): Invitation | undefined => {
       // Invitation lookup is public (for accepting invitations)
-      return getInvitationByToken.get(token) as GeneratedInvitation | undefined;
+      return getInvitationByToken.get(token) as Invitation | undefined;
     },
-    invitations: (_: any, { inviterId }: { inviterId: string }, context: AuthContext): GeneratedInvitation[] => {
+    invitations: (_: any, { inviterId }: { inviterId: string }, context: AuthContext): Invitation[] => {
       // Invitations require authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -427,9 +201,9 @@ export const resolvers = {
       if (context.user.id !== inviterId) {
         throw new Error('Unauthorized: Can only view your own invitations');
       }
-      return getInvitationsByInviter.all(inviterId) as GeneratedInvitation[];
+      return getInvitationsByInviter.all(inviterId) as Invitation[];
     },
-    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }, context: AuthContext): GeneratedBookingRequest[] => {
+    bookingRequestsByHost: (_: any, { hostId }: { hostId: string }, context: AuthContext): BookingRequest[] => {
       // Booking requests require authentication and user must own the host
       if (!context.user) {
         throw new Error('Authentication required');
@@ -438,9 +212,9 @@ export const resolvers = {
       if (!host || host.user_id !== context.user.id) {
         throw new Error('Unauthorized: Can only view booking requests for your own hosts');
       }
-      return getBookingRequestsByHost.all(hostId) as GeneratedBookingRequest[];
+      return getBookingRequestsByHost.all(hostId) as BookingRequest[];
     },
-    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }, context: AuthContext): GeneratedBookingRequest[] => {
+    bookingRequestsByRequester: (_: any, { requesterId }: { requesterId: string }, context: AuthContext): BookingRequest[] => {
       // Booking requests require authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -448,7 +222,7 @@ export const resolvers = {
       if (context.user.id !== requesterId) {
         throw new Error('Unauthorized: Can only view your own booking requests');
       }
-      return getBookingRequestsByRequester.all(requesterId) as GeneratedBookingRequest[];
+      return getBookingRequestsByRequester.all(requesterId) as BookingRequest[];
     },
     bookingRequestsByHostUser: (_: any, { userId }: { userId: string }, context: AuthContext) => {
       // Booking requests require authentication
@@ -497,7 +271,7 @@ export const resolvers = {
     },
   },
   Mutation: {
-    createHost: (_: any, args: any, context: AuthContext): GeneratedHost => {
+    createHost: (_: any, args: any, context: AuthContext): Host => {
       // Creating a host requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -595,7 +369,7 @@ export const resolvers = {
         throw error;
       }
     },
-    createAvailability: (_: any, args: any, context: AuthContext): GeneratedAvailability => {
+    createAvailability: (_: any, args: any, context: AuthContext): Availability => {
       // Creating availability requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -633,9 +407,9 @@ export const resolvers = {
         end_date: args.endDate,
         status: args.status || 'available',
         notes: args.notes || null,
-      } as GeneratedAvailability;
+      } as Availability;
     },
-    createBookingRequest: (_: any, args: any, context: AuthContext): GeneratedBookingRequest => {
+    createBookingRequest: (_: any, args: any, context: AuthContext): BookingRequest => {
       // Creating booking requests requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -679,9 +453,9 @@ export const resolvers = {
         message: args.message,
         status: 'pending',
         created_at: new Date().toISOString(),
-      } as GeneratedBookingRequest;
+      } as BookingRequest;
     },
-    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }, context: AuthContext): GeneratedBookingRequest => {
+    updateBookingRequestStatus: (_: any, { id, status, responseMessage }: { id: string, status: string, responseMessage?: string }, context: AuthContext): BookingRequest => {
       // Updating booking request status requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -739,7 +513,7 @@ export const resolvers = {
       }
 
       // Return updated booking request
-      return getBookingRequestById.get(id) as GeneratedBookingRequest;
+      return getBookingRequestById.get(id) as BookingRequest;
     },
     checkEmailExists: (_: any, { email }: { email: string }) => {
       validateEmail(email);
@@ -756,7 +530,7 @@ export const resolvers = {
             
       return invitationUrl;
     },
-    updateHost: (_: any, { id, input }: { id: string, input: any }, context: AuthContext): GeneratedHost | undefined => {
+    updateHost: (_: any, { id, input }: { id: string, input: any }, context: AuthContext): Host | undefined => {
       // Updating hosts requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -920,7 +694,7 @@ export const resolvers = {
       }
         if (updates.length === 0) {
           // No updates provided, return current host
-          return getHostById.get(id) as GeneratedHost | undefined
+          return getHostById.get(id) as Host | undefined
         }
 
         const updateQuery = `UPDATE hosts SET ${updates.join(', ')} WHERE id = ?`
@@ -951,7 +725,7 @@ export const resolvers = {
         }
 
         // Return updated host
-        return getHostById.get(id) as GeneratedHost | undefined
+        return getHostById.get(id) as Host | undefined
       } catch (error: any) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
           throw new Error('A host with this email already exists');
@@ -987,7 +761,7 @@ export const resolvers = {
         return false
       }
     },
-    createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }, context: AuthContext): GeneratedUser => {
+    createUser: (_: any, { email, name, image }: { email: string, name?: string, image?: string }, context: AuthContext): User => {
       // Creating users requires authentication (called from auth callback)
       if (!context.user) {
         throw new Error('Authentication required');
@@ -997,7 +771,7 @@ export const resolvers = {
       const userId = context.user.id;
       
       insertUser.run(userId, email, name, null, image);
-      const created: GeneratedUser = {
+      const created: User = {
         id: userId,
         email,
         name,
@@ -1006,7 +780,7 @@ export const resolvers = {
       } as any;
       return created as any;
     },
-    updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }, context: AuthContext): GeneratedUser => {
+    updateUser: (_: any, { id, name, image }: { id: string, name?: string, image?: string }, context: AuthContext): User => {
       // Updating user requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -1029,9 +803,9 @@ export const resolvers = {
       }
       
       updateUser.run(name, image, id);
-      return getUserById.get(id) as GeneratedUser;
+      return getUserById.get(id) as User;
     },
-    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }, context: AuthContext): GeneratedConnection => {
+    createConnection: (_: any, { userId, connectedUserEmail, relationship }: { userId: string, connectedUserEmail: string, relationship?: string }, context: AuthContext): Connection => {
       // Creating connections requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -1065,9 +839,9 @@ export const resolvers = {
         relationship,
         status: 'pending',
         created_at: new Date().toISOString(),
-      } as unknown as GeneratedConnection;
+      } as unknown as Connection;
     },
-    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }, context: AuthContext): GeneratedConnection | undefined => {
+    updateConnectionStatus: (_: any, { connectionId, status }: { connectionId: string, status: string }, context: AuthContext): Connection | undefined => {
       // Updating connection status requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -1091,7 +865,7 @@ export const resolvers = {
       updateConnectionStatus.run(status, connectionId);
       // Return the updated connection
       const updatedConnection = db.prepare('SELECT * FROM connections WHERE id = ?').get(connectionId);
-      return updatedConnection as GeneratedConnection | undefined;
+      return updatedConnection as Connection | undefined;
     },
     deleteConnection: (_: any, { connectionId }: { connectionId: string }, context: AuthContext) => {
       // Deleting connections requires authentication
@@ -1131,7 +905,7 @@ export const resolvers = {
         return false;
       }
     },
-    createInvitation: (_: any, { inviterId, inviteeEmail, message }: { inviterId: string, inviteeEmail: string, message?: string }, context: AuthContext): GeneratedInvitation => {
+    createInvitation: (_: any, { inviterId, inviteeEmail, message }: { inviterId: string, inviteeEmail: string, message?: string }, context: AuthContext): Invitation => {
       // Creating invitations requires authentication
       if (!context.user) {
         throw new Error('Authentication required');
@@ -1183,7 +957,7 @@ export const resolvers = {
           status: 'connection-sent',
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           created_at: new Date().toISOString(),
-        } as GeneratedInvitation;
+        } as Invitation;
       }
 
       // Check for existing pending invitation
@@ -1217,7 +991,7 @@ export const resolvers = {
         status: 'pending',
         expires_at: expiresAt.toISOString(),
         created_at: new Date().toISOString(),
-      } as GeneratedInvitation;
+      } as Invitation;
 
       // Send invitation email
       // const invitationUrl = `http://localhost:3000/invite/${token}`;

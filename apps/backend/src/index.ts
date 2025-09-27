@@ -8,7 +8,8 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import { resolvers, typeDefs } from './schema';
+import { resolvers } from './schema';
+import { typeDefs } from './generated/typedefs';
 
 // Initialize database by importing db.ts (tables are created on import)
 console.log('Database initialized');
