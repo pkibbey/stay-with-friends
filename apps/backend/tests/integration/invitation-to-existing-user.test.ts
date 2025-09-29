@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect, describe, test, beforeEach, afterEach } from '@jest/globals';
 import { getUserByEmail, getConnectionBetweenUsers } from '../../src/db';
-import { resolvers } from '../../src/schema';
+import { invitationsResolvers } from '../../src/graphql/resolvers/invitations';
 import BetterSqlite3 from 'better-sqlite3';
 import path from 'path';
 
@@ -130,7 +130,7 @@ describe('Invitation to existing user flow', () => {
 
   test('should create a connection request when inviting an existing user', async () => {
     // Attempt to create an invitation for an existing user
-    const result = resolvers.Mutation.createInvitation(null, {
+    const result = invitationsResolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
       message: 'Want to connect!'
@@ -159,7 +159,7 @@ describe('Invitation to existing user flow', () => {
 
   test('should create a connection request with default message when no message provided', async () => {
     // Attempt to create an invitation for an existing user without message
-    const result = resolvers.Mutation.createInvitation(null, {
+    const result = invitationsResolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com'
     }, userContext);
@@ -174,7 +174,7 @@ describe('Invitation to existing user flow', () => {
 
   test('should throw error when trying to invite user with existing connection', async () => {
     // First create a connection
-    await resolvers.Mutation.createInvitation(null, {
+    await invitationsResolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'existing@example.com',
       message: 'Want to connect!'
@@ -182,7 +182,7 @@ describe('Invitation to existing user flow', () => {
 
     // Try to create another invitation - should fail
     expect(() => {
-      resolvers.Mutation.createInvitation(null, {
+      invitationsResolvers.Mutation.createInvitation(null, {
         inviterId: inviterId,
         inviteeEmail: 'existing@example.com',
         message: 'Another connection attempt!'
@@ -191,7 +191,7 @@ describe('Invitation to existing user flow', () => {
   });
 
   test('should create regular invitation for non-existing user', async () => {
-    const result = resolvers.Mutation.createInvitation(null, {
+    const result = invitationsResolvers.Mutation.createInvitation(null, {
       inviterId: inviterId,
       inviteeEmail: 'new-user@example.com',
       message: 'Join our platform!'

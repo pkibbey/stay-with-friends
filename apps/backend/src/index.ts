@@ -8,7 +8,7 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import { resolvers } from './schema';
+import { resolvers } from './graphql/resolvers';
 import { typeDefs } from './generated/typedefs';
 
 // Initialize database by importing db.ts (tables are created on import)

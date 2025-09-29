@@ -1,6 +1,6 @@
 import { expect, describe, test, beforeEach, afterEach } from '@jest/globals';
 import { insertInvitation, updateInvitationStatus } from '../../src/db';
-import { resolvers } from '../../src/schema';
+import { invitationsResolvers } from '../../src/graphql/resolvers/invitations';
 import { Invitation } from '@stay-with-friends/shared-types';
 import BetterSqlite3 from 'better-sqlite3';
 import path from 'path';
@@ -133,7 +133,7 @@ describe('Invitations query', () => {
     updateInvitationStatus.run('accepted', new Date().toISOString(), acceptedId);
 
     // Query invitations using the GraphQL resolver
-      const result = resolvers.Query.invitations(null, { inviterId: inviterId }, { user: { id: inviterId, email: 'test@example.com' } });
+    const result = invitationsResolvers.Query.invitations(null, { inviterId: inviterId }, { user: { id: inviterId, email: 'test@example.com' } });
 
     // Should return both invitations
     expect(result).toHaveLength(2);
@@ -150,7 +150,7 @@ describe('Invitations query', () => {
   });
 
   test('should return empty array when no invitations exist', async () => {
-      const result = resolvers.Query.invitations(null, { inviterId: inviterId.toString() }, { user: { id: inviterId, email: 'test@example.com' } });
+    const result = invitationsResolvers.Query.invitations(null, { inviterId: inviterId.toString() }, { user: { id: inviterId, email: 'test@example.com' } });
     expect(result).toHaveLength(0);
   });
 });
