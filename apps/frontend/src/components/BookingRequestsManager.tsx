@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiPatch } from '@/lib/api'
 import { BookingRequestWithRelations } from '@/types'
 import { BookingRequestsDisplay } from '@/components/BookingRequestsDisplay'
 
@@ -21,35 +21,23 @@ export function BookingRequestsManager({
 
   const handleStatusUpdate = async (requestId: string, status: string, responseMessage?: string) => {
     try {
-      const result = await authenticatedGraphQLRequest(`
-        mutation UpdateBookingRequestStatus($id: ID!, $status: String!, $responseMessage: String) {
-          updateBookingRequestStatus(id: $id, status: $status, responseMessage: $responseMessage) {
-            id
-            status
-            responseMessage
-            respondedAt
-          }
-        }
-      `, { id: requestId, status, responseMessage })
-
-      const updated = (result.data as { updateBookingRequestStatus?: { id: string } })?.updateBookingRequestStatus
-      if (updated) {
-        // Update the local state to reflect the change
-        setMyRequests(prev =>
-          prev.map(req =>
-            req.id === requestId
-              ? { ...req, status, responseMessage, respondedAt: new Date().toISOString() }
-              : req
-          )
+      // REST endpoint: PUT /booking-requests/:id/status
+      await apiPatch(`/booking-requests/${requestId}/status`, { status, response_message: responseMessage })
+      // Update the local state to reflect the change
+      setMyRequests(prev =>
+        prev.map(req =>
+          req.id === requestId
+            ? { ...req, status, responseMessage, respondedAt: new Date().toISOString() }
+            : req
         )
-        setIncomingRequests(prev =>
-          prev.map(req =>
-            req.id === requestId
-              ? { ...req, status, responseMessage, respondedAt: new Date().toISOString() }
-              : req
-          )
+      )
+      setIncomingRequests(prev =>
+        prev.map(req =>
+          req.id === requestId
+            ? { ...req, status, responseMessage, respondedAt: new Date().toISOString() }
+            : req
         )
-      }
+      )
     } catch (error) {
       console.error('Error updating booking request:', error)
       // In a real app, you'd want to show an error message to the user

@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { fetchUserData } from '@/lib/graphql-server'
+import { apiGet } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
-import { User } from '@/types'
+import type { User } from '@stay-with-friends/shared-types'
 import { ProfileClient } from '@/components/ProfileClient'
 import { SignInButton } from '@/components/SignInButton'
 
@@ -27,22 +27,29 @@ export default async function Profile() {
     )
   }
 
-  // Fetch user data server-side
-  const userData = await fetchUserData(session.user.email)
-  
+  // Fetch user data server-side via REST
+  let userData = null
+  try {
+    userData = await apiGet<User>(`/users/email/${encodeURIComponent(session.user.email)}`)
+  } catch {
+    // fallback to session if not found
+  }
+
   // Create user object for client components with stable values
   const user: User = userData ? {
     id: userData.id,
     email: userData.email || session.user.email || '',
     name: userData.name || session.user.name || '',
     image: userData.image || session.user.image || null,
-    createdAt: userData.createdAt || new Date().toISOString(),
+    created_at: userData.created_at || new Date().toISOString(),
+    email_verified: userData.email_verified || undefined,
   } : {
     id: session.user.id || '',
     email: session.user.email || '',
     name: session.user.name || '',
     image: session.user.image || null,
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    email_verified: undefined,
   }
 
   return (

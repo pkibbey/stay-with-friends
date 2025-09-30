@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Host } from "@/types"
+import { HostWithAvailabilities } from "@/types"
 import { Home, Users, Clock } from "lucide-react"
 
 interface HostAboutProps {
-  host: Host
+  host: HostWithAvailabilities
 }
 
 export function HostAbout({ host }: HostAboutProps) {
@@ -27,17 +27,17 @@ export function HostAbout({ host }: HostAboutProps) {
             </div>
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Up to {host.maxGuests} guests</span>
+              <span className="text-sm">Up to {host.max_guests} guests</span>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Check-in: {host.checkInTime || 'Flexible'}</span>
+              <span className="text-sm">Check-in: {host.check_in_time || 'Flexible'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">Check-out: {host.checkOutTime || 'Flexible'}</span>
+              <span className="text-sm">Check-out: {host.check_out_time || 'Flexible'}</span>
             </div>
           </div>
         </div>

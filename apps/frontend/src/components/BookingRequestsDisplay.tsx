@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BookingRequest, BookingRequestWithRelations } from '@/types'
+import { BookingRequestWithRelations } from '@/types'
 import { BookingRequestCard } from '@/components/BookingRequestCard'
 import Link from 'next/link'
+import { BookingRequest } from '@stay-with-friends/shared-types'
 
 interface BookingRequestsDisplayProps {
   myRequests: BookingRequestWithRelations[]

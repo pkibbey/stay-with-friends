@@ -53,7 +53,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
             width={400}
             height={300}
             src={result.photos[0]}
-            alt={result.name}
+            alt={result.name || 'Host photo'}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -117,7 +117,7 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
             </div>
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              {result.maxGuests} guests
+              {result.max_guests} guests
             </div>
             {result.bedrooms && (
               <div className="flex items-center">
@@ -134,11 +134,11 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
           </div>
           
           {/* Check-in/out times if available */}
-          {(result.checkInTime || result.checkOutTime) && (
+          {(result.check_in_time || result.check_out_time) && (
             <div className="text-xs text-gray-500">
-              {result.checkInTime && `Check-in: ${result.checkInTime}`}
-              {result.checkInTime && result.checkOutTime && ' • '}
-              {result.checkOutTime && `Check-out: ${result.checkOutTime}`}
+              {result.check_in_time && `Check-in: ${result.check_in_time}`}
+              {result.check_in_time && result.check_out_time && ' • '}
+              {result.check_out_time && `Check-out: ${result.check_out_time}`}
             </div>
           )}
         </div>

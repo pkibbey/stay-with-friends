@@ -25,18 +25,18 @@ export interface HostProfileData extends Omit<Host, 'id' | 'createdAt' | 'update
   user?: User;
 }
 
-// Extended type for component-specific data (includes nested inviter data from GraphQL)
+// Extended type for component-specific data
 export interface InvitationWithUser extends Invitation {
   inviterUser?: User
 }
 
-// Extended type for component-specific data (includes nested data from GraphQL)
+// Extended type for component-specific data
 export interface BookingRequestWithRelations extends BookingRequest {
   host?: Host
   requester?: User
 }
 
-// Extended types for component-specific data (includes nested user data from GraphQL)
+// Extended types for component-specific data
 export interface ConnectionWithUser extends Connection {
   connectedUser: User
 }

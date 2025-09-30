@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { graphqlRequest } from '@/lib/graphql'
+import { apiGet, apiPost } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,33 +35,13 @@ export default function AcceptInvitationPage() {
 
     const fetchInvitation = async () => {
       try {
-        const result = await graphqlRequest(`
-          query GetInvitation($token: String!) {
-            invitation(token: $token) {
-              id
-              inviterId
-              inviteeEmail
-              message
-              token
-              status
-              expiresAt
-              createdAt
-              inviter {
-                id
-                name
-                email
-              }
-            }
-          }
-        `, { token })
-
-        type InvitationResponse = { invitation?: InvitationWithUser }
-        const invitationData = ((result.data as unknown) as InvitationResponse).invitation
+        // REST endpoint: /invitations/token/:token
+        const invitationData = await apiGet<InvitationWithUser>(`/invitations/token/${token}`)
         if (invitationData) {
           setInvitation(invitationData)
           // Pre-fill name if available
-          if (invitationData.inviteeEmail) {
-            setUserData(prev => ({ ...prev, email: invitationData.inviteeEmail }))
+          if (invitationData.invitee_email) {
+            setUserData(prev => ({ ...prev, email: invitationData.invitee_email }))
           }
         } else {
           setError('Invalid invitation token')
@@ -83,22 +63,14 @@ export default function AcceptInvitationPage() {
 
     setAccepting(true)
     try {
-      const result = await graphqlRequest(`
-        mutation AcceptInvitation($token: String!, $userData: AcceptInvitationInput!) {
-          acceptInvitation(token: $token, userData: $userData) {
-            id
-            email
-            name
-            emailVerified
-            createdAt
-          }
-        }
-      `, { token, userData: { name: userData.name || undefined, image: userData.image || undefined } })
-
-      type AcceptInvitationResponse = { acceptInvitation?: { id: string; createdAt?: string } }
-      const acceptedUser = ((result.data as unknown) as AcceptInvitationResponse).acceptInvitation
-      if (acceptedUser) {
-        const userCreatedAt = new Date(acceptedUser.createdAt || '')
+      // REST endpoint: POST /invitations/accept (assumed, or use /invitations/:id/accept if available)
+      // We'll use /invitations/:id/status with { status: 'accepted', userData }
+      const res = await apiPost<{ id: string; created_at?: string }>(
+        `/invitations/${invitation.id}/status`,
+        { status: 'accepted', userData: { name: userData.name || undefined, image: userData.image || undefined } }
+      )
+      if (res && res.created_at) {
+        const userCreatedAt = new Date(res.created_at)
         const now = new Date()
         const wasExisting = (now.getTime() - userCreatedAt.getTime()) > 10000
 
@@ -216,7 +188,7 @@ export default function AcceptInvitationPage() {
             )}
 
             <Badge variant="outline" className="text-sm">
-              Invitation for: {invitation.inviteeEmail}
+              Invitation for: {invitation.invitee_email}
             </Badge>
           </div>
 
@@ -237,7 +209,7 @@ export default function AcceptInvitationPage() {
                   <Input
                     id="email"
                     type="email"
-                    value={invitation.inviteeEmail}
+                    value={invitation.invitee_email}
                     disabled
                     className="bg-gray-50"
                   />

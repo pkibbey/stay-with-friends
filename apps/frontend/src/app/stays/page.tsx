@@ -3,43 +3,15 @@ import { authOptions } from '@/lib/auth'
 import { PageLayout } from '@/components/PageLayout'
 import { BookingRequestWithRelations } from '@/types'
 import { BookingRequestsManager } from '@/components/BookingRequestsManager'
-import { serverAuthenticatedGraphQLRequest } from '@/lib/graphql-server'
+import { apiGet } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Inbox } from 'lucide-react'
 
+
 async function getMyBookingRequests(userId: string): Promise<BookingRequestWithRelations[]> {
   try {
-    const result = await serverAuthenticatedGraphQLRequest<{
-      bookingRequestsByRequester?: BookingRequestWithRelations[]
-    }>(`
-      query GetMyBookingRequests($requesterId: ID!) {
-        bookingRequestsByRequester(requesterId: $requesterId) {
-          id
-          hostId
-          requesterId
-          startDate
-          endDate
-          guests
-          message
-          status
-          responseMessage
-          respondedAt
-          createdAt
-          host {
-            id
-            name
-            location
-          }
-          requester {
-            id
-            email
-            name
-          }
-        }
-      }
-    `, { requesterId: userId })
-
-    return result.data?.bookingRequestsByRequester || []
+    // REST endpoint: /booking-requests/requester/:requesterId
+    return await apiGet<BookingRequestWithRelations[]>(`/booking-requests/requester/${userId}`)
   } catch (error) {
     console.error('Error fetching my booking requests:', error)
     return []
@@ -48,38 +20,8 @@ async function getMyBookingRequests(userId: string): Promise<BookingRequestWithR
 
 async function getIncomingBookingRequests(userId: string): Promise<BookingRequestWithRelations[]> {
   try {
-    const result = await serverAuthenticatedGraphQLRequest<{
-      bookingRequestsByHostUser?: BookingRequestWithRelations[]
-    }>(`
-      query GetIncomingBookingRequests($userId: ID!) {
-        bookingRequestsByHostUser(userId: $userId) {
-          id
-          hostId
-          requesterId
-          startDate
-          endDate
-          guests
-          message
-          status
-          responseMessage
-          respondedAt
-          createdAt
-          host {
-            id
-            name
-            location
-          }
-          requester {
-            id
-            email
-            name
-            image
-          }
-        }
-      }
-    `, { userId })
-
-    return result.data?.bookingRequestsByHostUser || []
+    // REST endpoint: /booking-requests/host/:hostId (hostId is userId for host user)
+    return await apiGet<BookingRequestWithRelations[]>(`/booking-requests/host/${userId}`)
   } catch (error) {
     console.error('Error fetching incoming booking requests:', error)
     return []

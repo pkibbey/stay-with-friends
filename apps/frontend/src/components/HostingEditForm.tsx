@@ -5,16 +5,16 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useSession } from 'next-auth/react'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiPost, apiPatch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Navigation, Upload, Trash2 } from 'lucide-react'
-import { User } from '@/types'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { User } from '@stay-with-friends/shared-types'
 
 // Zod schema for the add-hosting form
 const AddHostingSchema = z.object({
@@ -185,39 +185,38 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
       const amenities = ((values.amenities as string) || '').split(',').map((a: string) => a.trim()).filter((a: string) => a)
 
       if (isEditing && initialData) {
-        // Update existing host
-        const mutation = `
-          mutation UpdateHost($id: ID!, $input: UpdateHostInput!) {
-            updateHost(id: $id, input: $input) {
-              id
-              name
-              location
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              maxGuests
-              bedrooms
-              bathrooms
-              photos
-              createdAt
-              updatedAt
-              userId
-            }
+          // Update existing host via REST
+          try {
+            await apiPatch(`/hosts/${initialData.id}`, {
+              name: values.name,
+              location: values.location || undefined,
+              description: values.description || undefined,
+              address: values.address || undefined,
+              city: values.city || undefined,
+              state: values.state || undefined,
+              zipCode: values.zipCode || undefined,
+              country: values.country || undefined,
+              latitude,
+              longitude,
+              amenities,
+              houseRules: values.houseRules || undefined,
+              checkInTime: values.checkInTime || undefined,
+              checkOutTime: values.checkOutTime || undefined,
+              maxGuests: values.maxGuests,
+              bedrooms: values.bedrooms,
+              bathrooms: values.bathrooms,
+              photos: photos.length > 0 ? photos : undefined
+            })
+            onSuccess()
+          } catch (err) {
+            console.error('Failed to update host:', err)
+            toast.error('Failed to update hosting. Please check your inputs and try again.')
           }
-        `
-
-        const variables = {
-          id: initialData.id,
-          input: {
+      } else {
+        // Create new host via REST
+        try {
+          await apiPost('/hosts', {
+            userId: userId,
             name: values.name,
             location: values.location || undefined,
             description: values.description || undefined,
@@ -235,117 +234,11 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
             maxGuests: values.maxGuests,
             bedrooms: values.bedrooms,
             bathrooms: values.bathrooms,
-            photos: photos.length > 0 ? photos : undefined
-          }
-        }
-
-        const result = await authenticatedGraphQLRequest(mutation, variables)
-
-        if (result.data?.updateHost) {
+            photos: photos.length > 0 ? photos : []
+          })
           onSuccess()
-        } else {
-          console.error('Failed to update host:', result)
-          toast.error('Failed to update hosting. Please check your inputs and try again.')
-        }
-      } else {
-        // Create new host
-        const mutation = `
-          mutation CreateHost(
-            $userId: ID!
-            $name: String!
-            $location: String
-            $description: String
-            $address: String
-            $city: String
-            $state: String
-            $zipCode: String
-            $country: String
-            $latitude: Float
-            $longitude: Float
-            $amenities: [String!]
-            $houseRules: String
-            $checkInTime: String
-            $checkOutTime: String
-            $maxGuests: Int
-            $bedrooms: Int
-            $bathrooms: Int
-            $photos: [String!]
-          ) {
-            createHost(
-              userId: $userId
-              name: $name
-              location: $location
-              description: $description
-              address: $address
-              city: $city
-              state: $state
-              zipCode: $zipCode
-              country: $country
-              latitude: $latitude
-              longitude: $longitude
-              amenities: $amenities
-              houseRules: $houseRules
-              checkInTime: $checkInTime
-              checkOutTime: $checkOutTime
-              maxGuests: $maxGuests
-              bedrooms: $bedrooms
-              bathrooms: $bathrooms
-              photos: $photos
-            ) {
-              id
-              name
-              location
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              maxGuests
-              bedrooms
-              bathrooms
-              photos
-              createdAt
-              updatedAt
-              userId
-            }
-          }
-        `
-
-        const variables = {
-          userId: userId,
-          name: values.name,
-          location: values.location || undefined,
-          description: values.description || undefined,
-          address: values.address || undefined,
-          city: values.city || undefined,
-          state: values.state || undefined,
-          zipCode: values.zipCode || undefined,
-          country: values.country || undefined,
-          latitude,
-          longitude,
-          amenities,
-          houseRules: values.houseRules || undefined,
-          checkInTime: values.checkInTime || undefined,
-          checkOutTime: values.checkOutTime || undefined,
-          maxGuests: values.maxGuests,
-          bedrooms: values.bedrooms,
-          bathrooms: values.bathrooms,
-          photos: photos.length > 0 ? photos : []
-        }
-
-        const result = await authenticatedGraphQLRequest(mutation, variables)
-
-        if (result.data?.createHost) {
-          onSuccess()
-        } else {
-          console.error('Failed to create host:', result)
+        } catch (err) {
+          console.error('Failed to create host:', err)
           toast.error('Failed to create hosting. Please check your inputs and try again.')
         }
       }

@@ -1,9 +1,9 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { HostWithAvailabilities } from "@/types"
 import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
-import { Host } from "@/types"
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("./MapComponent").then(mod => ({ default: mod.MapComponent })), {
@@ -19,11 +19,11 @@ const MapComponent = dynamic(() => import("./MapComponent").then(mod => ({ defau
 })
 
 interface HostLocationProps {
-  host: Host
+  host: HostWithAvailabilities
 }
 
 export function HostLocation({ host }: HostLocationProps) {
-  const fullAddress = [host.address, host.city, host.state, host.zipCode, host.country]
+  const fullAddress = [host.address, host.city, host.state, host.zip_code, host.country]
     .filter(Boolean)
     .join(', ')
 
@@ -45,7 +45,7 @@ export function HostLocation({ host }: HostLocationProps) {
           address={host.address}
           city={host.city}
           state={host.state}
-          zipCode={host.zipCode}
+          zip_code={host.zip_code}
           country={host.country}
           location={host.location}
           className="h-64"

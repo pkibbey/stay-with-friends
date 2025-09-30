@@ -8,7 +8,7 @@ import { UserPlus, Clock, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiPost } from '@/lib/api'
 import { Banner, BannerTitle, BannerClose } from '@/components/ui/banner'
 
 export default function Invite() {
@@ -23,31 +23,23 @@ export default function Invite() {
     const userId = (session?.user as any)?.id
     if (!userId || !email) return
     try {
-      const result = await authenticatedGraphQLRequest(`
-        mutation CreateInvitation($inviterId: ID!, $inviteeEmail: String!, $message: String) {
-          createInvitation(inviterId: $inviterId, inviteeEmail: $inviteeEmail, message: $message) {
-            id
-            inviteeEmail
-            message
-            status
-            createdAt
-            token
-          }
-        }
-      `, { inviterId: userId, inviteeEmail: email, message: message || undefined })
-
-      type CreateInvitationResponse = { createInvitation?: { id: string; status?: string; token?: string } }
-      const invitation = ((result.data as unknown) as CreateInvitationResponse).createInvitation
+      // REST endpoint: POST /invitations
+  const invitation = await apiPost<{ id: string; status?: string; token?: string }>('/invitations', {
+        inviter_id: userId,
+        invitee_email: email,
+        message: message || undefined,
+      })
       if (invitation) {
         if (invitation.status === 'connection-sent') {
-            toast.success('Connection request sent! The user is already registered, so a connection request has been sent instead.')
-        } else {
+          toast.success('Connection request sent! The user is already registered, so a connection request has been sent instead.')
+        } else if (invitation.token) {
           const invitationUrl = `http://localhost:3000/invite/${invitation.token}`
           setLastInvitationUrl(invitationUrl)
+        } else {
+          toast.success('Invitation sent!')
         }
       } else {
-  console.error('GraphQL error:', ((result as unknown) as { errors?: { message: string }[] }).errors)
-  toast.error('Failed to send invitation. ' + (((result as unknown) as { errors?: { message: string }[] }).errors?.[0]?.message || 'Unknown error'))
+        toast.error('Failed to send invitation.')
       }
     } catch (error) {
       console.error('Error creating invitation:', error)

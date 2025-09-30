@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiPost } from '@/lib/api'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, Star } from "lucide-react"
 import { formatDateForUrl } from '@/lib/date-utils'
-import type { Host } from '@/types'
+import { Host } from '@stay-with-friends/shared-types'
 
 interface BookingFormProps {
   host: Host
@@ -42,35 +43,18 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
 
     setIsSubmitting(true)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `
-            mutation CreateBookingRequest($hostId: ID!, $requesterId: ID!, $startDate: String!, $endDate: String!, $guests: Int!, $message: String) {
-              createBookingRequest(hostId: $hostId, requesterId: $requesterId, startDate: $startDate, endDate: $endDate, guests: $guests, message: $message) {
-                id
-                status
-              }
-            }
-          `,
-          variables: {
-            hostId: host.id,
-            requesterId: (session?.user as { id?: string })?.id,
-            startDate: formatDateForUrl(startDate),
-            endDate: formatDateForUrl(endDate),
-            guests: bookingForm.guests,
-            message: bookingForm.message
-          },
-        }),
+      // REST endpoint: POST /booking-requests
+      await apiPost('/booking-requests', {
+        id: crypto.randomUUID(),
+        host_id: host.id,
+        requester_id: (session?.user as { id?: string })?.id,
+        start_date: formatDateForUrl(startDate),
+        end_date: formatDateForUrl(endDate),
+        guests: bookingForm.guests,
+        message: bookingForm.message,
+        status: 'pending'
       })
-
-      const data = await response.json()
-      if (data.data?.createBookingRequest) {
-        setBookingSubmitted(true)
-      }
+      setBookingSubmitted(true)
     } catch (error) {
       console.error('Failed to submit booking request:', error)
     } finally {
@@ -117,7 +101,7 @@ export function BookingForm({ host, maxNights, selectedDate }: BookingFormProps)
                 id="guests"
                 type="number"
                 min="1"
-                max={host.maxGuests || 1}
+                max={host.max_guests || 1}
                 value={bookingForm.guests}
                 onChange={(e) => setBookingForm(prev => ({ ...prev, guests: parseInt(e.target.value) }))}
                 required

@@ -5,11 +5,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Clock, CheckCircle, UserPlus, X } from 'lucide-react'
 import { Status, StatusIndicator, StatusLabel } from '@/components/ui/status'
-import { Invitation } from '@/types'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiGet, apiDelete } from '@/lib/api'
 import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
+import { Invitation } from '@stay-with-friends/shared-types'
 
 export default function SentInvitations() {
   const { data: session } = useSession()
@@ -21,21 +21,9 @@ export default function SentInvitations() {
     const inviterId = (session?.user as any)?.id
     if (!inviterId) return
     try {
-      const result = await authenticatedGraphQLRequest(`
-        query GetInvitations($inviterId: ID!) {
-          invitations(inviterId: $inviterId) {
-            id
-            inviteeEmail
-            message
-            status
-            createdAt
-          }
-        }
-      `, { inviterId })
-
-      type InvitationsResponse = { invitations?: Invitation[] }
-      const invitationsData = ((result.data as unknown) as InvitationsResponse).invitations
-      setInvitations(invitationsData || [])
+      // REST endpoint: /invitations?inviter_id=xxx
+      const data = await apiGet<Invitation[]>(`/invitations?inviter_id=${inviterId}`)
+      setInvitations(data || [])
     } catch (error) {
       console.error('Error fetching invitations:', error)
     }
@@ -49,16 +37,11 @@ export default function SentInvitations() {
     if (!confirm('Are you sure you want to delete this invitation? This action cannot be undone.')) {
       return
     }
-    
     setDeletingIds(prev => new Set(prev).add(invitationId))
     try {
-      const result = await authenticatedGraphQLRequest(`
-        mutation DeleteInvitation($invitationId: ID!) {
-          deleteInvitation(invitationId: $invitationId)
-        }
-      `, { invitationId })
-
-      if ((result.data as { deleteInvitation?: boolean })?.deleteInvitation) {
+      // REST endpoint: DELETE /invitations/:id
+      const res = await apiDelete(`/invitations/${invitationId}`)
+      if (res) {
         fetchInvitations()
       } else {
         toast.error('Failed to delete invitation')
@@ -101,11 +84,11 @@ export default function SentInvitations() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>{invitation.inviteeEmail.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{invitation.invitee_email?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{invitation.inviteeEmail}</p>
-                      <p className="text-xs text-muted-foreground">Invited on {invitation.createdAt ? new Date(invitation.createdAt).toLocaleDateString() : 'Unknown date'}</p>
+                      <p className="font-medium text-sm">{invitation.invitee_email}</p>
+                      <p className="text-xs text-muted-foreground">Invited on {invitation.created_at ? new Date(invitation.created_at).toLocaleDateString() : 'Unknown date'}</p>
                       <Status status={invitation.status as 'accepted' | 'pending' | 'blocked' | 'cancelled' | 'connection-sent'} className="mt-1">
                         <StatusIndicator />
                         <StatusLabel>
@@ -131,8 +114,8 @@ export default function SentInvitations() {
                     {(invitation.status === 'pending' || invitation.status === 'cancelled') && (
                       <Button
                         variant="outline"
-                        onClick={() => handleDeleteInvitation(invitation.id)}
-                        disabled={deletingIds.has(invitation.id)}
+                        onClick={() => invitation.id && handleDeleteInvitation(invitation.id)}
+                        disabled={typeof invitation.id === 'undefined' || deletingIds.has(invitation.id)}
                         size="sm"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >

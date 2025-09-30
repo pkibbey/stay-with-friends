@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Edit, MapPin, Users, Bed, Bath, Clock, Trash2, Plus, Image as ImageIcon } from 'lucide-react'
 import { HostWithAvailabilities } from '@/types'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiDelete } from '@/lib/api'
 import Link from 'next/link'
 
 interface HostingDisplayProps {
@@ -24,22 +24,14 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
   const handleDeleteHost = async (hostId: string) => {
     setDeleting(true)
     try {
-      const mutation = `
-            mutation DeleteHost($id: ID!) {
-              deleteHost(id: $id)
-            }
-          `
-
-      type DeleteHostResponse = { deleteHost?: boolean }
-
-      const result = await authenticatedGraphQLRequest<DeleteHostResponse>(mutation, { id: hostId })
-      const ok = (result.data as DeleteHostResponse | undefined)?.deleteHost
-      if (ok) {
+      const res = await apiDelete(`/hosts/${hostId}`) as Response
+      if (res.ok) {
         onRefresh()
         setDeleteConfirmId(null)
       } else {
-        console.error('Failed to delete host:', result)
-        toast.error('Failed to delete host')
+        const errorMsg = (await res.json())?.error || 'Failed to delete host'
+        console.error('Failed to delete host:', errorMsg)
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error('Error deleting host:', error)
@@ -144,7 +136,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => confirmDelete(hosting.id)}
+                        onClick={() => hosting.id && confirmDelete(hosting.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
@@ -178,13 +170,13 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                   <p className="text-gray-600 mb-4">{hosting.description}</p>
 
                   {/* Address Information */}
-                  {(hosting.address || hosting.city || hosting.state || hosting.zipCode || hosting.country) && (
+                  {(hosting.address || hosting.city || hosting.state || hosting.zip_code || hosting.country) && (
                     <div className="mb-4">
                       <h4 className="font-semibold mb-2">Address</h4>
                       <div className="text-sm text-gray-600 space-y-1">
                         {hosting.address && <p>{hosting.address}</p>}
                         <p>
-                          {[hosting.city, hosting.state, hosting.zipCode].filter(Boolean).join(', ')}
+                          {[hosting.city, hosting.state, hosting.zip_code].filter(Boolean).join(', ')}
                           {hosting.country && `, ${hosting.country}`}
                         </p>
                         {(hosting.latitude && hosting.longitude) && (
@@ -199,7 +191,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Users className="w-4 h-4" />
-                      {hosting.maxGuests} guests
+                      {hosting.max_guests} guests
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Bed className="w-4 h-4" />
@@ -211,7 +203,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="w-4 h-4" />
-                      {hosting.checkInTime} - {hosting.checkOutTime}
+                      {hosting.check_in_time} - {hosting.check_out_time}
                     </div>
                   </div>
 
@@ -228,10 +220,10 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                     </div>
                   )}
 
-                  {hosting.houseRules && (
+                  {hosting.house_rules && (
                     <div className="mb-4">
                       <h4 className="font-semibold mb-2">House Rules</h4>
-                      <p className="text-sm text-gray-600">{hosting.houseRules}</p>
+                      <p className="text-sm text-gray-600">{hosting.house_rules}</p>
                     </div>
                   )}
 
@@ -243,7 +235,7 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                           <div key={availability.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex-1">
                               <div className="font-medium text-sm">
-                                {new Date(availability.startDate).toLocaleDateString()} - {new Date(availability.endDate).toLocaleDateString()}
+                                {new Date(availability.start_date || '').toLocaleDateString()} - {new Date(availability.end_date || '').toLocaleDateString()}
                               </div>
                               <div className="text-xs text-gray-600 capitalize">
                                 Status: {availability.status}

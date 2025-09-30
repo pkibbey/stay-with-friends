@@ -6,7 +6,6 @@ import { z } from 'zod';
  * - Field types and validation
  * - Database table mapping
  * - Frontend/backend transformations
- * - GraphQL type generation
  */
 interface BaseFieldMeta {
     type: 'string' | 'integer' | 'real' | 'datetime' | 'json';
@@ -560,41 +559,149 @@ export declare const ENTITIES: {
     };
 };
 export declare const UserSchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    email: z.ZodString | z.ZodOptional<z.ZodString>;
+    name: z.ZodString | z.ZodOptional<z.ZodString>;
+    email_verified: z.ZodString | z.ZodOptional<z.ZodString>;
+    image: z.ZodString | z.ZodOptional<z.ZodString>;
+    created_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const HostSchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString> | z.ZodNumber | z.ZodOptional<z.ZodNumber> | z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    name: z.ZodString | z.ZodOptional<z.ZodString>;
+    location: z.ZodString | z.ZodOptional<z.ZodString>;
+    description: z.ZodString | z.ZodOptional<z.ZodString>;
+    address: z.ZodString | z.ZodOptional<z.ZodString>;
+    city: z.ZodString | z.ZodOptional<z.ZodString>;
+    state: z.ZodString | z.ZodOptional<z.ZodString>;
+    zip_code: z.ZodString | z.ZodOptional<z.ZodString>;
+    country: z.ZodString | z.ZodOptional<z.ZodString>;
+    latitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    longitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    amenities: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+    house_rules: z.ZodString | z.ZodOptional<z.ZodString>;
+    check_in_time: z.ZodString | z.ZodOptional<z.ZodString>;
+    check_out_time: z.ZodString | z.ZodOptional<z.ZodString>;
+    max_guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    bedrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    bathrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    photos: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+    created_at: z.ZodString | z.ZodOptional<z.ZodString>;
+    updated_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const AvailabilitySchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    host_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    start_date: z.ZodString | z.ZodOptional<z.ZodString>;
+    end_date: z.ZodString | z.ZodOptional<z.ZodString>;
+    status: z.ZodString | z.ZodOptional<z.ZodString>;
+    notes: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const BookingRequestSchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString> | z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    host_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    requester_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    start_date: z.ZodString | z.ZodOptional<z.ZodString>;
+    end_date: z.ZodString | z.ZodOptional<z.ZodString>;
+    guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+    message: z.ZodString | z.ZodOptional<z.ZodString>;
+    status: z.ZodString | z.ZodOptional<z.ZodString>;
+    response_message: z.ZodString | z.ZodOptional<z.ZodString>;
+    responded_at: z.ZodString | z.ZodOptional<z.ZodString>;
+    created_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const ConnectionSchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    connected_user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    relationship: z.ZodString | z.ZodOptional<z.ZodString>;
+    status: z.ZodString | z.ZodOptional<z.ZodString>;
+    created_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const InvitationSchema: z.ZodObject<{
-    [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+    id: z.ZodString | z.ZodOptional<z.ZodString>;
+    inviter_id: z.ZodString | z.ZodOptional<z.ZodString>;
+    invitee_email: z.ZodString | z.ZodOptional<z.ZodString>;
+    message: z.ZodString | z.ZodOptional<z.ZodString>;
+    token: z.ZodString | z.ZodOptional<z.ZodString>;
+    status: z.ZodString | z.ZodOptional<z.ZodString>;
+    expires_at: z.ZodString | z.ZodOptional<z.ZodString>;
+    accepted_at: z.ZodString | z.ZodOptional<z.ZodString>;
+    created_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const SCHEMAS: {
     readonly User: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        email: z.ZodString | z.ZodOptional<z.ZodString>;
+        name: z.ZodString | z.ZodOptional<z.ZodString>;
+        email_verified: z.ZodString | z.ZodOptional<z.ZodString>;
+        image: z.ZodString | z.ZodOptional<z.ZodString>;
+        created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
     readonly Host: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString> | z.ZodNumber | z.ZodOptional<z.ZodNumber> | z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        name: z.ZodString | z.ZodOptional<z.ZodString>;
+        location: z.ZodString | z.ZodOptional<z.ZodString>;
+        description: z.ZodString | z.ZodOptional<z.ZodString>;
+        address: z.ZodString | z.ZodOptional<z.ZodString>;
+        city: z.ZodString | z.ZodOptional<z.ZodString>;
+        state: z.ZodString | z.ZodOptional<z.ZodString>;
+        zip_code: z.ZodString | z.ZodOptional<z.ZodString>;
+        country: z.ZodString | z.ZodOptional<z.ZodString>;
+        latitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        longitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        amenities: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+        house_rules: z.ZodString | z.ZodOptional<z.ZodString>;
+        check_in_time: z.ZodString | z.ZodOptional<z.ZodString>;
+        check_out_time: z.ZodString | z.ZodOptional<z.ZodString>;
+        max_guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        bedrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        bathrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        photos: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+        created_at: z.ZodString | z.ZodOptional<z.ZodString>;
+        updated_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
     readonly Availability: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        host_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        start_date: z.ZodString | z.ZodOptional<z.ZodString>;
+        end_date: z.ZodString | z.ZodOptional<z.ZodString>;
+        status: z.ZodString | z.ZodOptional<z.ZodString>;
+        notes: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
     readonly BookingRequest: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString> | z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        host_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        requester_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        start_date: z.ZodString | z.ZodOptional<z.ZodString>;
+        end_date: z.ZodString | z.ZodOptional<z.ZodString>;
+        guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
+        message: z.ZodString | z.ZodOptional<z.ZodString>;
+        status: z.ZodString | z.ZodOptional<z.ZodString>;
+        response_message: z.ZodString | z.ZodOptional<z.ZodString>;
+        responded_at: z.ZodString | z.ZodOptional<z.ZodString>;
+        created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
     readonly Connection: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        connected_user_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        relationship: z.ZodString | z.ZodOptional<z.ZodString>;
+        status: z.ZodString | z.ZodOptional<z.ZodString>;
+        created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
     readonly Invitation: z.ZodObject<{
-        [x: string]: z.ZodString | z.ZodOptional<z.ZodString>;
+        id: z.ZodString | z.ZodOptional<z.ZodString>;
+        inviter_id: z.ZodString | z.ZodOptional<z.ZodString>;
+        invitee_email: z.ZodString | z.ZodOptional<z.ZodString>;
+        message: z.ZodString | z.ZodOptional<z.ZodString>;
+        token: z.ZodString | z.ZodOptional<z.ZodString>;
+        status: z.ZodString | z.ZodOptional<z.ZodString>;
+        expires_at: z.ZodString | z.ZodOptional<z.ZodString>;
+        accepted_at: z.ZodString | z.ZodOptional<z.ZodString>;
+        created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
 };
 export type User = z.infer<typeof UserSchema>;

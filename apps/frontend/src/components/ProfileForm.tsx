@@ -2,12 +2,12 @@
 
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiPatch } from '@/lib/api'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { User } from '@/types'
+import type { User } from '@stay-with-friends/shared-types'
 
 interface ProfileFormProps {
   user: User
@@ -33,38 +33,19 @@ export function ProfileForm({ user, onUserUpdate, sessionData }: ProfileFormProp
     if (!user) return
     setLoading(true)
     try {
-      const mutation = `
-        mutation UpdateUser($id: ID!, $name: String, $image: String) {
-          updateUser(id: $id, name: $name, image: $image) {
-            id
-            name
-            image
-          }
+      // Update user via REST PATCH
+      await apiPatch(`/users/${user.id}`, { name })
+      const updatedUser = { ...user, name }
+      onUserUpdate(updatedUser)
+      setName(name || '')
+      // Update the session to reflect the new name
+      await update({
+        user: {
+          ...sessionData.user,
+          name
         }
-      `
-
-      const result = await authenticatedGraphQLRequest<{ updateUser?: { id: string; name?: string; image?: string } }>(mutation, { id: user.id, name: name || undefined, image: user.image || undefined })
-
-      const updated = (result.data as { updateUser?: { id: string; name?: string; image?: string } } | undefined)?.updateUser
-      if (updated) {
-        const updatedUser = { ...user, name: updated.name, image: updated.image }
-        onUserUpdate(updatedUser)
-        setName(updated.name || '')
-        
-        // Update the session to reflect the new name and image
-        await update({
-          user: {
-            ...sessionData.user,
-            name: updated.name,
-            image: updated.image
-          }
-        })
-        
-        toast.success('Profile updated')
-      } else {
-        console.error('Failed to update profile:', result)
-        toast.error('Failed to update profile')
-      }
+      })
+      toast.success('Profile updated')
     } catch (error) {
       console.error('Error updating profile:', error)
       toast.error('Failed to update profile')

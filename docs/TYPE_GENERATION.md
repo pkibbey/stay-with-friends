@@ -4,13 +4,11 @@ This project has an **enhanced automated type generation system** that creates c
 
 ## How it works
 
-1. **Schema Definition**: All entity schemas are defined in `schema/entities.ts` using Zod
-2. **Enhanced Generation**: Run `npm run generate` from the root to generate types with validation
+1. **Schema Definition**: All entity schemas are defined in `packages/shared-types/src/entities.ts` using Zod
+2. **Enhanced Generation**: Types and validation are imported directly from the shared package—no GraphQL or Apollo code is generated or required.
 3. **Generated Files**:
-   - Backend: `apps/backend/src/generated/types.ts` (snake_case fields + Zod schemas)
-   - Frontend: `apps/frontend/src/generated/types.ts` (camelCase fields + validation utilities)
-   - GraphQL: `apps/backend/src/generated/schema.graphql` (auto-generated)
-   - SQL: `apps/backend/src/generated/schema.sql` (auto-generated)
+  - No generated GraphQL or Apollo files. All types and validation are shared via the package.
+
 
 ## Key Enhancements
 
@@ -25,7 +23,7 @@ This project has an **enhanced automated type generation system** that creates c
 ### In Backend Code (with Validation)
 
 ```typescript
-import { Host, HostSchema, validate } from './generated/types';
+import { Host, HostSchema, validate } from '@stay-with-friends/shared-types';
 
 // Validate input data at runtime
 const createHost = async (input: unknown) => {
@@ -48,33 +46,31 @@ if (safeResult.success) {
 ### In Frontend Code (with Safe Transformations)
 
 ```typescript
-import { Host, safeTransformHost, HostSchema } from '../generated/types';
+import { Host, safeParse, HostSchema } from '@stay-with-friends/shared-types';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 // Automatic form validation
 const form = useForm<Host>({
-  resolver: zodResolver(HostSchema) // ✅ Auto-generated schema!
+  resolver: zodResolver(HostSchema) // ✅ Shared schema usage!
 });
 
 // Safe transformation from API data
 const handleApiResponse = async () => {
   const backendHost = await fetch('/api/hosts/1').then(r => r.json());
   
-  const transformResult = safeTransformHost(backendHost);
-  if (transformResult.success) {
-    setHost(transformResult.data); // ✅ Properly typed & validated
+  const parseResult = safeParse.host(backendHost);
+  if (parseResult.success) {
+    setHost(parseResult.data); // ✅ Properly typed & validated
   } else {
-    setError(transformResult.error); // ✅ Clear error message
+    setError(parseResult.error); // ✅ Clear error message
   }
 };
 ```
 
 ### Adding New Fields
 
-1. Update `schema/entities.ts`:
-2. Run `npm run generate`
-
-3. Types are automatically updated in both backend and frontend!
+1. Update `packages/shared-types/src/entities.ts`:
+2. Types are automatically updated in both backend and frontend!
 
 ### Advanced Schema Configuration
 
@@ -108,6 +104,6 @@ The enhanced types are **backward compatible** with your existing code:
 1. ✅ **Immediate**: All existing imports keep working
 2. 🚀 **Gradual Enhancement**: Add validation where needed (`validate.host(data)`)
 3. 🎯 **Form Integration**: Use `zodResolver(HostSchema)` for form validation
-4. 🛡️ **API Safety**: Use `safeTransformHost(apiData)` for safe transformations
+4. 🛡️ **API Safety**: Use `safeParse.host(apiData)` for safe transformations
 
 No breaking changes - just additional superpowers when you need them!

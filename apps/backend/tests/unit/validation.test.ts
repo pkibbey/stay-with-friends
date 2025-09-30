@@ -1,15 +1,7 @@
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 
-  createTestUser, 
-  createTestHost,
-  createTestAvailability,
-  createTestBookingRequest,
-  createTestConnection,
-  createTestInvitation
 } from '../setup';
-
-// Mock the validation functions from schema.ts
 const validateEmail = (email: string): void => {
   if (!email || typeof email !== 'string') {
     throw new Error('Email is required');

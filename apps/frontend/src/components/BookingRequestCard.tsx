@@ -51,6 +51,8 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
   }
 
   const handleAction = async (action: string) => {
+    if (!request.id) return;
+
     if (action === 'approve' || action === 'decline') {
       if (showResponseForm) {
         setPendingAction(action)
@@ -98,11 +100,11 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
           </div>
 
           <div className="text-right text-sm text-gray-500">
-            {request.createdAt && (
-              <div>Requested {format(new Date(request.createdAt), 'MMM d, yyyy')}</div>
+            {request.created_at && (
+              <div>Requested {format(new Date(request.created_at), 'MMM d, yyyy')}</div>
             )}
-            {request.respondedAt && (
-              <div>Responded {format(new Date(request.respondedAt), 'MMM d, yyyy')}</div>
+            {request.responded_at && (
+              <div>Responded {format(new Date(request.responded_at), 'MMM d, yyyy')}</div>
             )}
           </div>
         </div>
@@ -111,8 +113,8 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <div>
-              <div className="font-medium">{formatDate(request.startDate)} - {formatDate(request.endDate)}</div>
-              <div className="text-sm text-gray-500">{calculateNights(request.startDate, request.endDate)} nights</div>
+              <div className="font-medium">{formatDate(request.start_date || '')} - {formatDate(request.end_date || '')}</div>
+              <div className="text-sm text-gray-500">{calculateNights(request.start_date || '', request.end_date || '')} nights</div>
             </div>
           </div>
 
@@ -136,7 +138,7 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
           </div>
         )}
 
-        {request.responseMessage && (
+        {request.response_message && (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <MessageSquare className="w-4 h-4 text-gray-500" />
@@ -145,7 +147,7 @@ export function BookingRequestCard({ request, type, onStatusUpdate }: BookingReq
               </span>
             </div>
             <div className="bg-blue-50 p-3 rounded-lg text-sm">
-              {request.responseMessage}
+              {request.response_message}
             </div>
           </div>
         )}

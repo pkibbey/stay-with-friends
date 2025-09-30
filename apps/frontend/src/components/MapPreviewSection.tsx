@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { MapComponent } from './MapComponent'
 import { MapPin, ArrowRight } from 'lucide-react'
 import { HostProfileData } from '@/types'
-import { graphqlRequest } from '@/lib/graphql'
+import { apiGet } from '@/lib/api'
 
 export function MapPreviewSection() {
   const [hosts, setHosts] = useState<HostProfileData[]>([])
@@ -18,31 +18,8 @@ export function MapPreviewSection() {
     const fetchHostsForMap = async () => {
       try {
         setLoading(true)
-        const query = `
-          query GetHostsForMap {
-            hosts {
-              id
-              name
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              maxGuests
-              user {
-                id
-                name
-              }
-            }
-          }
-        `
-
-        const result = await graphqlRequest(query)
-        const fetchedHosts = (result.data as { hosts: HostProfileData[] })?.hosts || []
-        setHosts(fetchedHosts)
+        const hosts: HostProfileData[] = await apiGet('/hosts')
+        setHosts(hosts)
       } catch (err) {
         console.error('Error fetching hosts for map:', err)
         setError(err instanceof Error ? err.message : 'Failed to load map')
@@ -50,7 +27,6 @@ export function MapPreviewSection() {
         setLoading(false)
       }
     }
-
     fetchHostsForMap()
   }, [])
 

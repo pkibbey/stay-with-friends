@@ -2,10 +2,10 @@
 
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiPatch } from '@/lib/api'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { User } from '@/types'
+import type { User } from '@stay-with-friends/shared-types'
 import Image from 'next/image'
 
 interface ProfileAvatarProps {
@@ -47,50 +47,30 @@ export function ProfileAvatar({ user, onUserUpdate, sessionData }: ProfileAvatar
       const formData = new FormData()
       formData.append('avatar', file)
 
+      // Upload avatar to backend (assume /api/upload-avatar returns { url })
       const headers: Record<string, string> = {}
       if (sessionData?.apiToken) {
         headers['Authorization'] = `Bearer ${sessionData.apiToken}`
       }
-
       const response = await fetch('http://localhost:4000/api/upload-avatar', {
         method: 'POST',
         body: formData,
         headers,
       })
-
       const data = await response.json()
       if (data?.url) {
-        // Update user in backend with new image URL
-        const mutation = `
-          mutation UpdateUser($id: ID!, $name: String, $image: String) {
-            updateUser(id: $id, name: $name, image: $image) {
-              id
-              name
-              image
-            }
+        // Update user in backend with new image URL via REST
+        await apiPatch(`/users/${user.id}`, { image: data.url })
+        const updatedUser = { ...user, image: data.url }
+        onUserUpdate(updatedUser)
+        // Update the session to reflect the new image
+        await update({
+          user: {
+            ...sessionData.user,
+            image: data.url
           }
-        `
-
-        const result = await authenticatedGraphQLRequest<{ updateUser?: { id: string; name?: string; image?: string } }>(
-          mutation, 
-          { id: user.id, name: user.name, image: data.url }
-        )
-
-        const updated = result.data?.updateUser
-        if (updated) {
-          const updatedUser = { ...user, image: updated.image }
-          onUserUpdate(updatedUser)
-          
-          // Update the session to reflect the new image
-          await update({
-            user: {
-              ...sessionData.user,
-              image: updated.image
-            }
-          })
-          
-          toast.success('Profile picture updated')
-        }
+        })
+        toast.success('Profile picture updated')
       } else {
         console.error('Upload failed', data)
         toast.error('Failed to upload image')

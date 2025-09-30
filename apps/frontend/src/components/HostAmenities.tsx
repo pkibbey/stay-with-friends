@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Host } from "@/types"
+import { HostWithAvailabilities } from "@/types"
 
 interface HostAmenitiesProps {
-  host: Host
+  host: HostWithAvailabilities
 }
 
 export function HostAmenities({ host }: HostAmenitiesProps) {

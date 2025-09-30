@@ -5,70 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
 import { HostingEditForm } from '@/components/HostingEditForm'
-import { HostWithAvailabilities, User } from '@/types'
+import { HostWithAvailabilities } from '@/types'
+import { apiGet } from '@/lib/api'
+import { User } from '@stay-with-friends/shared-types'
 
 async function getHosting(id: string): Promise<HostWithAvailabilities | null> {
   try {
-    const response = await fetch('http://localhost:4000/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: `
-          query GetHost($id: ID!) {
-            host(id: $id) {
-              id
-              name
-              location
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              maxGuests
-              bedrooms
-              bathrooms
-              photos
-              userId
-              user {
-                id
-                name
-                email
-                image
-              }
-              availabilities {
-                id
-                startDate
-                endDate
-                status
-                notes
-              }
-            }
-          }
-        `,
-        variables: { id }
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.status}`)
-    }
-
-    const result = await response.json()
-
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(result.errors[0].message)
-    }
-
-    return result.data?.host as HostWithAvailabilities | null
+    // REST endpoint: /hosts/:id
+    return await apiGet<HostWithAvailabilities>(`/hosts/${id}`)
   } catch (error) {
     console.error('Error fetching hosting:', error)
     return null
@@ -120,7 +64,7 @@ export default function EditHostingPage() {
   }
 
   // Check if user owns this hosting
-  if (hosting.userId !== userId) {
+  if (hosting.user_id !== userId) {
     return (
       <PageLayout title="Hosting" showHeader={false}>
         <div className="text-center">
@@ -143,24 +87,24 @@ export default function EditHostingPage() {
     >
       <HostingEditForm
         initialData={{
-          id: hosting.id,
-          name: hosting.name,
+          id: hosting.id || '',
+          name: hosting.name || '',
           description: hosting.description,
           location: hosting.location,
           address: hosting.address,
           city: hosting.city,
           state: hosting.state,
-          zipCode: hosting.zipCode,
+          zipCode: hosting.zip_code,
           country: hosting.country,
           latitude: hosting.latitude,
           longitude: hosting.longitude,
-          maxGuests: hosting.maxGuests || 2,
+          maxGuests: hosting.max_guests || 2,
           bedrooms: hosting.bedrooms || 1,
           bathrooms: hosting.bathrooms || 1,
-          checkInTime: hosting.checkInTime,
-          checkOutTime: hosting.checkOutTime,
+          checkInTime: hosting.check_in_time,
+          checkOutTime: hosting.check_out_time,
           amenities: hosting.amenities,
-          houseRules: hosting.houseRules,
+          houseRules: hosting.house_rules,
           photos: hosting.photos
         }}
         onSuccess={handleEditSuccess}

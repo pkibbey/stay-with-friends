@@ -183,10 +183,10 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
                             
                             {/* Property Details */}
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                              {host.maxGuests && (
+                              {host.max_guests && (
                                 <div className="flex items-center gap-1">
                                   <Users className="w-4 h-4" />
-                                  <span>{host.maxGuests} guests</span>
+                                  <span>{host.max_guests} guests</span>
                                 </div>
                               )}
                               {host.bedrooms && (

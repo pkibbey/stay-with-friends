@@ -7,7 +7,7 @@ import { Status, StatusIndicator, StatusLabel } from '@/components/ui/status'
 import { AlertCircle, CheckCircle, X, Clock } from 'lucide-react'
 
 import { ConnectionWithUser } from '@/types'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiGet, apiPatch } from '@/lib/api'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
@@ -21,24 +21,9 @@ export default function Requests() {
     const userId = (session?.user as any)?.id
     if (!userId) return
     try {
-      const result = await authenticatedGraphQLRequest(`
-        query GetConnectionRequests($userId: ID!) {
-          connectionRequests(userId: $userId) {
-            id
-            connectedUser {
-              id
-              email
-              name
-              image
-            }
-            status
-          }
-        }
-      `, { userId })
-
-      type RequestsResponse = { connectionRequests?: ConnectionWithUser[] }
-      const requestsData = ((result.data as unknown) as RequestsResponse).connectionRequests
-      setRequests(requestsData || [])
+      // REST endpoint: /connection-requests?user_id=xxx
+      const data = await apiGet<ConnectionWithUser[]>(`/connection-requests?user_id=${userId}`)
+      setRequests(data || [])
     } catch (error) {
       console.error('Error fetching requests:', error)
     }
@@ -51,16 +36,9 @@ export default function Requests() {
   const handleUpdateConnectionStatus = async (connectionId: string, status: string) => {
     setUpdatingIds(prev => new Set(prev).add(connectionId))
     try {
-      const result = await authenticatedGraphQLRequest(`
-        mutation UpdateConnectionStatus($connectionId: ID!, $status: String!) {
-          updateConnectionStatus(connectionId: $connectionId, status: $status) {
-            id
-            status
-          }
-        }
-      `, { connectionId, status })
-
-      if ((result.data as { updateConnectionStatus?: { id: string } })?.updateConnectionStatus) {
+      // REST endpoint: PATCH /connections/:id { status }
+      const res = await apiPatch(`/connections/${connectionId}`, { status })
+      if (res.ok) {
         fetchRequests()
       }
     } catch (error) {
@@ -115,8 +93,8 @@ export default function Requests() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleUpdateConnectionStatus(request.id, 'accepted')}
-                      disabled={updatingIds.has(request.id)}
+                      onClick={() => request.id && handleUpdateConnectionStatus(request.id, 'accepted')}
+                      disabled={typeof request.id === 'undefined' || updatingIds.has(request.id)}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                     >
@@ -125,8 +103,8 @@ export default function Requests() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => handleUpdateConnectionStatus(request.id, 'blocked')}
-                      disabled={updatingIds.has(request.id)}
+                      onClick={() => request.id && handleUpdateConnectionStatus(request.id, 'blocked')}
+                      disabled={typeof request.id === 'undefined' || updatingIds.has(request.id)}
                       size="sm"
                     >
                       <X className="h-4 w-4 mr-1" />

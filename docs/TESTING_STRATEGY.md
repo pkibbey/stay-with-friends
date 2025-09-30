@@ -23,7 +23,6 @@ apps/backend/
 │   │   ├── db-operations.test.ts   # Database operation tests
 │   │   └── business-logic.test.ts  # Business rule tests
 │   ├── integration/
-│   │   ├── graphql.test.ts         # GraphQL resolver tests
 │   │   ├── api-endpoints.test.ts   # REST endpoint tests
 │   │   └── database.test.ts        # Database integration tests
 │   └── fixtures/
@@ -68,39 +67,6 @@ describe('Email Validation', () => {
   it('should reject emails longer than 255 characters', () => {
     const longEmail = 'a'.repeat(250) + '@example.com';
     expect(() => validateEmail(longEmail)).toThrow('Email must be between 5 and 255 characters');
-  });
-});
-```
-
-#### Integration Tests - GraphQL Resolvers
-**Purpose**: Test that all GraphQL operations work correctly with the database
-
-**Coverage**:
-- User CRUD operations
-- Host CRUD operations
-- Availability management
-- Booking request workflow
-- Connection management
-- Invitation flow
-- Search functionality
-
-**Example Test**:
-```typescript
-describe('Host Operations', () => {
-  it('should create host with valid data', async () => {
-    const mutation = `
-      mutation CreateHost($input: CreateHostInput!) {
-        createHost(input: $input) {
-          id name location
-        }
-      }
-    `;
-    
-    const response = await request(app)
-      .post('/graphql')
-      .send({ query: mutation, variables: { input: validHostData } });
-      
-    expect(response.body.data.createHost).toMatchObject(validHostData);
   });
 });
 ```
@@ -335,9 +301,6 @@ jobs:
 ```bash
 # Install artillery for load testing
 npm install --save-dev artillery
-
-# Test GraphQL endpoints under load
-artillery run load-test-config.yml
 ```
 
 ### Performance Testing (Frontend)

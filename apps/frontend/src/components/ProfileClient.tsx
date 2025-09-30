@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from 'react'
-import { User } from '@/types'
 import { ProfileAvatar } from './ProfileAvatar'
 import { ProfileForm } from './ProfileForm'
+import { User } from '@stay-with-friends/shared-types'
 
 interface ProfileClientProps {
   initialUser: User

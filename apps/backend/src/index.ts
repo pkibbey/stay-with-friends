@@ -1,6 +1,4 @@
 import express, { Request, Response } from 'express';
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@as-integrations/express5';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -8,8 +6,6 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import { resolvers } from './graphql/resolvers';
-import { typeDefs } from './generated/typedefs';
 
 // Initialize database by importing db.ts (tables are created on import)
 console.log('Database initialized');
@@ -28,7 +24,7 @@ interface JWTPayload {
   backendUserId?: string;
 }
  
-// Enable CORS for REST endpoints (GraphQL uses its own middleware)
+// Enable CORS for REST endpoints
 app.use(cors());
 
 // Ensure uploads directory exists and serve it statically
@@ -102,96 +98,80 @@ app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from REST API' });
 });
 
-const server = new ApolloServer<AuthContext>({
-  typeDefs,
-  resolvers,
-});
+// Image upload endpoint
+app.post('/api/upload-image', upload.single('image'), (req: Request, res: Response) => {
+  // multer adds the file to req.file
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const file: any = (req as any).file
+  if (!file) {
+    return res.status(400).json({ error: 'No file uploaded' })
+  }
 
-async function startServer() {  
-  await server.start();
+  const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+  res.json({ url })
+})
 
-  app.use('/graphql', cors<cors.CorsRequest>(), express.json(), expressMiddleware(server, {
-    context: async ({ req }) => getAuthContext(req as Request),
-  }));
-
-  // Image upload endpoint
-  app.post('/api/upload-image', upload.single('image'), (req: Request, res: Response) => {
-    // multer adds the file to req.file
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const file: any = (req as any).file
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' })
+// Avatar upload endpoint with image resizing
+app.post('/api/upload-avatar', upload.single('avatar'), async (req: Request, res: Response) => {
+  try {
+    // Check authentication
+    const authContext = getAuthContext(req);
+    if (!authContext.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
-    res.json({ url })
-  })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const file: any = (req as any).file;
+    if (!file) {
+      return res.status(400).json({ error: 'No avatar file uploaded' });
+    }
 
-  // Avatar upload endpoint with image resizing
-  app.post('/api/upload-avatar', upload.single('avatar'), async (req: Request, res: Response) => {
+    // Generate UUID-based filename for avatar to prevent naming conflicts
+    const uuid = uuidv4()
+    const avatarFilename = `avatar-${authContext.user.id}-${uuid}.jpg`;
+    const avatarPath = path.join(avatarsDir, avatarFilename);
+
+    // Process image with Sharp: resize to 256x256 and convert to JPEG
+    await sharp(file.path)
+      .resize(256, 256, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({
+        quality: 85,
+        progressive: true
+      })
+      .toFile(avatarPath);
+
+    // Delete the temporary uploaded file
+    fs.unlinkSync(file.path);
+
+    // Generate URL for the processed avatar
+    const avatarUrl = `${req.protocol}://${req.get('host')}/avatars/${avatarFilename}`;
+
+    res.json({ 
+      url: avatarUrl,
+      filename: avatarFilename,
+      message: 'Avatar uploaded and resized successfully'
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    
+    // Clean up temporary file if it exists
     try {
-      // Check authentication
-      const authContext = getAuthContext(req);
-      if (!authContext.user) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const file: any = (req as any).file;
-      if (!file) {
-        return res.status(400).json({ error: 'No avatar file uploaded' });
+      if (file && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
       }
-
-      // Generate UUID-based filename for avatar to prevent naming conflicts
-      const uuid = uuidv4()
-      const avatarFilename = `avatar-${authContext.user.id}-${uuid}.jpg`;
-      const avatarPath = path.join(avatarsDir, avatarFilename);
-
-      // Process image with Sharp: resize to 256x256 and convert to JPEG
-      await sharp(file.path)
-        .resize(256, 256, {
-          fit: 'cover',
-          position: 'center'
-        })
-        .jpeg({
-          quality: 85,
-          progressive: true
-        })
-        .toFile(avatarPath);
-
-      // Delete the temporary uploaded file
-      fs.unlinkSync(file.path);
-
-      // Generate URL for the processed avatar
-      const avatarUrl = `${req.protocol}://${req.get('host')}/avatars/${avatarFilename}`;
-
-      res.json({ 
-        url: avatarUrl,
-        filename: avatarFilename,
-        message: 'Avatar uploaded and resized successfully'
-      });
-    } catch (error) {
-      console.error('Avatar upload error:', error);
-      
-      // Clean up temporary file if it exists
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const file: any = (req as any).file;
-        if (file && fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path);
-        }
-      } catch (cleanupError) {
-        console.error('Failed to clean up temporary file:', cleanupError);
-      }
-
-      res.status(500).json({ error: 'Failed to process avatar image' });
+    } catch (cleanupError) {
+      console.error('Failed to clean up temporary file:', cleanupError);
     }
-  })
 
-  app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/graphql`);
-    console.log(`REST API available at http://localhost:${port}/api`);
-  });
-}
+    res.status(500).json({ error: 'Failed to process avatar image' });
+  }
+})
 
-startServer();
+app.listen(port, () => {
+  console.log(`REST API available at http://localhost:${port}/api`);
+});

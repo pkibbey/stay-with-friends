@@ -20,7 +20,7 @@ interface MapComponentProps {
   address?: string
   city?: string
   state?: string
-  zipCode?: string
+  zip_code?: string
   country?: string
   location?: string
   className?: string
@@ -31,7 +31,7 @@ export function MapComponent({
   address,
   city,
   state,
-  zipCode,
+  zip_code,
   country,
   location,
   className = "h-100",
@@ -44,7 +44,7 @@ export function MapComponent({
   const popupOverlayRef = useRef<Overlay | null>(null)
 
   // Create a full address string for geocoding (single location mode)
-  const fullAddress = [address, city, state, zipCode, country]
+  const fullAddress = [address, city, state, zip_code, country]
     .filter(Boolean)
     .join(', ')
 
@@ -141,7 +141,7 @@ export function MapComponent({
       } else {
         // Geocode the host address
         try {
-          const locationString = [host.address, host.city, host.state, host.zipCode, host.country]
+          const locationString = [host.address, host.city, host.state, host.zip_code, host.country]
             .filter(Boolean)
             .join(', ')
           
@@ -170,8 +170,8 @@ export function MapComponent({
       markerElement.className = 'map-pin-marker'
       
       // Create compact host info card
-      const hostName = host.name?.length > 20 ? host.name.substring(0, 17) + '...' : (host.name || 'Unnamed Host')
-      const guestInfo = host.maxGuests ? `${host.maxGuests} guests` : ''
+      const hostName = host.name && host.name?.length > 20 ? host.name.substring(0, 17) + '...' : (host.name || 'Unnamed Host')
+      const guestInfo = host.max_guests ? `${host.max_guests} guests` : ''
       const locationInfo = host.city ? (host.city.length > 15 ? host.city.substring(0, 12) + '...' : host.city) : (host.state || '')
       
       markerElement.innerHTML = `
@@ -221,7 +221,7 @@ export function MapComponent({
                 <p class="text-xs text-gray-600">${location}</p>
               </div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-500">${host.maxGuests ? `${host.maxGuests} guests` : 'Guest capacity not specified'}</span>
+                <span class="text-xs text-gray-500">${host.max_guests ? `${host.max_guests} guests` : 'Guest capacity not specified'}</span>
               </div>
               <div class="text-xs text-gray-600 mb-2">
                 ${description}

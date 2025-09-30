@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Home, Users, Calendar, TrendingUp } from 'lucide-react'
-import { graphqlRequest } from '@/lib/graphql'
+import { apiGet } from '@/lib/api'
 
 interface CommunityStats {
   totalHostsCount: number
@@ -24,17 +24,16 @@ export function CommunityStatsSection() {
     const fetchStats = async () => {
       try {
         setLoading(true)
-        const query = `
-          query GetCommunityStats {
-            totalHostsCount
-            totalConnectionsCount
-            totalBookingsCount
-          }
-        `
-
-        const result = await graphqlRequest(query)
-        const fetchedStats = result.data as unknown as CommunityStats
-        setStats(fetchedStats)
+        const [hosts, connections, bookings] = await Promise.all([
+          apiGet<{ count: number }>('/stats/hosts'),
+          apiGet<{ count: number }>('/stats/connections'),
+          apiGet<{ count: number }>('/stats/bookings'),
+        ])
+        setStats({
+          totalHostsCount: hosts.count,
+          totalConnectionsCount: connections.count,
+          totalBookingsCount: bookings.count,
+        })
       } catch (err) {
         console.error('Error fetching community stats:', err)
         setError(err instanceof Error ? err.message : 'Failed to load stats')
@@ -42,7 +41,6 @@ export function CommunityStatsSection() {
         setLoading(false)
       }
     }
-
     fetchStats()
   }, [])
 

@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Host } from "@/types"
+import { HostWithAvailabilities } from "@/types"
 
 interface HostHouseRulesProps {
-  host: Host
+  host: HostWithAvailabilities
 }
 
 export function HostHouseRules({ host }: HostHouseRulesProps) {
-  const displayRules = host.houseRules || ""
+  const displayRules = host.house_rules || ""
 
   if (!displayRules) {
     return null

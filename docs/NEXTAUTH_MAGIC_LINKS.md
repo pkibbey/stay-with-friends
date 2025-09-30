@@ -74,7 +74,7 @@ Replace magic links with:
 **Option 1** - Minimal custom adapter that:
 - ✅ Handles verification tokens (required for magic links)
 - ✅ Uses JWT for sessions (no session persistence) 
-- ✅ Keeps user management in backend GraphQL API
+- ✅ Keeps user management in backend API
 - ✅ Minimal database footprint
 
 ### Implementation Files

@@ -19,9 +19,6 @@ packages/shared-types/             # 🎯 THE source of truth
 │   └── index.ts                  # Exports
 └── dist/                         # Built package
 
-apps/backend/src/generated/       # Only GraphQL-specific files
-├── schema.graphql                # GraphQL schema (string format)
-└── typedefs.ts                   # TypeScript export of GraphQL
 
 # NO MORE generated types! 🎉
 # ❌ apps/backend/src/generated/types.ts     (DELETED)
@@ -41,18 +38,6 @@ import {
   validate,
   validateEmail 
 } from '@stay-with-friends/shared-types';
-
-// ✅ Use in GraphQL resolvers
-import { typeDefs } from './generated/typedefs';
-
-const resolvers = {
-  Mutation: {
-    createUser: (_, input) => {
-      const userData = validate.user(input); // Runtime validation
-      return insertUser.run(userData);
-    }
-  }
-};
 ```
 
 ### Frontend Usage
@@ -87,7 +72,7 @@ const handleApiResponse = (data: unknown) => {
 | Aspect | Before | After |
 |--------|--------|-------|
 | **Schema Location** | 3 places (entities.ts + 2 generated) | 1 place (shared-types) |
-| **Type Files** | 4 generated files | 2 generated files (GraphQL only) |
+| **Type Files** | 4 generated files | 0 generated files |
 | **Import Source** | Generated files | Shared package |
 | **Duplication Risk** | High (3 copies) | Zero (1 source) |
 | **Generation Time** | ~3 seconds | ~1 second |
@@ -98,7 +83,6 @@ const handleApiResponse = (data: unknown) => {
 ### ✅ What Works Now
 - **Types**: Import from `@stay-with-friends/shared-types`
 - **Validation**: Import from `@stay-with-friends/shared-types`
-- **GraphQL**: Import from `./generated/typedefs`
 - **Build**: All packages build correctly
 - **IntelliSense**: Perfect auto-completion
 
@@ -116,7 +100,7 @@ This was your brilliant realization! Instead of:
 - ❌ Define schemas → Generate types → Import generated types
 - ✅ Define schemas → Import schemas directly
 
-The shared-types package **IS** the types. No generation needed for types, only for GraphQL strings that Apollo requires.
+The shared-types package **IS** the types. No generation needed for types.
 
 ## 🚧 Future Enhancements
 

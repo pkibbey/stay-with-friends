@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { User } from '@stay-with-friends/shared-types'
 
-// This is a simple GraphQL client function
-async function graphqlRequest(query: string, variables: object = {}) {
-  const response = await fetch('http://localhost:4000/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  })
-
-  const data = await response.json()
-  if (data.errors) {
-    throw new Error(data.errors[0].message)
-  }
-  return data.data
-}
+import { apiGet } from '@/lib/api'
 
 // GET /api/user - Get user by email
 export async function GET(request: NextRequest) {
@@ -33,29 +16,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const query = `
-      query GetUser($email: String!) {
-        user(email: $email) {
-          id
-          name
-          email
-          emailVerified
-          image
-          createdAt
-        }
-      }
-    `
+    // REST endpoint: /users?email=xxx
+  const users = await apiGet<User[]>(`/users?email=${encodeURIComponent(email)}`)
+    const user = Array.isArray(users) ? users[0] : users
 
-    const data = await graphqlRequest(query, { email })
-    
-    if (!data.user) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({ user: data.user })
+    return NextResponse.json({ user })
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json(

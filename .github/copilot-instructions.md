@@ -8,7 +8,7 @@ These notes are tuned to help an AI assistant be productive in the "Stay With Fr
   - `apps/backend` — TypeScript Express + Apollo GraphQL server (port 4000 in dev). See `apps/backend/src/index.ts`, `apps/backend/src/schema.ts`, and `apps/backend/src/db.ts`.
 
 2) How the pieces communicate
-- Frontend fetches data from the backend GraphQL endpoint at http://localhost:4000/graphql. The backend also exposes a small REST surface at `/api/*` (example: `/api/hello`).
+- Frontend fetches data from the backend REST API endpoint at http://localhost:4000.
 - Database is SQLite located at `apps/backend/database.db` (the backend code will create it on startup).
 
 3) Common developer commands (from each app's `package.json`)
@@ -44,7 +44,7 @@ migration helper)
 - Availability queries: `getAvailabilitiesByDateRange` and `getAvailabilityDates` in `db.ts` show date range handling and a recursive date_series SQL pattern.
 
 8) Integration points & external deps
-- Key packages: `better-sqlite3`, `@apollo/server`, `express`, `next`, `next-auth` (frontend), `drizzle-orm` (frontend db tooling).
+- Key packages: `better-sqlite3`, `express`, `next`, and `next-auth` (frontend).
 - Email sending is stubbed in `sendInvitationEmail` — it logs the URL instead of calling an external service. If adding real email integrations, follow the existing pattern and update tests accordingly.
 
 9) Pragmatic editing rules for AI

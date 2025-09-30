@@ -4,74 +4,16 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-import { HostWithAvailabilities, User } from '@/types'
+import { HostWithAvailabilities } from '@/types'
+import { apiGet } from '@/lib/api'
 import { HostingDisplay } from '@/components/HostingDisplay'
+import { User } from '@stay-with-friends/shared-types'
 
 async function getHostings(userId: string): Promise<HostWithAvailabilities[]> {
   try {
-    const response = await fetch('http://localhost:4000/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Note: In a real app, you'd need to handle authentication here
-        // For now, we'll assume the backend accepts requests from the frontend
-      },
-      body: JSON.stringify({
-        query: `
-          query GetHosts {
-            hosts {
-              id
-              name
-              location
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              maxGuests
-              bedrooms
-              bathrooms
-              photos
-              userId
-              user {
-                id
-                name
-                email
-                image
-              }
-              availabilities {
-                id
-                startDate
-                endDate
-                status
-                notes
-              }
-            }
-          }
-        `
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.status}`)
-    }
-
-    const result = await response.json()
-
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(result.errors[0].message)
-    }
-
-    const hosts = (result.data?.hosts || []) as HostWithAvailabilities[]
-    // Filter by userId on the server side
-    return hosts.filter((host: HostWithAvailabilities) => host.userId === userId)
+    // REST endpoint: /hosts?user_id=xxx
+    const hosts = await apiGet<HostWithAvailabilities[]>(`/hosts?user_id=${userId}`)
+    return hosts || []
   } catch (error) {
     console.error('Error fetching hostings:', error)
     return []

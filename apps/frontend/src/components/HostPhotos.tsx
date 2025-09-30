@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from 'next/image'
 import { ImageIcon } from "lucide-react"
-import { Host } from "@/types"
+import { HostWithAvailabilities } from "@/types"
 
 interface HostPhotosProps {
-  host: Host
+  host: HostWithAvailabilities
 }
 
 export function HostPhotos({ host }: HostPhotosProps) {

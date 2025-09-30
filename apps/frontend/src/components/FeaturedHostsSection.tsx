@@ -9,7 +9,7 @@ import { MapPin, Users, Home, Eye, Bed, Bath, User, ArrowRight } from 'lucide-re
 import { parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
 import { HostProfileData } from '@/types'
-import { graphqlRequest } from '@/lib/graphql'
+import { apiGet } from '@/lib/api'
 
 interface FeaturedHostsSectionProps {
   limit?: number
@@ -33,7 +33,7 @@ function FeaturedHostCard({ host }: { host: HostProfileData }) {
             width={400}
             height={300}
             src={host.photos[0]}
-            alt={host.name}
+            alt={host.name || 'Host photo'}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -91,7 +91,7 @@ function FeaturedHostCard({ host }: { host: HostProfileData }) {
             </div>
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              {host.maxGuests} guests
+              {host.max_guests} guests
             </div>
             {host.bedrooms && (
               <div className="flex items-center">
@@ -145,47 +145,9 @@ export function FeaturedHostsSection({ limit = 6 }: FeaturedHostsSectionProps) {
     const fetchFeaturedHosts = async () => {
       try {
         setLoading(true)
-        const query = `
-          query GetFeaturedHosts {
-            hosts {
-              id
-              name
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              maxGuests
-              bedrooms
-              bathrooms
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              photos
-              createdAt
-              updatedAt
-              availabilities {
-                id
-                startDate
-                endDate
-                status
-                notes
-              }
-              user {
-                id
-                name
-                email
-              }
-            }
-          }
-        `
-        const result = await graphqlRequest(query)
-        const fetchedHosts = (result.data as { hosts: HostProfileData[] })?.hosts || []
-        setHosts(fetchedHosts.slice(0, limit))
+        // REST: /api/hosts returns all hosts
+        const hosts: HostProfileData[] = await apiGet('/hosts')
+        setHosts(hosts.slice(0, limit))
       } catch (err) {
         console.error('Error fetching featured hosts:', err)
         setError(err instanceof Error ? err.message : 'Failed to load hosts')
@@ -193,7 +155,6 @@ export function FeaturedHostsSection({ limit = 6 }: FeaturedHostsSectionProps) {
         setLoading(false)
       }
     }
-
     fetchFeaturedHosts()
   }, [limit])
 

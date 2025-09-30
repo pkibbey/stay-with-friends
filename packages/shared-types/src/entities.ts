@@ -2,12 +2,11 @@ import { z } from 'zod';
 
 /**
  * ENTITY SCHEMAS - Single Source of Truth
- * 
+ *
  * These Zod schemas define the complete entity structure including:
  * - Field types and validation
  * - Database table mapping
  * - Frontend/backend transformations
- * - GraphQL type generation
  */
 
 // Base field metadata type
@@ -177,37 +176,49 @@ export const ENTITIES = {
 export const UserSchema = z.object(
   Object.fromEntries(
     Object.entries(UserEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof UserEntity.fields]: (typeof UserEntity.fields)[K]['schema'];
+  }
 );
 
 export const HostSchema = z.object(
   Object.fromEntries(
     Object.entries(HostEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof HostEntity.fields]: (typeof HostEntity.fields)[K]['schema'];
+  }
 );
 
 export const AvailabilitySchema = z.object(
   Object.fromEntries(
     Object.entries(AvailabilityEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof AvailabilityEntity.fields]: (typeof AvailabilityEntity.fields)[K]['schema'];
+  }
 );
 
 export const BookingRequestSchema = z.object(
   Object.fromEntries(
     Object.entries(BookingRequestEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof BookingRequestEntity.fields]: (typeof BookingRequestEntity.fields)[K]['schema'];
+  }
 );
 
 export const ConnectionSchema = z.object(
   Object.fromEntries(
     Object.entries(ConnectionEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof ConnectionEntity.fields]: (typeof ConnectionEntity.fields)[K]['schema'];
+  }
 );
 
 export const InvitationSchema = z.object(
   Object.fromEntries(
     Object.entries(InvitationEntity.fields).map(([key, field]) => [key, field.schema])
-  )
+  ) as {
+    [K in keyof typeof InvitationEntity.fields]: (typeof InvitationEntity.fields)[K]['schema'];
+  }
 );
 
 // Export schema collection
@@ -227,3 +238,5 @@ export type Availability = z.infer<typeof AvailabilitySchema>;
 export type BookingRequest = z.infer<typeof BookingRequestSchema>;
 export type Connection = z.infer<typeof ConnectionSchema>;
 export type Invitation = z.infer<typeof InvitationSchema>;
+
+// ...existing code...

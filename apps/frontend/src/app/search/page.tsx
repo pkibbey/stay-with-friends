@@ -11,7 +11,7 @@ import { Map, List, Calendar } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
 import { HostProfileData, SearchFiltersState } from '@/types'
-import { graphqlRequest } from '@/lib/graphql'
+import { apiGet } from '@/lib/api'
 
 
 function SearchPage() {
@@ -43,109 +43,16 @@ function SearchPage() {
   // Search function
   const searchHosts = useCallback(async (searchFilters: SearchFiltersState) => {
     setError(null)
-
     try {
-      let query: string
-      let variables: {
-        query?: string | null
-        startDate?: string | null
-      } = {}
-
+      let hosts: HostProfileData[] = []
       if (searchFilters.query || searchFilters.startDate) {
-        // Advanced search with filters
-        query = `
-          query SearchHostsAdvanced(
-            $query: String
-            $startDate: String
-          ) {
-            searchHostsAdvanced(
-              query: $query
-              startDate: $startDate
-            ) {
-              id
-              name
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              maxGuests
-              bedrooms
-              bathrooms
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              photos
-              createdAt
-              updatedAt
-              availabilities {
-                id
-                startDate
-                endDate
-                status
-                notes
-              }
-              user {
-                id
-                name
-                email
-              }
-            }
-          }
-        `
-        variables = {
-          query: searchFilters.query || null,
-          startDate: searchFilters.startDate || null
-        }
+        // REST: /api/hosts/search/:query?startDate=YYYY-MM-DD
+        const queryParam = encodeURIComponent(searchFilters.query || '')
+        const startDateParam = searchFilters.startDate ? `&startDate=${encodeURIComponent(searchFilters.startDate)}` : ''
+        hosts = await apiGet(`/hosts/search/${queryParam}?${startDateParam}`)
       } else {
-        // Get all hosts when no filters are applied
-        query = `
-          query GetAllHosts {
-            hosts {
-              id
-              name
-              description
-              address
-              city
-              state
-              zipCode
-              country
-              latitude
-              longitude
-              maxGuests
-              bedrooms
-              bathrooms
-              amenities
-              houseRules
-              checkInTime
-              checkOutTime
-              photos
-              createdAt
-              updatedAt
-              availabilities {
-                id
-                startDate
-                endDate
-                status
-                notes
-              }
-              user {
-                id
-                name
-                email
-              }
-            }
-          }
-        `
+        hosts = await apiGet('/hosts')
       }
-
-      const result = await graphqlRequest(query, variables)
-      
-      const hosts = (result.data as { searchHostsAdvanced?: HostProfileData[], hosts?: HostProfileData[] })?.searchHostsAdvanced || (result.data as { searchHostsAdvanced?: HostProfileData[], hosts?: HostProfileData[] })?.hosts || []
       setHosts(hosts)
     } catch (err) {
       console.error('Search error:', err)

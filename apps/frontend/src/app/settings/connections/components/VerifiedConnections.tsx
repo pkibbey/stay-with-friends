@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle, UserPlus, X } from 'lucide-react'
 import { Status, StatusIndicator, StatusLabel } from '@/components/ui/status'
 import { ConnectionWithUser } from '@/types'
-import { authenticatedGraphQLRequest } from '@/lib/graphql'
+import { apiGet, apiDelete } from '@/lib/api'
 import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
@@ -21,25 +21,9 @@ export default function VerifiedConnections() {
     const userId = (session?.user as any)?.id
     if (!userId) return
     try {
-      const result = await authenticatedGraphQLRequest(`
-        query GetConnections($userId: ID!) {
-          connections(userId: $userId) {
-            id
-            connectedUser {
-              id
-              email
-              name
-              image
-            }
-            status
-          }
-        }
-      `, { userId })
-
-      type ConnectionsResponse = { connections?: ConnectionWithUser[] }
-      const authenticatedConnections = ((result.data as unknown) as ConnectionsResponse).connections
-
-      setConnections(authenticatedConnections || [])
+      // REST endpoint: /connections?user_id=xxx
+      const data = await apiGet<ConnectionWithUser[]>(`/connections?user_id=${userId}`)
+      setConnections(data || [])
     } catch (error) {
       console.error('Error fetching connections:', error)
     }
@@ -53,16 +37,11 @@ export default function VerifiedConnections() {
     if (!confirm('Are you sure you want to remove this connection? This action cannot be undone.')) {
       return
     }
-    
     setDeletingIds(prev => new Set(prev).add(connectionId))
     try {
-      const result = await authenticatedGraphQLRequest(`
-        mutation DeleteConnection($connectionId: ID!) {
-          deleteConnection(connectionId: $connectionId)
-        }
-      `, { connectionId })
-
-      if ((result.data as { deleteConnection?: boolean })?.deleteConnection) {
+      // REST endpoint: DELETE /connections/:id
+      const res = await apiDelete(`/connections/${connectionId}`)
+      if (res) {
         fetchConnections()
       } else {
         toast.error('Failed to remove connection')
@@ -119,16 +98,18 @@ export default function VerifiedConnections() {
                       </Status>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleDeleteConnection(connection.id)}
-                    disabled={deletingIds.has(connection.id)}
-                    size="sm"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Remove
-                  </Button>
+                  {connection.id && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDeleteConnection(connection.id!)}
+                      disabled={deletingIds.has(connection.id!)}
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))}

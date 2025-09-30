@@ -6,7 +6,8 @@ import { AvailabilityCalendar } from "@/components/AvailabilityCalendar"
 import { BookingForm } from "@/components/BookingForm"
 import { ExistingBookingRequests } from "@/components/ExistingBookingRequests"
 import { formatDateForUrl, parseLocalDate } from '@/lib/date-utils'
-import type { HostWithAvailabilities, BookingRequest } from '@/types'
+import type { HostWithAvailabilities } from '@/types'
+import { BookingRequest } from '@stay-with-friends/shared-types'
 
 interface HostDetailClientProps {
   host: HostWithAvailabilities
@@ -31,8 +32,8 @@ export function HostDetailClient({ host, selectedDate: initialSelectedDate, book
       if (availability.status !== 'available') return false
 
       // Parse availability dates with consistent timezone handling
-      const startDate = parseLocalDate(availability.startDate)
-      const endDate = parseLocalDate(availability.endDate)
+      const startDate = parseLocalDate(availability.start_date || '')
+      const endDate = parseLocalDate(availability.end_date || '')
 
       return checkDate >= startDate && checkDate <= endDate
     })
@@ -59,8 +60,8 @@ export function HostDetailClient({ host, selectedDate: initialSelectedDate, book
         selectedDate={selectedDate}
         onSelect={handleDateSelect}
         availabilities={host.availabilities?.map(a => ({
-          startDate: a.startDate,
-          endDate: a.endDate,
+          startDate: a.start_date || '',
+          endDate: a.end_date || '',
           status: a.status || 'available'
         }))}
       />
@@ -69,7 +70,7 @@ export function HostDetailClient({ host, selectedDate: initialSelectedDate, book
       {bookingRequests.length > 0 && (
         <ExistingBookingRequests
           requests={bookingRequests}
-          hostName={host.name}
+          hostName={host.name || ''}
         />
       )}
 

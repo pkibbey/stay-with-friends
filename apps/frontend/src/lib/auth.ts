@@ -118,66 +118,36 @@ export const authOptions = {
         if (account?.provider === 'email' && user?.email) {
           try {
             console.log('Fetching backend user ID for email (authenticated):', user.email)
-            const response = await fetch('http://localhost:4000/graphql', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.apiToken}` },
-              body: JSON.stringify({
-                query: `
-                  query GetUser($email: String!) {
-                    user(email: $email) {
-                      id
-                      email
-                      name
-                    }
-                  }
-                `,
-                variables: { email: user.email },
-              }),
-            })
-
+            // Try to fetch user from REST API
+            const response = await fetch(`http://localhost:4000/api/users/by-email/${encodeURIComponent(user.email)}`);
             if (response.ok) {
-              const data = await response.json()
-              if (data.data?.user?.id) {
-                token.backendUserId = data.data.user.id
-                // Propagate name/email from backend user into the token so
-                // the session callback can expose them to the client.
-                if (data.data.user.name) token.name = data.data.user.name
-                if (data.data.user.email) token.email = data.data.user.email
-                console.log('Stored backend user ID in token:', token.backendUserId)
+              const data = await response.json();
+              if (data && data.id) {
+                token.backendUserId = data.id;
+                if (data.name) token.name = data.name;
+                if (data.email) token.email = data.email;
+                console.log('Stored backend user ID in token:', token.backendUserId);
               } else {
-                // No user found, attempt to create one (authenticated)
-                console.log('No backend user found; creating user for email:', user.email)
-                const createResp = await fetch('http://localhost:4000/graphql', {
+                // No user found, attempt to create one via REST
+                console.log('No backend user found; creating user for email:', user.email);
+                const createResp = await fetch('http://localhost:4000/api/users', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.apiToken}` },
-                  body: JSON.stringify({
-                    query: `
-                      mutation CreateUser($email: String!, $name: String) {
-                        createUser(email: $email, name: $name) {
-                          id
-                          email
-                          name
-                        }
-                      }
-                    `,
-                    variables: { email: user.email, name: user.name },
-                  }),
-                })
-
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: user.email, name: user.name }),
+                });
                 if (createResp.ok) {
-                  const createData = await createResp.json()
-                  if (createData.data?.createUser?.id) {
-                    token.backendUserId = createData.data.createUser.id
-                    // Also propagate newly created user's name/email into token
-                    if (createData.data.createUser.name) token.name = createData.data.createUser.name
-                    if (createData.data.createUser.email) token.email = createData.data.createUser.email
-                    console.log('Created backend user and stored id in token:', token.backendUserId)
+                  const createData = await createResp.json();
+                  if (createData && createData.id) {
+                    token.backendUserId = createData.id;
+                    if (createData.name) token.name = createData.name;
+                    if (createData.email) token.email = createData.email;
+                    console.log('Created backend user and stored id in token:', token.backendUserId);
                   }
                 }
               }
             }
           } catch (error) {
-            console.error('Error fetching/creating backend user in JWT callback:', error)
+            console.error('Error fetching/creating backend user in JWT callback:', error);
           }
         }
 

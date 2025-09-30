@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, CheckCircle, XCircle, Eye, EyeOff, Loader2 } from "lucide-react"
-import type { BookingRequest } from '@/types'
+import type { BookingRequest } from '@stay-with-friends/shared-types'
+import { apiPatch } from '@/lib/api'
 
 interface ExistingBookingRequestsProps {
   requests: BookingRequest[]
@@ -25,27 +26,10 @@ export function ExistingBookingRequests({ requests, hostName }: ExistingBookingR
   const handleCancelRequest = async (requestId: string) => {
     setCancellingRequest(requestId)
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            mutation UpdateBookingRequestStatus($id: ID!, $status: String!) {
-              updateBookingRequestStatus(id: $id, status: $status) {
-                id
-                status
-              }
-            }
-          `,
-          variables: { id: requestId, status: 'cancelled' },
-        }),
-      })
-      
-      const data = await response.json()
-      if (data.data?.updateBookingRequestStatus) {
-        // Refresh the page to update the requests
-        window.location.reload()
-      }
+      // REST endpoint: PUT /booking-requests/:id/status
+      await apiPatch(`/booking-requests/${requestId}/status`, { status: 'cancelled' })
+      // Refresh the page to update the requests
+      window.location.reload()
     } catch (error) {
       console.error('Error cancelling booking request:', error)
     } finally {
@@ -93,13 +77,13 @@ export function ExistingBookingRequests({ requests, hostName }: ExistingBookingR
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">
-                      {new Date(request.createdAt!).toLocaleDateString()}
+                      {request.created_at ? new Date(request.created_at).toLocaleDateString() : ''}
                     </span>
-                    {request.status === 'pending' && (
+                    {request.status === 'pending' && request.id && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleCancelRequest(request.id)}
+                        onClick={() => handleCancelRequest(request.id as string)}
                         disabled={cancellingRequest === request.id}
                         className="border-red-200 text-red-600 hover:bg-red-50"
                       >
@@ -113,12 +97,12 @@ export function ExistingBookingRequests({ requests, hostName }: ExistingBookingR
                   </div>
                 </div>
                 <div className="text-sm space-y-1">
-                  <div>Dates: {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}</div>
+                  <div>Dates: {request.start_date && request.end_date ? `${new Date(request.start_date).toLocaleDateString()} - ${new Date(request.end_date).toLocaleDateString()}` : ''}</div>
                   <div>Guests: {request.guests}</div>
                   {request.message && <div>Message: {request.message}</div>}
-                  {request.responseMessage && (
+                  {request.response_message && (
                     <div className="mt-2 p-2 bg-white dark:bg-gray-700 rounded">
-                      <strong>Response:</strong> {request.responseMessage}
+                      <strong>Response:</strong> {request.response_message}
                     </div>
                   )}
                 </div>

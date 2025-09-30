@@ -14,7 +14,6 @@
     "test:unit": "jest --testPathPatterns=unit"
   },
   "dependencies": {
-    "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.2",
     "@stay-with-friends/shared-types": "*",
     "@stay-with-friends/shared-utils": "*",
@@ -23,7 +22,6 @@
     "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "graphql": "^16.11.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "sharp": "^0.34.4",
