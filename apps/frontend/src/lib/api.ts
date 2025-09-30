@@ -1,6 +1,6 @@
 export async function apiPatch(path: string, body: unknown): Promise<Response> {
   const headers = await getAuthHeaders()
-  return fetch(`${API_BASE}${path}`, {
+  return fetch(joinPath(path), {
     method: 'PATCH',
     headers,
     body: JSON.stringify(body),
@@ -21,7 +21,14 @@ interface ExtendedSession {
   apiToken?: string
 }
 
-const API_BASE = 'http://localhost:4000/api'
+// Allow overriding the API base via NEXT_PUBLIC_API_BASE (useful in dev and prod)
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api'
+
+function joinPath(path: string) {
+  if (!path) return API_BASE
+  if (path.startsWith('/')) return `${API_BASE}${path}`
+  return `${API_BASE}/${path}`
+}
 
 async function getAuthHeaders() {
   const session = await getSession() as ExtendedSession
@@ -32,14 +39,14 @@ async function getAuthHeaders() {
 
 export async function apiGet<T>(path: string): Promise<T> {
   const headers = await getAuthHeaders()
-  const res = await fetch(`${API_BASE}${path}`, { headers })
+  const res = await fetch(joinPath(path), { headers })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const headers = await getAuthHeaders()
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(joinPath(path), {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -50,7 +57,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
 export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   const headers = await getAuthHeaders()
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(joinPath(path), {
     method: 'PUT',
     headers,
     body: JSON.stringify(body),
@@ -61,7 +68,7 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 
 export async function apiDelete<T>(path: string): Promise<T> {
   const headers = await getAuthHeaders()
-  const res = await fetch(`${API_BASE}${path}`, { method: 'DELETE', headers })
+  const res = await fetch(joinPath(path), { method: 'DELETE', headers })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }

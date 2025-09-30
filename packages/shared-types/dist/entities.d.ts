@@ -97,7 +97,7 @@ export declare const HostEntity: {
             meta: BaseFieldMeta;
         };
         amenities: {
-            schema: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+            schema: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
             meta: BaseFieldMeta;
         };
         house_rules: {
@@ -125,7 +125,7 @@ export declare const HostEntity: {
             meta: BaseFieldMeta;
         };
         photos: {
-            schema: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+            schema: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
             meta: BaseFieldMeta;
         };
         created_at: {
@@ -368,7 +368,7 @@ export declare const ENTITIES: {
                 meta: BaseFieldMeta;
             };
             amenities: {
-                schema: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+                schema: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
                 meta: BaseFieldMeta;
             };
             house_rules: {
@@ -396,7 +396,7 @@ export declare const ENTITIES: {
                 meta: BaseFieldMeta;
             };
             photos: {
-                schema: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+                schema: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
                 meta: BaseFieldMeta;
             };
             created_at: {
@@ -579,14 +579,14 @@ export declare const HostSchema: z.ZodObject<{
     country: z.ZodString | z.ZodOptional<z.ZodString>;
     latitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
     longitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
-    amenities: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+    amenities: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
     house_rules: z.ZodString | z.ZodOptional<z.ZodString>;
     check_in_time: z.ZodString | z.ZodOptional<z.ZodString>;
     check_out_time: z.ZodString | z.ZodOptional<z.ZodString>;
     max_guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
     bedrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
     bathrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
-    photos: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+    photos: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
     created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     updated_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
@@ -652,14 +652,14 @@ export declare const SCHEMAS: {
         country: z.ZodString | z.ZodOptional<z.ZodString>;
         latitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
         longitude: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
-        amenities: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+        amenities: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
         house_rules: z.ZodString | z.ZodOptional<z.ZodString>;
         check_in_time: z.ZodString | z.ZodOptional<z.ZodString>;
         check_out_time: z.ZodString | z.ZodOptional<z.ZodString>;
         max_guests: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
         bedrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
         bathrooms: z.ZodNumber | z.ZodOptional<z.ZodNumber>;
-        photos: z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>> | z.ZodOptional<z.ZodType<string[], unknown, z.core.$ZodTypeInternals<string[], unknown>>>;
+        photos: z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodOptional<z.ZodArray<z.ZodString>>> | z.ZodPipe<z.ZodTransform<any, unknown>, z.ZodArray<z.ZodString>>;
         created_at: z.ZodString | z.ZodOptional<z.ZodString>;
         updated_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -704,6 +704,15 @@ export declare const SCHEMAS: {
         created_at: z.ZodString | z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
 };
+/**
+ * Helpers to convert between runtime objects and DB rows using entity metadata.
+ * - toDbRow: returns an object mapping column -> value suitable for DB insertion (JSON fields stringified)
+ * - toDbValues: returns an array of values in the entity field order (useful for prepared statements)
+ * - fromDbRow: parses a DB row into a runtime-typed object using the Zod schema (this also applies preprocessors)
+ */
+export declare function toDbRow<T extends keyof typeof ENTITIES>(entityName: T, obj: Record<string, unknown>): Record<string, unknown>;
+export declare function toDbValues<T extends keyof typeof ENTITIES>(entityName: T, obj: Record<string, unknown>): unknown[];
+export declare function fromDbRow<T extends keyof typeof SCHEMAS>(schemaName: T, row: Record<string, unknown>): z.infer<typeof SCHEMAS[T]>;
 export type User = z.infer<typeof UserSchema>;
 export type Host = z.infer<typeof HostSchema>;
 export type Availability = z.infer<typeof AvailabilitySchema>;

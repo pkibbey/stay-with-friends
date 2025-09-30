@@ -334,6 +334,11 @@ export const getInvitationByEmail = db.prepare(`
   SELECT * FROM invitations WHERE invitee_email = ? AND status = 'pending'
 `);
 
+// Get all invitations
+export const getAllInvitations = db.prepare(`
+  SELECT * FROM invitations ORDER BY created_at DESC
+`);
+
 export const deleteInvitation = db.prepare(`
   DELETE FROM invitations WHERE id = ?
 `);

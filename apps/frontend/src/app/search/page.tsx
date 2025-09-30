@@ -13,7 +13,6 @@ import { SearchResults } from '@/components/SearchResults'
 import { HostProfileData, SearchFiltersState } from '@/types'
 import { apiGet } from '@/lib/api'
 
-
 function SearchPage() {
   const router = useRouter()
   const searchParams = useSearchParams()

@@ -32,8 +32,6 @@ export default function EditHostingPage() {
   useEffect(() => {
     if (hostingId) {
       getHosting(hostingId).then((data) => {
-        console.log('Fetched hosting data:', data)
-        console.log('Hosting photos:', data?.photos)
         setHosting(data)
         setLoading(false)
       })

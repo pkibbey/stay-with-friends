@@ -6,6 +6,7 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import router from './routes'; // Import the router from routes.ts
 
 // Initialize database by importing db.ts (tables are created on import)
 console.log('Database initialized');
@@ -26,6 +27,9 @@ interface JWTPayload {
  
 // Enable CORS for REST endpoints
 app.use(cors());
+
+// Parse JSON bodies for REST endpoints
+app.use(express.json());
 
 // Ensure uploads directory exists and serve it statically
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
@@ -93,7 +97,10 @@ const upload = multer({
   }
 })
 
-// REST API
+// Mount routes defined in ./routes at /api
+app.use('/api', router);
+
+// Simple health endpoint
 app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from REST API' });
 });

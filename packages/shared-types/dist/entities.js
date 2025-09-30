@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SCHEMAS = exports.InvitationSchema = exports.ConnectionSchema = exports.BookingRequestSchema = exports.AvailabilitySchema = exports.HostSchema = exports.UserSchema = exports.ENTITIES = exports.InvitationEntity = exports.ConnectionEntity = exports.BookingRequestEntity = exports.AvailabilityEntity = exports.HostEntity = exports.UserEntity = void 0;
+exports.toDbRow = toDbRow;
+exports.toDbValues = toDbValues;
+exports.fromDbRow = fromDbRow;
 const zod_1 = require("zod");
 // Base field types with database metadata
 const StringField = (opts = {}) => ({
@@ -19,8 +22,38 @@ const DateTimeField = (opts = {}) => ({
     schema: opts.nullable ? zod_1.z.string().optional() : zod_1.z.string(),
     meta: { type: 'datetime', ...opts }
 });
-const JsonField = (innerSchema, opts = {}) => ({
-    schema: opts.nullable ? innerSchema.optional() : innerSchema,
+// Helper for string-array fields stored as JSON in the DB but typed as arrays at runtime
+// Accepts either a JSON string (e.g. '["a","b"]') or an actual array and normalizes to string[]
+const StringArrayField = (opts = {}) => ({
+    schema: opts.nullable
+        ? zod_1.z.preprocess((val) => {
+            if (val == null)
+                return undefined;
+            if (Array.isArray(val))
+                return val;
+            if (typeof val === 'string') {
+                try {
+                    return JSON.parse(val);
+                }
+                catch {
+                    return val;
+                }
+            }
+            return val;
+        }, zod_1.z.array(zod_1.z.string()).optional())
+        : zod_1.z.preprocess((val) => {
+            if (Array.isArray(val))
+                return val;
+            if (typeof val === 'string') {
+                try {
+                    return JSON.parse(val);
+                }
+                catch {
+                    return val;
+                }
+            }
+            return val;
+        }, zod_1.z.array(zod_1.z.string())),
     meta: { type: 'json', ...opts }
 });
 // Entity definitions with full schema and metadata
@@ -50,14 +83,14 @@ exports.HostEntity = {
         country: StringField({ nullable: true }),
         latitude: RealField({ nullable: true }),
         longitude: RealField({ nullable: true }),
-        amenities: JsonField(zod_1.z.array(zod_1.z.string()), { nullable: true, jsonType: 'string[]' }),
+        amenities: StringArrayField({ nullable: true }),
         house_rules: StringField({ nullable: true }),
         check_in_time: StringField({ nullable: true }),
         check_out_time: StringField({ nullable: true }),
         max_guests: IntegerField({ nullable: true }),
         bedrooms: IntegerField({ nullable: true }),
         bathrooms: IntegerField({ nullable: true }),
-        photos: JsonField(zod_1.z.array(zod_1.z.string()), { nullable: true, jsonType: 'string[]' }),
+        photos: StringArrayField({ nullable: true }),
         created_at: DateTimeField({ default: 'CURRENT_TIMESTAMP' }),
         updated_at: DateTimeField({ default: 'CURRENT_TIMESTAMP' }),
     }
@@ -139,4 +172,97 @@ exports.SCHEMAS = {
     Connection: exports.ConnectionSchema,
     Invitation: exports.InvitationSchema,
 };
+/**
+ * Helpers to convert between runtime objects and DB rows using entity metadata.
+ * - toDbRow: returns an object mapping column -> value suitable for DB insertion (JSON fields stringified)
+ * - toDbValues: returns an array of values in the entity field order (useful for prepared statements)
+ * - fromDbRow: parses a DB row into a runtime-typed object using the Zod schema (this also applies preprocessors)
+ */
+function toDbRow(entityName, obj) {
+    const entity = exports.ENTITIES[entityName];
+    const out = {};
+    for (const [key, field] of Object.entries(entity.fields)) {
+        const meta = field.meta;
+        const val = obj[key];
+        if (meta?.type === 'json') {
+            if (val === undefined || val === null) {
+                out[key] = null;
+            }
+            else if (typeof val === 'string') {
+                // already serialized
+                out[key] = val;
+            }
+            else {
+                try {
+                    out[key] = JSON.stringify(val);
+                }
+                catch {
+                    // fallback to storing original value if stringify fails
+                    out[key] = val;
+                }
+            }
+        }
+        else {
+            out[key] = val === undefined ? null : val;
+        }
+    }
+    return out;
+}
+function toDbValues(entityName, obj) {
+    const entity = exports.ENTITIES[entityName];
+    return Object.keys(entity.fields).map((k) => toDbRow(entityName, obj)[k]);
+}
+function fromDbRow(schemaName, row) {
+    const schema = exports.SCHEMAS[schemaName];
+    // first try direct parse (this will run any preprocessors like StringArrayField)
+    const safe = schema.safeParse(row);
+    if (safe.success)
+        return safe.data;
+    // If parse failed, attempt to normalize the row: convert NULL -> undefined for nullable fields,
+    // apply defaults where provided, and coerce numeric strings to numbers.
+    const entity = exports.ENTITIES[schemaName];
+    const normalized = { ...row };
+    for (const [key, field] of Object.entries(entity.fields)) {
+        const meta = field.meta;
+        const val = row[key];
+        if (val === null || val === undefined) {
+            if (meta?.nullable) {
+                normalized[key] = undefined;
+            }
+            else if (meta?.default !== undefined) {
+                normalized[key] = meta.default;
+            }
+            else {
+                // sensible fallbacks to allow parsing; these avoid throwing but keep the shape reasonable
+                switch (meta?.type) {
+                    case 'string':
+                    case 'datetime':
+                        normalized[key] = '';
+                        break;
+                    case 'integer':
+                    case 'real':
+                        normalized[key] = 0;
+                        break;
+                    case 'json':
+                        normalized[key] = meta?.jsonType === 'string[]' ? [] : {};
+                        break;
+                    default:
+                        normalized[key] = undefined;
+                }
+            }
+        }
+        else {
+            // try to coerce numeric strings coming from the DB into numbers
+            if ((meta?.type === 'integer' || meta?.type === 'real') && typeof val === 'string') {
+                const n = Number(val);
+                normalized[key] = Number.isNaN(n) ? val : n;
+            }
+        }
+    }
+    const second = schema.safeParse(normalized);
+    if (second.success)
+        return second.data;
+    // Last resort: return normalized object (best-effort coercion) to avoid blowing up the API.
+    return normalized;
+}
 // ...existing code...

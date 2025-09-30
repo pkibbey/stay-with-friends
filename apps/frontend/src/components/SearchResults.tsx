@@ -16,6 +16,7 @@ interface SearchResultsProps {
 }
 
 function ResultCard({ result, filters }: { result: HostProfileData; filters: SearchFiltersState }) {
+  console.log('result.amenities: ', result.amenities);
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
     if (!filters.startDate) return true
@@ -146,8 +147,8 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
         {/* Amenities */}
         {result.amenities && result.amenities.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {result.amenities.slice(0, 4).map((amenity) => (
-              <Badge key={amenity} variant="outline" className="text-xs">
+            {result.amenities?.slice(0, 4).length > 0 && result.amenities?.slice(0, 4).map((amenity) => (
+              <Badge key={String(amenity)} variant="outline" className="text-xs">
                 {amenity}
               </Badge>
             ))}
