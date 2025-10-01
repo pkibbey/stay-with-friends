@@ -2,80 +2,15 @@ import {
   setupTestDatabase, 
   teardownTestDatabase, 
 } from '../setup';
-const validateEmail = (email: string): void => {
-  if (!email || typeof email !== 'string') {
-    throw new Error('Email is required');
-  }
-  if (email.length < 5 || email.length > 255) {
-    throw new Error('Email must be between 5 and 255 characters');
-  }
-  if (!email.includes('@') || !email.includes('.')) {
-    throw new Error('Email must be a valid email address');
-  }
-};
-
-const validateName = (name: string): void => {
-  if (!name || typeof name !== 'string') {
-    throw new Error('Name is required');
-  }
-  if (name.trim().length < 1 || name.length > 255) {
-    throw new Error('Name must be between 1 and 255 characters');
-  }
-};
-
-const validateOptionalText = (text: string | undefined, fieldName: string, maxLength: number): void => {
-  if (text !== undefined && text !== null) {
-    if (typeof text !== 'string') {
-      throw new Error(`${fieldName} must be a string`);
-    }
-    if (text.length > maxLength) {
-      throw new Error(`${fieldName} must be no more than ${maxLength} characters`);
-    }
-  }
-};
-
-const validateCoordinates = (lat: number | undefined, lng: number | undefined): void => {
-  if (lat !== undefined && (typeof lat !== 'number' || lat < -90 || lat > 90)) {
-    throw new Error('Latitude must be between -90 and 90');
-  }
-  if (lng !== undefined && (typeof lng !== 'number' || lng < -180 || lng > 180)) {
-    throw new Error('Longitude must be between -180 and 180');
-  }
-};
-
-const validatePositiveInteger = (value: number | undefined, fieldName: string, max?: number): void => {
-  if (value !== undefined && value !== null) {
-    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
-      throw new Error(`${fieldName} must be a positive integer`);
-    }
-    if (max && value > max) {
-      throw new Error(`${fieldName} must be no more than ${max}`);
-    }
-  }
-};
-
-const validateDateRange = (startDate: string, endDate: string): void => {
-  if (!startDate || !endDate) {
-    throw new Error('Start date and end date are required');
-  }
-  
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new Error('Invalid date format');
-  }
-  
-  if (start > end) {
-    throw new Error('Start date must be before or equal to end date');
-  }
-};
-
-const validateStatus = (status: string, validStatuses: string[]): void => {
-  if (status && !validStatuses.includes(status)) {
-    throw new Error(`Status must be one of: ${validStatuses.join(', ')}`);
-  }
-};
+import {
+  validateEmail,
+  validateName,
+  validateOptionalText,
+  validateCoordinates,
+  validatePositiveInteger,
+  validateDateRange,
+  validateStatus,
+} from '@stay-with-friends/shared-types';
 
 describe('Validation Functions', () => {
   beforeEach(() => {
@@ -90,6 +25,7 @@ describe('Validation Functions', () => {
     it('should accept valid email addresses', () => {
       expect(() => validateEmail('test@example.com')).not.toThrow();
       expect(() => validateEmail('user.name+tag@domain.co.uk')).not.toThrow();
+      expect(() => validateEmail('a@b.c')).not.toThrow(); // Minimum valid length (5 chars)
     });
 
     it('should reject invalid email addresses', () => {
@@ -99,10 +35,29 @@ describe('Validation Functions', () => {
       expect(() => validateEmail('a'.repeat(256))).toThrow('Email must be between 5 and 255 characters');
     });
 
+    it('should reject emails with invalid domains', () => {
+      expect(() => validateEmail('test@domain')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail('test@.com')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail('test@domain.')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail('@domain.com')).toThrow('Email must be a valid email address');
+    });
+
+    it('should reject emails with whitespace', () => {
+      expect(() => validateEmail('test @example.com')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail('test@ example.com')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail(' test@example.com')).toThrow('Email must be a valid email address');
+      expect(() => validateEmail('test@example.com ')).toThrow('Email must be a valid email address');
+    });
+
+    it('should reject very short emails', () => {
+      expect(() => validateEmail('a@b')).toThrow('Email must be between 5 and 255 characters');
+      expect(() => validateEmail('a@')).toThrow('Email must be between 5 and 255 characters');
+    });
+
     it('should reject non-string values', () => {
-      expect(() => validateEmail(null as any)).toThrow('Email is required');
-      expect(() => validateEmail(undefined as any)).toThrow('Email is required');
-      expect(() => validateEmail(123 as any)).toThrow('Email is required');
+      expect(() => validateEmail(null as unknown as string)).toThrow('Email is required');
+      expect(() => validateEmail(undefined as unknown as string)).toThrow('Email is required');
+      expect(() => validateEmail(123 as unknown as string)).toThrow('Email is required');
     });
   });
 
@@ -119,25 +74,55 @@ describe('Validation Functions', () => {
       expect(() => validateName('a'.repeat(256))).toThrow('Name must be between 1 and 255 characters');
     });
 
+    it('should reject very long names', () => {
+      const longName = 'a'.repeat(300);
+      expect(() => validateName(longName)).toThrow('Name must be between 1 and 255 characters');
+    });
+
+    it('should handle names with mixed whitespace', () => {
+      expect(() => validateName('  ')).toThrow('Name must be between 1 and 255 characters');
+      expect(() => validateName('\t')).toThrow('Name must be between 1 and 255 characters');
+      expect(() => validateName('\n')).toThrow('Name must be between 1 and 255 characters');
+      expect(() => validateName(' \t\n ')).toThrow('Name must be between 1 and 255 characters');
+    });
+
+    it('should accept names with leading/trailing spaces that have content', () => {
+      expect(() => validateName(' John ')).not.toThrow();
+      expect(() => validateName('  Jane  ')).not.toThrow();
+    });
+
     it('should reject non-string values', () => {
-      expect(() => validateName(null as any)).toThrow('Name is required');
-      expect(() => validateName(undefined as any)).toThrow('Name is required');
-      expect(() => validateName(123 as any)).toThrow('Name is required');
+      expect(() => validateName(null as unknown as string)).toThrow('Name is required');
+      expect(() => validateName(undefined as unknown as string)).toThrow('Name is required');
+      expect(() => validateName(123 as unknown as string)).toThrow('Name is required');
     });
   });
 
   describe('validateOptionalText', () => {
-  it('should accept valid optional text', () => {
-    expect(() => validateOptionalText('Valid text', 'Test', 100)).not.toThrow();
-    expect(() => validateOptionalText(undefined, 'Test', 100)).not.toThrow();
-    expect(() => validateOptionalText(null as any, 'Test', 100)).not.toThrow();
-  });    it('should reject text exceeding max length', () => {
+    it('should accept valid optional text', () => {
+      expect(() => validateOptionalText('Valid text', 'Test', 100)).not.toThrow();
+      expect(() => validateOptionalText(undefined, 'Test', 100)).not.toThrow();
+      expect(() => validateOptionalText('', 'Test', 100)).not.toThrow();
+    });
+  
+    it('should reject text exceeding max length', () => {
       expect(() => validateOptionalText('a'.repeat(101), 'Test', 100))
         .toThrow('Test must be no more than 100 characters');
     });
 
+    it('should reject very long text', () => {
+      const veryLongText = 'a'.repeat(10000);
+      expect(() => validateOptionalText(veryLongText, 'Description', 5000))
+        .toThrow('Description must be no more than 5000 characters');
+    });
+
+    it('should accept text with mixed whitespace', () => {
+      expect(() => validateOptionalText('  spaces  ', 'Test', 100)).not.toThrow();
+      expect(() => validateOptionalText('\t\n\r', 'Test', 100)).not.toThrow();
+    });
+
     it('should reject non-string values', () => {
-      expect(() => validateOptionalText(123 as any, 'Test', 100))
+      expect(() => validateOptionalText(123 as unknown as string, 'Test', 100))
         .toThrow('Test must be a string');
     });
   });
@@ -148,6 +133,7 @@ describe('Validation Functions', () => {
       expect(() => validateCoordinates(90, 180)).not.toThrow();
       expect(() => validateCoordinates(-90, -180)).not.toThrow();
       expect(() => validateCoordinates(undefined, undefined)).not.toThrow();
+      expect(() => validateCoordinates(0, 0)).not.toThrow(); // Null Island
     });
 
     it('should reject invalid coordinates', () => {
@@ -157,9 +143,22 @@ describe('Validation Functions', () => {
       expect(() => validateCoordinates(0, -181)).toThrow('Longitude must be between -180 and 180');
     });
 
+    it('should reject out-of-range coordinates', () => {
+      expect(() => validateCoordinates(100, 0)).toThrow('Latitude must be between -90 and 90');
+      expect(() => validateCoordinates(-100, 0)).toThrow('Latitude must be between -90 and 90');
+      expect(() => validateCoordinates(0, 200)).toThrow('Longitude must be between -180 and 180');
+      expect(() => validateCoordinates(0, -200)).toThrow('Longitude must be between -180 and 180');
+      expect(() => validateCoordinates(500, 500)).toThrow('Latitude must be between -90 and 90');
+    });
+
     it('should reject non-numeric values', () => {
-      expect(() => validateCoordinates('40.7128' as any, 0)).toThrow('Latitude must be between -90 and 90');
-      expect(() => validateCoordinates(0, '-74.0060' as any)).toThrow('Longitude must be between -180 and 180');
+      expect(() => validateCoordinates('40.7128' as unknown as number, 0)).toThrow('Latitude must be between -90 and 90');
+      expect(() => validateCoordinates(0, '-74.0060' as unknown as number)).toThrow('Longitude must be between -180 and 180');
+    });
+
+    it('should handle extreme precision coordinates', () => {
+      expect(() => validateCoordinates(40.712775897, -74.005973754)).not.toThrow();
+      expect(() => validateCoordinates(89.99999999, 179.99999999)).not.toThrow();
     });
   });
 
@@ -177,8 +176,25 @@ describe('Validation Functions', () => {
       expect(() => validatePositiveInteger(101, 'Test', 100)).toThrow('Test must be no more than 100');
     });
 
+    it('should reject negative values including negative guest counts', () => {
+      expect(() => validatePositiveInteger(-1, 'Guest count')).toThrow('Guest count must be a positive integer');
+      expect(() => validatePositiveInteger(-10, 'Guest count')).toThrow('Guest count must be a positive integer');
+      expect(() => validatePositiveInteger(-100, 'Max guests')).toThrow('Max guests must be a positive integer');
+    });
+
+    it('should reject floating point numbers', () => {
+      expect(() => validatePositiveInteger(1.1, 'Test')).toThrow('Test must be a positive integer');
+      expect(() => validatePositiveInteger(99.9, 'Test')).toThrow('Test must be a positive integer');
+      expect(() => validatePositiveInteger(0.5, 'Test')).toThrow('Test must be a positive integer');
+    });
+
+    it('should handle large integers', () => {
+      expect(() => validatePositiveInteger(1000000, 'Test')).not.toThrow();
+      expect(() => validatePositiveInteger(Number.MAX_SAFE_INTEGER, 'Test')).not.toThrow();
+    });
+
     it('should reject non-numeric values', () => {
-      expect(() => validatePositiveInteger('5' as any, 'Test')).toThrow('Test must be a positive integer');
+      expect(() => validatePositiveInteger('5' as unknown as number, 'Test')).toThrow('Test must be a positive integer');
     });
   });
 
@@ -194,6 +210,20 @@ describe('Validation Functions', () => {
       expect(() => validateDateRange('invalid-date', '2025-12-07')).toThrow('Invalid date format');
       expect(() => validateDateRange('2025-12-07', '2025-12-01')).toThrow('Start date must be before or equal to end date');
     });
+
+    it('should handle various invalid date formats', () => {
+      expect(() => validateDateRange('not-a-date', '2025-12-07')).toThrow('Invalid date format');
+      expect(() => validateDateRange('2025-12-01', 'not-a-date')).toThrow('Invalid date format');
+      // Note: JavaScript Date constructor is lenient and accepts '12/01/2025' format
+      // The validator uses new Date() which will parse various formats
+      expect(() => validateDateRange('2025-13-01', '2025-12-07')).toThrow('Invalid date format');
+      expect(() => validateDateRange('2025-12-32', '2025-12-07')).toThrow('Invalid date format');
+    });
+
+    it('should accept long date ranges', () => {
+      expect(() => validateDateRange('2025-01-01', '2025-12-31')).not.toThrow();
+      expect(() => validateDateRange('2025-01-01', '2026-01-01')).not.toThrow();
+    });
   });
 
   describe('validateStatus', () => {
@@ -201,13 +231,32 @@ describe('Validation Functions', () => {
       const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
       expect(() => validateStatus('pending', validStatuses)).not.toThrow();
       expect(() => validateStatus('approved', validStatuses)).not.toThrow();
-      expect(() => validateStatus('', validStatuses)).not.toThrow(); // Empty string is allowed
+      expect(() => validateStatus('declined', validStatuses)).not.toThrow();
+      expect(() => validateStatus('cancelled', validStatuses)).not.toThrow();
     });
 
     it('should reject invalid statuses', () => {
       const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
       expect(() => validateStatus('invalid', validStatuses))
         .toThrow('Status must be one of: pending, approved, declined, cancelled');
+      expect(() => validateStatus('PENDING', validStatuses))
+        .toThrow('Status must be one of: pending, approved, declined, cancelled');
+      expect(() => validateStatus('Pending', validStatuses))
+        .toThrow('Status must be one of: pending, approved, declined, cancelled');
+    });
+
+    it('should reject empty or whitespace statuses', () => {
+      const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
+      expect(() => validateStatus('', validStatuses))
+        .toThrow('Status must be one of: pending, approved, declined, cancelled');
+      expect(() => validateStatus(' ', validStatuses))
+        .toThrow('Status must be one of: pending, approved, declined, cancelled');
+    });
+
+    it('should be case-sensitive', () => {
+      const validStatuses = ['active', 'inactive'];
+      expect(() => validateStatus('ACTIVE', validStatuses))
+        .toThrow('Status must be one of: active, inactive');
     });
   });
 });
