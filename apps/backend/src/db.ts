@@ -142,6 +142,27 @@ try {
 
 // Connections table constraints and indexes  
 try {
+  // Backfill: ensure only one connection row exists for each user pair, keeping the most relevant record
+  db.exec(`
+    WITH ranked AS (
+      SELECT 
+        id,
+        ROW_NUMBER() OVER (
+          PARTITION BY user_id, connected_user_id
+          ORDER BY 
+            CASE status WHEN 'accepted' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+            datetime(created_at) DESC,
+            id
+        ) AS rn
+      FROM connections
+    )
+    DELETE FROM connections
+    WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
+  `);
+
+  // Enforce uniqueness going forward
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_connections_user_connected_unique ON connections(user_id, connected_user_id)`);
+
   db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_user_id ON connections(user_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_connected_user_id ON connections(connected_user_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_status ON connections(status)`);

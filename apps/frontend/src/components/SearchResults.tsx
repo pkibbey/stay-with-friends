@@ -16,7 +16,6 @@ interface SearchResultsProps {
 }
 
 function ResultCard({ result, filters }: { result: HostWithAvailabilities; filters: SearchFiltersState }) {
-  console.log('result.amenities: ', result.amenities);
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
     if (!filters.startDate) return true
