@@ -11,7 +11,7 @@
 ### Unit-level gaps (\`apps/backend/tests/unit\`)
 
 - [x] Refactor `validation.test.ts` to import validators from `@stay-with-friends/shared-types` instead of duplicating logic, and add edge-case coverage (very long names, mixed whitespace, invalid email domains, out-of-range coordinates, negative guest counts).
-- [ ] Create `db-derived-data.test.ts` exercising read-only statements such as `getAvailabilityDates`, `searchHostsAvailableOnDate`, and `getPendingBookingRequestsCountByHostUser` (cover empty ranges, overlapping availability windows, and hosts with mixed booking statuses).
+- [x] Create `db-derived-data.test.ts` exercising read-only statements such as `getAvailabilityDates`, `searchHostsAvailableOnDate`, and `getPendingBookingRequestsCountByHostUser` (cover empty ranges, overlapping availability windows, and hosts with mixed booking statuses).
 - [ ] Add focused tests for connection helpers (`getConnectionBetweenUsers`, `deleteConnectionsBetweenUsers`) to ensure bi-directional lookups and cleanup are correct.
 - [ ] Cover statistics statements (`getTotalHostsCount`, `getTotalConnectionsCount`, `getTotalBookingsCount`) for zero, single, and multiple record scenarios to prevent regressions in dashboard metrics.
 - [ ] Extract the duplicated `validateDateRange` helper from `routes/availabilities.ts` and `routes/booking-requests.ts` into a shared module and add unit tests for invalid formats, reversed ranges, and missing values.
