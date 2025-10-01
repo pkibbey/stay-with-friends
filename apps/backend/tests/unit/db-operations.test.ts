@@ -324,7 +324,7 @@ describe('Database Operations', () => {
     it('should validate booking status workflow', () => {
       const validStatuses = ['pending', 'approved', 'declined', 'cancelled'];
       const validTransitions: Record<string, string[]> = {
-        pending: ['approved', 'declined', 'cancelled'],
+        pending: validStatuses.filter(s => s !== 'pending'),
         approved: ['cancelled'],
         declined: [] as string[],
         cancelled: [] as string[],
