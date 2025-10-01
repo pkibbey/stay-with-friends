@@ -7,10 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar as CalendarIcon, Home, MapPin, Users, Bed, Bath } from 'lucide-react'
 import { convertAvailabilityDates } from '@/lib/date-utils'
 import Link from 'next/link'
-import type { HostProfileData } from '@/types'
+import type { HostWithAvailabilities } from '@/types'
 
 interface SearchCalendarViewProps {
-  hosts: HostProfileData[]
+  hosts: HostWithAvailabilities[]
 }
 
 export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
@@ -19,15 +19,15 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
 
   // Create a map of date strings to hosts available on those dates
   const hostsByDate = useMemo(() => {
-    const dateMap = new Map<string, HostProfileData[]>()
+    const dateMap = new Map<string, HostWithAvailabilities[]>()
     
     hosts.forEach(host => {
       if (host.availabilities) {
         host.availabilities.forEach(availability => {
           if (availability.status === 'available') {
-            const startDate = new Date(availability.startDate)
-            const endDate = new Date(availability.endDate)
-            
+            const startDate = new Date(availability.start_date || '')
+            const endDate = new Date(availability.end_date || '')
+
             // Add each date in the range
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
               const dateKey = d.toISOString().split('T')[0]

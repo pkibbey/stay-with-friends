@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SearchFilters } from '../../src/components/SearchFilters';
 
-// Mock the GraphQL fetch
+// Mock fetch
 global.fetch = jest.fn();
 
 describe('SearchFilters Component', () => {

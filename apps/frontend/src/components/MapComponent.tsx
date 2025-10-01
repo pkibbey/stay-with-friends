@@ -13,7 +13,7 @@ import { Style, Icon } from 'ol/style'
 import Overlay from 'ol/Overlay'
 import { MapPin } from 'lucide-react'
 import 'ol/ol.css'
-import { HostProfileData } from '@/types'
+import { HostWithAvailabilities } from '@/types'
 
 interface MapComponentProps {
   // Single location props (backward compatibility)
@@ -24,7 +24,7 @@ interface MapComponentProps {
   country?: string
   location?: string
   className?: string
-  hosts?: HostProfileData[]
+  hosts?: HostWithAvailabilities[]
 }
 
 export function MapComponent({
@@ -112,7 +112,7 @@ export function MapComponent({
     }
   }, [])
 
-  const addHostsToMap = useCallback(async (hosts: HostProfileData[], map: Map) => {
+  const addHostsToMap = useCallback(async (hosts: HostWithAvailabilities[], map: Map) => {
     if (hosts.length === 0) return
 
     // Remove existing markers

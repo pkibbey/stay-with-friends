@@ -119,7 +119,7 @@ export const authOptions = {
           try {
             console.log('Fetching backend user ID for email (authenticated):', user.email)
             // Try to fetch user from REST API
-            const response = await fetch(`http://localhost:4000/api/users/by-email/${encodeURIComponent(user.email)}`);
+            const response = await fetch(`http://localhost:4000/api/users/email/${encodeURIComponent(user.email)}`);
             if (response.ok) {
               const data = await response.json();
               if (data && data.id) {
@@ -143,6 +143,22 @@ export const authOptions = {
                     if (createData.email) token.email = createData.email;
                     console.log('Created backend user and stored id in token:', token.backendUserId);
                   }
+                }
+              }
+            } else if (response.status === 404) {
+              console.log('Backend user not found (404); creating user for email:', user.email);
+              const createResp = await fetch('http://localhost:4000/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, name: user.name }),
+              });
+              if (createResp.ok) {
+                const createData = await createResp.json();
+                if (createData && createData.id) {
+                  token.backendUserId = createData.id;
+                  if (createData.name) token.name = createData.name;
+                  if (createData.email) token.email = createData.email;
+                  console.log('Created backend user and stored id in token:', token.backendUserId);
                 }
               }
             }

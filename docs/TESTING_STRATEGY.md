@@ -16,74 +16,31 @@ Our testing strategy follows a three-tier approach:
 ```
 apps/backend/
 ├── tests/
-│   ├── setup.ts                    # Database setup and test utilities
-│   ├── jest.setup.ts               # Jest configuration
+│   ├── setup.ts                    # In-memory SQLite schema + factory helpers
+│   ├── jest.setup.ts               # Ts-jest bootstrap (mocks uuid)
+│   ├── __mocks__/uuid.ts           # Deterministic UUID mock for Jest
 │   ├── unit/
-│   │   ├── validation.test.ts      # Input validation tests
-│   │   ├── db-operations.test.ts   # Database operation tests
-│   │   └── business-logic.test.ts  # Business rule tests
-│   ├── integration/
-│   │   ├── api-endpoints.test.ts   # REST endpoint tests
-│   │   └── database.test.ts        # Database integration tests
-│   └── fixtures/
-│       ├── users.json              # Test data fixtures
-│       ├── hosts.json
-│       └── bookings.json
+│   │   ├── validation.test.ts      # Shared validator coverage (email/name/date)
+│   │   └── db-operations.test.ts   # Direct SQL interaction checks using factories
+│   └── integration/
+│       └── upload.test.ts          # Multer + image upload flow using Supertest
 ```
 
 ### 2. Testing Dependencies
 
-```bash
-# Install testing dependencies
-cd apps/backend
-npm install --save-dev \
-  jest \
-  @types/jest \
-  ts-jest \
-  supertest \
-  @types/supertest
-```
+> Testing dependencies (jest, ts-jest, supertest, etc.) are already declared in `apps/backend/package.json`. Run `npm install` at the repository root to hydrate them.
 
-### 3. Test Categories
+### 3. Current Coverage Snapshot
 
-#### Unit Tests - Validation Functions
-**Purpose**: Ensure all validation functions comply with entity specifications
-
-**Coverage**:
-- Email validation (unique, format, length)
-- Name validation (required, length)
-- Date range validation (start ≤ end, no past dates)
-- Coordinate validation (-90 ≤ lat ≤ 90, -180 ≤ lng ≤ 180)
-- Guest count validation (positive integer, within limits)
-- Status validation (allowed values only)
-
-**Example Test**:
-```typescript
-describe('Email Validation', () => {
-  it('should accept valid email formats', () => {
-    expect(() => validateEmail('user@example.com')).not.toThrow();
-  });
-  
-  it('should reject emails longer than 255 characters', () => {
-    const longEmail = 'a'.repeat(250) + '@example.com';
-    expect(() => validateEmail(longEmail)).toThrow('Email must be between 5 and 255 characters');
-  });
-});
-```
+- `tests/unit/validation.test.ts` exercises the shared validation helpers (email, name, optional text, coordinates, positive integers, date ranges, and status whitelists). The tests currently duplicate the logic under test; migrating them to import from `@stay-with-friends/shared-types` would reduce drift.
+- `tests/unit/db-operations.test.ts` verifies core SQL operations against an in-memory SQLite database using the factory helpers in `tests/setup.ts`. It covers availability insertions, booking request workflows, connection uniqueness expectations, and invitation uniqueness/expiry rules.
+- `tests/integration/upload.test.ts` boots the Express app, runs image upload scenarios via Supertest, and checks that Multer/Sharp pipelines respond with the expected payload.
 
 ### 4. Database Testing Strategy
 
-**Test Database**: Each test uses an in-memory SQLite database for isolation
-
-**Setup**:
-- Create fresh database for each test
-- Clean up after each test
-
-**Constraints Testing**:
-- Foreign key relationships
-- Unique constraints
-- Check constraints
-- Cascade deletions
+- Every backend test spins up an isolated in-memory SQLite database using `setupTestDatabase()`; schemas mirror the production tables but do include foreign keys that are not yet present in `apps/backend/src/db.ts`.
+- `db-operations.test.ts` asserts behaviour such as unique invitation tokens, acceptable availability statuses, and booking status transitions. Failed assertions indicate gaps between the intended business rules and the live schema (e.g., the production `connections` table does **not** enforce the unique `(user_id, connected_user_id)` constraint yet).
+- Factories in `tests/setup.ts` centralise seed data to keep scenarios realistic.
 
 ## Frontend Testing Strategy
 
@@ -92,169 +49,76 @@ describe('Email Validation', () => {
 ```
 apps/frontend/
 ├── tests/
-│   ├── setup.ts                    # Testing environment setup
+│   ├── setup.ts                    # Jest setup (jsdom + testing-library defaults)
 │   ├── components/
-│   │   ├── SearchFilters.test.tsx  # Component unit tests
-│   │   ├── HostCard.test.tsx
-│   │   ├── BookingForm.test.tsx
-│   │   └── AvailabilityCalendar.test.tsx
-│   ├── pages/
-│   │   ├── HomePage.test.tsx       # Page integration tests
-│   │   ├── HostingPage.test.tsx
-│   │   └── SearchPage.test.tsx
-│   ├── utils/
-│   │   ├── date-utils.test.ts      # Utility function tests
-│   │   └── validation.test.ts
+│   │   └── SearchFilters.test.tsx  # Exercises filter UI behaviour
 │   └── e2e/
-│       ├── user-journey.spec.ts    # End-to-end workflow tests
-│       ├── accessibility.spec.ts   # Accessibility compliance tests
-│       └── mobile.spec.ts          # Mobile responsiveness tests
+│       └── invite.spec.ts          # Playwright flow covering invite creation
 ├── playwright.config.ts            # Playwright configuration
 ```
 
 ### 2. Testing Dependencies
 
-```bash
-# Install testing dependencies
-cd apps/frontend
-npm install --save-dev \
-  jest \
-  @types/jest \
-  jest-environment-jsdom \
-  @testing-library/react \
-  @testing-library/jest-dom \
-  @testing-library/user-event \
-  @playwright/test
-```
+> Jest, @testing-library, and Playwright are already listed in `apps/frontend/package.json`. Use `npm install` from the repo root to provision them.
 
-### 3. Test Categories
+### 3. Current Coverage Snapshot
 
-#### Component Tests
-**Purpose**: Test React components in isolation
+- `tests/components/SearchFilters.test.tsx` verifies that the guest selector honours the `maxGuests` cap and renders the expected options. It uses Testing Library with the shared `tests/setup.ts` helpers.
+- `tests/e2e/invite.spec.ts` (Playwright) walks through sending an invitation from the settings area, exercising both the frontend UI and backend invitation routes.
 
-**Coverage**:
-- Rendering with different props
-- User interactions (clicks, form inputs)
-- State changes
-- Accessibility features
-- Error boundaries
+### 4. Known Gaps
 
-**Example**:
-```typescript
-describe('SearchFilters', () => {
-  it('validates guest count against host capacity', () => {
-    render(<SearchFilters maxGuests={4} />);
-    const guestsSelect = screen.getByRole('combobox', { name: /guests/i });
-    
-    // Should not allow more guests than host capacity
-    expect(screen.queryByRole('option', { name: '5' })).not.toBeInTheDocument();
-  });
-});
-```
-
-#### Page Integration Tests
-**Purpose**: Test complete page functionality
-
-**Coverage**:
-- Page routing
-- Data fetching
-- Form submissions
-- Error handling
-- Loading states
-
-#### E2E Tests
-**Purpose**: Test complete user workflows
-
-**Coverage**:
-- User registration/authentication
-- Host creation and management
-- Availability management
-- Search and booking flow
-- Invitation system
-- Mobile responsiveness
-- Accessibility compliance
+- There are currently no Jest tests covering complex pages, forms (e.g., host creation), or API utilities.
+- No automated accessibility or mobile viewport checks exist yet.
+- Playwright coverage is limited to the invitation happy path; sign-in flows rely on magic-link logging instead of automated email retrieval.
 
 ## Test Organization and Commands
 
 ### Backend Commands
 
 ```bash
-# Run all tests
-npm test
+# From the monorepo root
+npm run test --workspace backend
 
-# Run tests in watch mode
-npm run test:watch
+# Watch mode
+npm run test:watch --workspace backend
 
-# Run only unit tests
-npm run test:unit
+# Focus on unit or integration suites
+npm run test:unit --workspace backend
+npm run test:integration --workspace backend
 
-# Run only integration tests
-npm run test:integration
-
-# Generate coverage report
-npm run test:coverage
+# Coverage report
+npm run test:coverage --workspace backend
 ```
 
 ### Frontend Commands
 
 ```bash
-# Run all Jest tests
-npm test
+# From the monorepo root
+npm run test --workspace frontend
 
-# Run tests in watch mode
-npm run test:watch
+# Watch mode
+npm run test:watch --workspace frontend
 
-# Run E2E tests
-npm run test:e2e
+# Playwright E2E (run after starting the dev servers)
+npm run test:e2e --workspace frontend
 
-# Run E2E tests with UI
-npm run test:e2e:ui
-
-# Generate coverage report
-npm run test:coverage
+# Coverage report
+npm run test:coverage --workspace frontend
 ```
 
 ## Entity Specification Compliance Testing
 
-### User Entity Tests
-- [x] Email uniqueness and format validation
-- [x] Name length validation (1-255 characters)
-- [x] Email verification flow
-- [x] User creation timestamps
-
-### Host Entity Tests
-- [x] Required name field validation
-- [x] Email uniqueness (when provided)
-- [x] Location and description text limits
-- [x] Coordinate validation (-90 to 90 lat, -180 to 180 lng)
-- [x] Positive integer validation (guests, bedrooms, bathrooms)
-- [x] Array validation (amenities, photos)
-- [x] Host-user relationship integrity
-
-### Availability Entity Tests
-- [x] Date range validation (start ≤ end)
-- [x] Status validation (available, booked, blocked)
-- [x] Host relationship integrity
-- [x] Overlapping availability handling
-
-### BookingRequest Entity Tests
-- [x] Date range validation
-- [x] Guest count validation (≤ host capacity)
-- [x] Status workflow (pending → approved/declined)
-- [x] Host and requester relationships
-
-### Connection Entity Tests
-- [x] No self-connections allowed
-- [x] Unique user pair constraints
-- [x] Status validation (pending, accepted, blocked)
-- [x] Bidirectional relationship handling
-
-### Invitation Entity Tests
-- [x] Email format validation
-- [x] Token uniqueness and security
-- [x] Expiration date validation
-- [x] Status workflow (pending → accepted/cancelled)
-- [x] Auto-connection creation on acceptance
+| Area | Status | Notes |
+| --- | --- | --- |
+| **User validations** | ✅ | Email and name validators covered in `validation.test.ts`. Email verification flow is manual and untested. |
+| **Host operations** | ⚠️ Partial | Validators for coordinates/positive integers are exercised, but there are no API or end-to-end tests ensuring host creation/update flows. |
+| **Availability** | ⚠️ Partial | Date range & status enumeration covered in `db-operations.test.ts`. Overlap handling remains manual and untested. |
+| **Booking requests** | ⚠️ Partial | Tests assert status transitions and guest count expectations, but no integration tests hit the `/booking-requests` routes. |
+| **Connections** | ❌ Gap | Unit tests expect a unique constraint that the production schema does not enforce; there are no route-level tests for requests/updates. |
+| **Invitations** | ✅ | Token uniqueness and expiry validated via factories and `db-operations.test.ts`. Auto-connection on acceptance is not implemented. |
+| **Frontend components** | ⚠️ Partial | `SearchFilters` unit test verifies guest cap logic; most UI components lack coverage. |
+| **Playwright flows** | ⚠️ Partial | `invite.spec.ts` covers the invitation happy path. Sign-in shortcuts rely on magic-link logs; other journeys are not scripted. |
 
 ## Continuous Integration
 
@@ -267,81 +131,15 @@ npm install --save-dev husky lint-staged
 npx husky add .husky/pre-commit "npm run test && npm run lint"
 ```
 
-### CI Pipeline (GitHub Actions example)
-```yaml
-name: Test Suite
-on: [push, pull_request]
-
-jobs:
-  backend-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: cd apps/backend && npm ci
-      - run: cd apps/backend && npm test
-      
-  frontend-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: cd apps/frontend && npm ci
-      - run: cd apps/frontend && npm test
-      - run: cd apps/frontend && npm run test:e2e
-```
+> **Status:** no automated CI pipeline is configured yet. When we add one, mirror the commands above using Turborepo workspaces (e.g., `npm run test --workspace backend`). A minimal GitHub Actions workflow should install dependencies once at the root, cache `node_modules`, and run backend + frontend test suites plus Playwright (optionally with the experimental `--project=chromium` flag for speed).
 
 ## Performance Testing
-
-### Load Testing (Backend)
-```bash
-# Install artillery for load testing
-npm install --save-dev artillery
-```
-
-### Performance Testing (Frontend)
-```typescript
-// Lighthouse performance testing in Playwright
-test('should meet performance benchmarks', async ({ page }) => {
-  await page.goto('/');
-  
-  const lighthouse = await new LighthouseCI().audit(page.url());
-  expect(lighthouse.performance).toBeGreaterThan(90);
-  expect(lighthouse.accessibility).toBeGreaterThan(95);
-});
-```
+No automated performance testing is in place yet. Baseline Lighthouse checks can be added to Playwright and backend load tests (Artillery or k6) can run against the Express server once the API surface stabilises.
 
 ## Security Testing
-
-### Input Sanitization Tests
-- SQL injection prevention
-- XSS prevention
-- CSRF protection
-- Rate limiting
-- Authentication/authorization
-
-### Data Privacy Tests
-- User data encryption
-- Access control validation
-- Data retention compliance
-- GDPR compliance features
+Security testing is manually performed during development. There are currently no automated suites for sanitisation, CSRF, or access-control audits. Adding supertest-based negative cases and Playwright smoke checks is a high-priority follow-up.
 
 ## Monitoring and Alerts
-
-### Test Metrics to Track
-- Test coverage percentage (target: >80%)
-- Test execution time
-- Flaky test detection
-- Performance regression detection
-
-### Quality Gates
-- All tests must pass before deployment
-- Coverage cannot decrease below threshold
-- Performance metrics must meet benchmarks
-- Accessibility tests must pass
+We do not yet aggregate test metrics or gate merges on coverage thresholds. Turborepo + GitHub Actions can surface coverage percentages and detect flaky tests once CI is enabled.
 
 This comprehensive testing strategy ensures that all functionality meets the specifications while maintaining high code quality and user experience standards.

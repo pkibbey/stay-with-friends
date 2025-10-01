@@ -12,19 +12,6 @@ export interface SearchFiltersState {
   startDate: string | null
 }
 
-// For form data and creation/updates (frontend-specific types that extend the generated base types)
-export interface HostProfileData extends Omit<Host, 'id' | 'createdAt' | 'updatedAt'> {
-  id?: string;
-  availabilities?: Array<{
-    id: string;
-    startDate: string;
-    endDate: string;
-    status: string;
-    notes?: string;
-  }>;
-  user?: User;
-}
-
 // Extended type for component-specific data
 export interface InvitationWithUser extends Invitation {
   inviterUser?: User

@@ -8,14 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { MapPin, Users, Home, Eye, Bed, Bath, User } from 'lucide-react'
 import { formatDisplayDate, parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-import { HostProfileData, SearchFiltersState } from '@/types'
+import { HostWithAvailabilities, SearchFiltersState } from '@/types'
 
 interface SearchResultsProps {
-  hosts: HostProfileData[]
+  hosts: HostWithAvailabilities[]
   filters: SearchFiltersState
 }
 
-function ResultCard({ result, filters }: { result: HostProfileData; filters: SearchFiltersState }) {
+function ResultCard({ result, filters }: { result: HostWithAvailabilities; filters: SearchFiltersState }) {
   console.log('result.amenities: ', result.amenities);
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
@@ -30,8 +30,8 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
     return result.availabilities.some(availability => {
       if (availability.status !== 'available') return false
 
-      const availStart = parseLocalDate(availability.startDate)
-      const availEnd = parseLocalDate(availability.endDate)
+      const availStart = parseLocalDate(availability.start_date || '')
+      const availEnd = parseLocalDate(availability.end_date || '')
 
       return startDate >= availStart && startDate <= availEnd
     })
@@ -40,8 +40,8 @@ function ResultCard({ result, filters }: { result: HostProfileData; filters: Sea
   const availableNow = result.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
     const today = new Date()
-    const start = parseLocalDate(availability.startDate)
-    const end = parseLocalDate(availability.endDate)
+    const start = parseLocalDate(availability.start_date || '')
+    const end = parseLocalDate(availability.end_date || '')
     return today >= start && today <= end
   }) || false
 

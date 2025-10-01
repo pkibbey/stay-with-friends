@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Map, List, Calendar } from 'lucide-react'
 import { SearchFilters } from '@/components/SearchFilters'
 import { SearchResults } from '@/components/SearchResults'
-import { HostProfileData, SearchFiltersState } from '@/types'
+import { HostWithAvailabilities, SearchFiltersState } from '@/types'
 import { apiGet } from '@/lib/api'
 
 function SearchPage() {
@@ -19,7 +19,7 @@ function SearchPage() {
   const hasInitialized = useRef(false)
   
   // Search state
-  const [hosts, setHosts] = useState<HostProfileData[]>([])
+  const [hosts, setHosts] = useState<HostWithAvailabilities[]>([])
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'list' | 'map' | 'calendar'>('list')
   
@@ -43,7 +43,7 @@ function SearchPage() {
   const searchHosts = useCallback(async (searchFilters: SearchFiltersState) => {
     setError(null)
     try {
-      let hosts: HostProfileData[] = []
+      let hosts: HostWithAvailabilities[] = []
       if (searchFilters.query || searchFilters.startDate) {
         // REST: /api/hosts/search/:query?startDate=YYYY-MM-DD
         const queryParam = encodeURIComponent(searchFilters.query || '')

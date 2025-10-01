@@ -1,10 +1,11 @@
-# NextAuth Magic Links & Adapter Requirements
+# NextAuth Magic Links & Minimal Adapter
 
-## ⚠️ Critical I### Current Status
+## Current Status (September 2025)
 
-✅ **FIXED** - Implemented minimal custom adapter that provides required methods for EmailProvider.
-
-**Key Issue Discovered**: NextAuth's EmailProvider requires `getUserByEmail` and other adapter methods, even with JWT strategy. Our adapter satisfies these requirements without actually persisting user data.e: Magic Links Require Database Adapter
+- ✅ Minimal custom adapter stored in `apps/frontend/src/lib/minimal-auth-adapter.ts` writes verification tokens into `verification-tokens.db` using Better SQLite.
+- ✅ Sessions remain JWT-only; the adapter stubs user/session methods while implementing token storage via `createVerificationToken` / `useVerificationToken`.
+- ✅ Development builds log magic-link URLs to both stdout and `/tmp/staywithfriends-magic-link.log` for local testing.
+- ⚠️ The JWT callback currently fetches backend users from `/api/users/by-email/:email`, but the REST route is `/api/users/email/:email` — this mismatch should be corrected in code.
 
 ### The Problem
 
@@ -43,11 +44,22 @@ Use a lightweight custom adapter that only handles verification tokens:
 // Custom adapter that ONLY stores verification tokens
 // Users and sessions remain JWT-only
 const MinimalAdapter = {
-  // Skip user/session methods (use JWT)
-  createUser: undefined,
-  getUser: undefined, 
-  // ... etc
-  
+  // Stub user/session methods so the interface is satisfied
+  async createUser(user) {
+    return {
+      id: crypto.randomUUID(),
+      email: user.email,
+      name: user.name ?? null,
+      emailVerified: user.emailVerified ?? null,
+      image: user.image ?? null,
+    }
+  },
+  async getUser() { return null },
+  async getUserByEmail(email) {
+    return { id: crypto.randomUUID(), email, name: null, emailVerified: null, image: null }
+  },
+  // ...other stubs omitted
+
   // ONLY implement token methods (required for magic links)
   async createVerificationToken(token) { /* store token */ },
   async useVerificationToken(params) { /* verify & delete token */ }
@@ -64,10 +76,6 @@ Replace magic links with:
 - OAuth providers (Google, GitHub) - no adapter needed
 - Phone/SMS verification 
 - Traditional email/password
-
-### Current Status
-
-✅ **FIXED** - Implemented minimal custom adapter for verification tokens only.
 
 ### Implemented Solution
 
@@ -98,6 +106,19 @@ export const authOptions = {
 - `verification-tokens.db` - Only temporary magic link tokens (~KB in size)
 - `apps/backend/database.db` - All application data (users, hosts, bookings)
 - **No session persistence** - JWT handles all session state
+
+### Operational Notes
+
+- The adapter purges expired tokens on every `createVerificationToken` call via `cleanupExpired.run(now)`.
+- Development mode logs each magic link URL to stdout and appends an entry to `/tmp/staywithfriends-magic-link.log`. Tests can read that file to simulate email delivery.
+- Removing `verification-tokens.db` will log everyone out of pending magic links; the file is re-created automatically on next sign-in.
+- The JWT callback in `auth.ts` re-signs an API token with the backend secret so REST calls can authenticate against Express endpoints.
+
+### Follow-ups
+
+- Fix the `/api/users/by-email/:email` vs `/api/users/email/:email` mismatch to ensure backend user provisioning succeeds on first login.
+- Consider moving the adapter into `packages/shared-utils` if other apps need magic link support.
+- Add Playwright helpers to capture the magic link from `/tmp/staywithfriends-magic-link.log` for automated sign-in flows.
 
 ### Key Learnings
 

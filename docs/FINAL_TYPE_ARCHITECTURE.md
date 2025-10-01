@@ -6,7 +6,7 @@ We've reached the **ideal architecture** where:
 
 1. **Single Source of Truth**: All types, schemas, and validation live in `@stay-with-friends/shared-types`
 2. **No Duplication**: Zero redundant type generation
-3. **Minimal Generation**: Only generate what absolutely cannot be imported (GraphQL strings)
+3. **Minimal Generation**: Only generate what absolutely cannot be imported
 4. **Direct Imports**: Apps import types directly from the shared package
 
 ## 📁 Final File Structure
@@ -67,7 +67,14 @@ const handleApiResponse = (data: unknown) => {
 };
 ```
 
-## 📊 Benefits Summary
+## �️ Runtime Helpers You Can Lean On
+
+- `toDbRow` and `fromDbRow` orchestrate JSON/text conversions for SQLite. Arrays such as `amenities` or `photos` are automatically serialised/deserialised through the `StringArrayField` helper.
+- `toDbValues` returns column-aligned value arrays that match the prepared statements in `apps/backend/src/db.ts`.
+- `StringArrayField`, `IntegerField`, `RealField`, etc., standardise schema metadata so both runtime validation and transformations stay in sync.
+- `safeParse` exposes strongly typed guards (`safeParse.user`, `safeParse.host`, …) for defensive handling of API responses.
+
+## �📊 Benefits Summary
 
 | Aspect | Before | After |
 |--------|--------|-------|

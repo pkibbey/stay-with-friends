@@ -8,19 +8,19 @@ import { Badge } from '@/components/ui/badge'
 import { MapPin, Users, Home, Eye, Bed, Bath, User, ArrowRight } from 'lucide-react'
 import { parseLocalDate } from '@/lib/date-utils'
 import Image from 'next/image'
-import { HostProfileData } from '@/types'
+import { HostWithAvailabilities } from '@/types'
 import { apiGet } from '@/lib/api'
 
 interface FeaturedHostsSectionProps {
   limit?: number
 }
 
-function FeaturedHostCard({ host }: { host: HostProfileData }) {
+function FeaturedHostCard({ host }: { host: HostWithAvailabilities }) {
   const availableNow = host.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
     const today = new Date()
-    const start = parseLocalDate(availability.startDate)
-    const end = parseLocalDate(availability.endDate)
+    const start = parseLocalDate(availability.start_date || '')
+    const end = parseLocalDate(availability.end_date || '')
     return today >= start && today <= end
   }) || false
 
@@ -137,7 +137,7 @@ function FeaturedHostCard({ host }: { host: HostProfileData }) {
 }
 
 export function FeaturedHostsSection({ limit = 6 }: FeaturedHostsSectionProps) {
-  const [hosts, setHosts] = useState<HostProfileData[]>([])
+  const [hosts, setHosts] = useState<HostWithAvailabilities[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -146,7 +146,7 @@ export function FeaturedHostsSection({ limit = 6 }: FeaturedHostsSectionProps) {
       try {
         setLoading(true)
         // REST: /api/hosts returns all hosts
-        const hosts: HostProfileData[] = await apiGet('/hosts')
+        const hosts: HostWithAvailabilities[] = await apiGet('/hosts')
         setHosts(hosts.slice(0, limit))
       } catch (err) {
         console.error('Error fetching featured hosts:', err)

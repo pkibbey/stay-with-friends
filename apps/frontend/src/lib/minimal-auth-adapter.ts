@@ -7,11 +7,11 @@ import Database from "better-sqlite3"
  * IMPORTANT: This adapter provides the required methods for EmailProvider
  * but doesn't actually persist users or sessions. All user methods return
  * temporary data - real user management happens in the JWT callback via
- * the backend GraphQL API.
+ * the backend API.
  * 
  * This allows magic link authentication to work while keeping:
  * - JWT-only sessions (no session persistence)
- * - User management in backend GraphQL API  
+ * - User management in backend API  
  * - Minimal database footprint (only verification tokens)
  */
 export function createMinimalAuthAdapter(dbPath: string = './verification-tokens.db'): Adapter {

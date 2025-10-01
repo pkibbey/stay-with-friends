@@ -6,11 +6,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapComponent } from './MapComponent'
 import { MapPin, ArrowRight } from 'lucide-react'
-import { HostProfileData } from '@/types'
+import { HostWithAvailabilities } from '@/types'
 import { apiGet } from '@/lib/api'
 
 export function MapPreviewSection() {
-  const [hosts, setHosts] = useState<HostProfileData[]>([])
+  const [hosts, setHosts] = useState<HostWithAvailabilities[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -18,7 +18,7 @@ export function MapPreviewSection() {
     const fetchHostsForMap = async () => {
       try {
         setLoading(true)
-        const hosts: HostProfileData[] = await apiGet('/hosts')
+        const hosts: HostWithAvailabilities[] = await apiGet('/hosts')
         setHosts(hosts)
       } catch (err) {
         console.error('Error fetching hosts for map:', err)

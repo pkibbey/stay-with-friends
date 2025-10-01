@@ -5,9 +5,9 @@ This project has an **enhanced automated type generation system** that creates c
 ## How it works
 
 1. **Schema Definition**: All entity schemas are defined in `packages/shared-types/src/entities.ts` using Zod
-2. **Enhanced Generation**: Types and validation are imported directly from the shared package—no GraphQL or Apollo code is generated or required.
+2. **Enhanced Generation**: Types and validation are imported directly from the shared package.
 3. **Generated Files**:
-  - No generated GraphQL or Apollo files. All types and validation are shared via the package.
+  - All types and validation are shared via the package.
 
 
 ## Key Enhancements
