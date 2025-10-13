@@ -352,7 +352,7 @@ export const updateInvitationStatus = db.prepare(`
 `);
 
 export const getInvitationByEmail = db.prepare(`
-  SELECT * FROM invitations WHERE invitee_email = ? AND status = 'pending'
+  SELECT * FROM invitations WHERE invitee_email = ? AND inviter_id = ? AND status = 'pending'
 `);
 
 // Get all invitations

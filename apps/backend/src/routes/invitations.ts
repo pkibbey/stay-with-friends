@@ -1,6 +1,6 @@
 import express from 'express';
-import { getInvitationByToken, getAllInvitations, insertInvitation, updateInvitationStatus, deleteInvitation } from '../db';
-import { toDbRow, fromDbRow } from '@stay-with-friends/shared-types';
+import { getInvitationByToken, getAllInvitations, insertInvitation, updateInvitationStatus, deleteInvitation, getInvitationByEmail } from '../db';
+import { toDbRow, fromDbRow, CreateInvitationSchema } from '@stay-with-friends/shared-types';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -23,8 +23,30 @@ router.get('/invitations', (req, res) => {
 
 router.post('/invitations', (req, res) => {
   try {
+  // Validate input
+  const validation = CreateInvitationSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.message });
+  }
+  
   const row = toDbRow('Invitation', req.body as Record<string, unknown>);
   if (!row.id) row.id = crypto.randomUUID();
+  
+  // Check for existing pending invitation with same inviter and email
+  const existingInvitation = getInvitationByEmail.get(row.invitee_email, row.inviter_id) as Record<string, unknown>;
+  if (existingInvitation) {
+    // Check if the existing invitation has expired
+    const expiresAt = new Date(existingInvitation.expires_at as string);
+    const now = new Date();
+    if (expiresAt > now) {
+      // Existing invitation is still valid, reject duplicate
+      throw new Error('A pending invitation already exists for this email');
+    } else {
+      // Existing invitation has expired, update its status to expired
+      updateInvitationStatus.run('expired', null, existingInvitation.id as string);
+    }
+  }
+  
   const values = ['id','inviter_id','invitee_email','message','token','expires_at'].map((k) => (k in row ? row[k] : null));
   insertInvitation.run(...values);
   res.status(201).json({ id: row.id });

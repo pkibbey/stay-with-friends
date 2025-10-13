@@ -96,6 +96,11 @@ export const setupTestDatabase = (): Database.Database => {
       );
     `);
 
+  // Create indexes to match production database
+  testDb.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_pending_unique ON invitations(inviter_id, invitee_email) WHERE status = 'pending';
+  `);
+
   return testDb;
 };
 

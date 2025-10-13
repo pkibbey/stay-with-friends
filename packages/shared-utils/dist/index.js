@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debounce = exports.retry = exports.deepClone = exports.omit = exports.pick = exports.chunk = exports.groupBy = exports.unique = exports.safeParseJSON = exports.parseJSON = exports.slugify = exports.capitalizeWords = exports.capitalizeFirst = exports.truncateString = exports.sanitizeString = exports.isInRange = exports.isPositiveInteger = exports.isValidUUID = exports.isValidURL = exports.isValidEmail = exports.isNotEmpty = exports.isEmpty = exports.isDateInFuture = exports.isDateToday = exports.isDateInPast = exports.getTomorrowString = exports.getTodayString = exports.isDateInRange = exports.getDaysBetween = exports.getDaysInRange = exports.addDaysToDate = exports.isValidDateString = exports.parseDate = exports.formatDisplayDate = exports.formatDateTime = exports.formatDate = void 0;
+exports.validateDateRange = exports.debounce = exports.retry = exports.deepClone = exports.omit = exports.pick = exports.chunk = exports.groupBy = exports.unique = exports.safeParseJSON = exports.parseJSON = exports.slugify = exports.capitalizeWords = exports.capitalizeFirst = exports.truncateString = exports.sanitizeString = exports.isInRange = exports.isPositiveInteger = exports.isValidUUID = exports.isValidURL = exports.isValidEmail = exports.isNotEmpty = exports.isEmpty = exports.isDateInFuture = exports.isDateToday = exports.isDateInPast = exports.getTomorrowString = exports.getTodayString = exports.isDateInRange = exports.getDaysBetween = exports.getDaysInRange = exports.addDaysToDate = exports.isValidDateString = exports.parseDate = exports.formatDisplayDate = exports.formatDateTime = exports.formatDate = void 0;
 // Re-export all utilities
 __exportStar(require("./date"), exports);
 __exportStar(require("./validation"), exports);
@@ -57,3 +57,4 @@ Object.defineProperty(exports, "omit", { enumerable: true, get: function () { re
 Object.defineProperty(exports, "deepClone", { enumerable: true, get: function () { return validation_1.deepClone; } });
 Object.defineProperty(exports, "retry", { enumerable: true, get: function () { return validation_1.retry; } });
 Object.defineProperty(exports, "debounce", { enumerable: true, get: function () { return validation_1.debounce; } });
+Object.defineProperty(exports, "validateDateRange", { enumerable: true, get: function () { return validation_1.validateDateRange; } });

@@ -1,13 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SCHEMAS = exports.InvitationSchema = exports.ConnectionSchema = exports.BookingRequestSchema = exports.AvailabilitySchema = exports.HostSchema = exports.UserSchema = exports.ENTITIES = exports.InvitationEntity = exports.ConnectionEntity = exports.BookingRequestEntity = exports.AvailabilityEntity = exports.HostEntity = exports.UserEntity = void 0;
+exports.SCHEMAS = exports.CreateInvitationSchema = exports.InvitationSchema = exports.ConnectionSchema = exports.BookingRequestSchema = exports.AvailabilitySchema = exports.HostSchema = exports.UserSchema = exports.ENTITIES = exports.InvitationEntity = exports.ConnectionEntity = exports.BookingRequestEntity = exports.AvailabilityEntity = exports.HostEntity = exports.UserEntity = void 0;
 exports.toDbRow = toDbRow;
 exports.toDbValues = toDbValues;
 exports.fromDbRow = fromDbRow;
 const zod_1 = require("zod");
 // Base field types with database metadata
 const StringField = (opts = {}) => ({
-    schema: opts.nullable ? zod_1.z.string().optional() : zod_1.z.string(),
+    schema: opts.nullable
+        ? (opts.email ? zod_1.z.string().email().optional() : zod_1.z.string().optional())
+        : (opts.email ? zod_1.z.string().email() : zod_1.z.string()),
     meta: { type: 'string', ...opts }
 });
 const IntegerField = (opts = {}) => ({
@@ -138,7 +140,7 @@ exports.InvitationEntity = {
     fields: {
         id: StringField({ primary: true }),
         inviter_id: StringField(),
-        invitee_email: StringField(),
+        invitee_email: StringField({ email: true }),
         message: StringField({ nullable: true }),
         token: StringField({ unique: true }),
         status: StringField({ default: 'pending' }),
@@ -163,6 +165,14 @@ exports.AvailabilitySchema = zod_1.z.object(Object.fromEntries(Object.entries(ex
 exports.BookingRequestSchema = zod_1.z.object(Object.fromEntries(Object.entries(exports.BookingRequestEntity.fields).map(([key, field]) => [key, field.schema])));
 exports.ConnectionSchema = zod_1.z.object(Object.fromEntries(Object.entries(exports.ConnectionEntity.fields).map(([key, field]) => [key, field.schema])));
 exports.InvitationSchema = zod_1.z.object(Object.fromEntries(Object.entries(exports.InvitationEntity.fields).map(([key, field]) => [key, field.schema])));
+// Input schemas for API endpoints (only required/provided fields)
+exports.CreateInvitationSchema = zod_1.z.object({
+    inviter_id: zod_1.z.string(),
+    invitee_email: zod_1.z.string().email(),
+    token: zod_1.z.string(),
+    expires_at: zod_1.z.string(),
+    message: zod_1.z.string().optional(),
+});
 // Export schema collection
 exports.SCHEMAS = {
     User: exports.UserSchema,

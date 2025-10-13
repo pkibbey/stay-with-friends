@@ -1,4 +1,7 @@
-# Test Coverage TODOs
+# Test Covera- [x] Create `db-derived-data.test.ts` exercising read-only statements such as `getAvailabilityDates`, `searchHostsAvailableOnDate`, and `getPendingBookingRequestsCountByHostUser` (cover empty ranges, overlapping availability windows, and hosts with mixed booking statuses).
+- [x] Add focused tests for connection helpers (`getConnectionBetweenUsers`, `deleteConnectionsBetweenUsers`) to ensure bi-directional lookups and cleanup are correct.
+- [x] Cover statistics statements (`getTotalHostsCount`, `getTotalConnectionsCount`, `getTotalBookingsCount`) for zero, single, and multiple record scenarios to prevent regressions in dashboard metrics.
+- [x] Extract the duplicated `validateDateRange` helper from `routes/availabilities.ts` and `routes/booking-requests.ts` into a shared module and add unit tests for invalid formats, reversed ranges, and missing values.ODOs
 
 ## Scope & approach
 
@@ -19,13 +22,13 @@
 
 ### Integration-level gaps (\`apps/backend/tests/integration\`)
 
-- [ ] Build a `hosts.routes.test.ts` suite covering `GET /hosts`, `GET /hosts/:id`, `GET /hosts/:id/availabilities`, `GET /hosts/search/:query`, and `POST /hosts` (success + validation failures + query paging). Include a TODO that highlights the missing `DELETE /hosts/:id` route currently assumed by the frontend.
-- [ ] Expand availability coverage with tests for `GET /availabilities/by-date`, `GET /availabilities/by-date-range`, and `POST /availabilities`, asserting that non-`available` statuses are filtered out and invalid date inputs yield `400`.
-- [ ] Add booking request route tests (`POST /booking-requests`, `GET /booking-requests/host/:hostId`, `GET /booking-requests/requester/:requesterId`, `GET /booking-requests/:id`, `PUT /booking-requests/:id/status`) ensuring `responded_at` is set and invalid statuses or IDs return the correct error.
-- [ ] Cover connection lifecycle endpoints (`GET /connections/:userId`, `GET /connection-requests/:userId`, `POST /connections`, `PUT /connections/:id/status`) including duplicate prevention (unique index violation) and invalid status payload handling.
-- [ ] Add user route tests verifying `POST /users` enforces email/name validation, `GET /users/email/:email` returns `404` for unknown emails, and `PATCH /users/:id` correctly performs partial updates.
-- [ ] Extend invitation route tests to assert token lookups (`GET /invitations/token/:token`), collection listing, `POST /invitations` payload validation, status updates requiring `status`, and `DELETE /invitations/:id` behaviour when the row is missing.
-- [ ] Add statistics route coverage for `/stats/hosts`, `/stats/connections`, `/stats/bookings` using seeded data to guarantee consistent counts.
+- [x] Build a `hosts.routes.test.ts` suite covering `GET /hosts`, `GET /hosts/:id`, `GET /hosts/:id/availabilities`, `GET /hosts/search/:query`, and `POST /hosts` (success + validation failures + query paging). Include a TODO that highlights the missing `DELETE /hosts/:id` route currently assumed by the frontend.
+- [x] Expand availability coverage with tests for `GET /availabilities/by-date`, `GET /availabilities/by-date-range`, and `POST /availabilities`, asserting that non-`available` statuses are filtered out and invalid date inputs yield `400`.
+- [x] Add booking request route tests (`POST /booking-requests`, `GET /booking-requests/host/:hostId`, `GET /booking-requests/requester/:requesterId`, `GET /booking-requests/:id`, `PUT /booking-requests/:id/status`) ensuring `responded_at` is set and invalid statuses or IDs return the correct error.
+- [x] Cover connection lifecycle endpoints (`GET /connections/:userId`, `GET /connection-requests/:userId`, `POST /connections`, `PUT /connections/:id/status`) including duplicate prevention (unique index violation) and invalid status payload handling.
+- [x] Add user route tests verifying `POST /users` enforces email/name validation, `GET /users/email/:email` returns `404` for unknown emails, and `PATCH /users/:id` correctly performs partial updates.
+- [x] Extend invitation route tests to assert token lookups (`GET /invitations/token/:token`), collection listing, `POST /invitations` payload validation, status updates requiring `status`, and `DELETE /invitations/:id` behaviour when the row is missing.
+- [x] Add statistics route coverage for `/stats/hosts`, `/stats/connections`, `/stats/bookings` using seeded data to guarantee consistent counts.
 - [ ] Broaden the existing `upload.test.ts` to assert failures for unsupported MIME types, over-limit file sizes, and cleanup of temporary files, alongside the happy-path upload.
 
 ### End-to-end API scenarios

@@ -630,6 +630,13 @@ export declare const InvitationSchema: z.ZodObject<{
     accepted_at: z.ZodString | z.ZodOptional<z.ZodString>;
     created_at: z.ZodString | z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
+export declare const CreateInvitationSchema: z.ZodObject<{
+    inviter_id: z.ZodString;
+    invitee_email: z.ZodString;
+    token: z.ZodString;
+    expires_at: z.ZodString;
+    message: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
 export declare const SCHEMAS: {
     readonly User: z.ZodObject<{
         id: z.ZodString | z.ZodOptional<z.ZodString>;

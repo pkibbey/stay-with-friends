@@ -154,3 +154,17 @@ export const debounce = <T extends (...args: any[]) => any>(
     timeout = setTimeout(() => func(...args), wait);
   };
 };
+
+export const validateDateRange = (startDate: string, endDate: string): void => {
+  if (!startDate || !endDate) {
+    throw new Error('Start date and end date are required');
+  }
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('Invalid date format');
+  }
+  if (start > end) {
+    throw new Error('Start date must be before or equal to end date');
+  }
+};

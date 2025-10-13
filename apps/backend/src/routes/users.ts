@@ -28,7 +28,7 @@ router.post('/users', (req, res) => {
 // PATCH /users/:id - update user name and/or image
 router.patch('/users/:id', (req, res) => {
   const { name, image } = req.body;
-  if (!name && !image) {
+  if (name === undefined && image === undefined) {
     return res.status(400).json({ error: 'At least one of name or image must be provided' });
   }
   try {

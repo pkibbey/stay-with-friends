@@ -1,22 +1,8 @@
 import express from 'express';
 import { insertBookingRequest, getBookingRequestsByHost, getBookingRequestsByRequester, updateBookingRequestStatus, getBookingRequestById } from '../db';
 import { toDbRow, fromDbRow } from '@stay-with-friends/shared-types';
+import { validateDateRange } from '@stay-with-friends/shared-utils';
 import crypto from 'crypto';
-
-// local validateDateRange
-const validateDateRange = (startDate: string, endDate: string): void => {
-  if (!startDate || !endDate) {
-    throw new Error('Start date and end date are required');
-  }
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new Error('Invalid date format');
-  }
-  if (start > end) {
-    throw new Error('Start date must be before or equal to end date');
-  }
-};
 
 const router = express.Router();
 

@@ -3,7 +3,7 @@
  * Common validation utilities that can be used across frontend and backend
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debounce = exports.retry = exports.deepClone = exports.omit = exports.pick = exports.chunk = exports.groupBy = exports.unique = exports.safeParseJSON = exports.parseJSON = exports.slugify = exports.capitalizeWords = exports.capitalizeFirst = exports.truncateString = exports.sanitizeString = exports.isInRange = exports.isPositiveInteger = exports.isValidUUID = exports.isValidURL = exports.isValidEmail = exports.isNotEmpty = exports.isEmpty = void 0;
+exports.validateDateRange = exports.debounce = exports.retry = exports.deepClone = exports.omit = exports.pick = exports.chunk = exports.groupBy = exports.unique = exports.safeParseJSON = exports.parseJSON = exports.slugify = exports.capitalizeWords = exports.capitalizeFirst = exports.truncateString = exports.sanitizeString = exports.isInRange = exports.isPositiveInteger = exports.isValidUUID = exports.isValidURL = exports.isValidEmail = exports.isNotEmpty = exports.isEmpty = void 0;
 const isEmpty = (value) => {
     if (value === null || value === undefined)
         return true;
@@ -161,3 +161,17 @@ const debounce = (func, wait) => {
     };
 };
 exports.debounce = debounce;
+const validateDateRange = (startDate, endDate) => {
+    if (!startDate || !endDate) {
+        throw new Error('Start date and end date are required');
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new Error('Invalid date format');
+    }
+    if (start > end) {
+        throw new Error('Start date must be before or equal to end date');
+    }
+};
+exports.validateDateRange = validateDateRange;

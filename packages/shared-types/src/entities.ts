@@ -27,8 +27,11 @@ const StringField = (opts: {
   nullable?: boolean; 
   default?: string;
   table?: string;
+  email?: boolean;
 } = {}) => ({
-  schema: opts.nullable ? z.string().optional() : z.string(),
+  schema: opts.nullable 
+    ? (opts.email ? z.string().email().optional() : z.string().optional())
+    : (opts.email ? z.string().email() : z.string()),
   meta: { type: 'string' as const, ...opts } as BaseFieldMeta
 });
 
@@ -176,7 +179,7 @@ export const InvitationEntity = {
   fields: {
     id: StringField({ primary: true }),
     inviter_id: StringField(),
-    invitee_email: StringField(),
+    invitee_email: StringField({ email: true }),
     message: StringField({ nullable: true }),
     token: StringField({ unique: true }),
     status: StringField({ default: 'pending' }),
@@ -244,6 +247,15 @@ export const InvitationSchema = z.object(
     [K in keyof typeof InvitationEntity.fields]: (typeof InvitationEntity.fields)[K]['schema'];
   }
 );
+
+// Input schemas for API endpoints (only required/provided fields)
+export const CreateInvitationSchema = z.object({
+  inviter_id: z.string(),
+  invitee_email: z.string().email(),
+  token: z.string(),
+  expires_at: z.string(),
+  message: z.string().optional(),
+});
 
 // Export schema collection
 export const SCHEMAS = {

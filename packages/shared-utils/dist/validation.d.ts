@@ -23,3 +23,4 @@ export declare const omit: <T, K extends keyof T>(obj: T, keys: K[]) => Omit<T, 
 export declare const deepClone: <T>(obj: T) => T;
 export declare const retry: <T>(fn: () => Promise<T>, retries?: number, delay?: number) => Promise<T>;
 export declare const debounce: <T extends (...args: any[]) => any>(func: T, wait: number) => (...args: Parameters<T>) => void;
+export declare const validateDateRange: (startDate: string, endDate: string) => void;
