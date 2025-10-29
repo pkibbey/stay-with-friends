@@ -1,46 +1,79 @@
 # Stay With Friends
 
-A monorepo web app built with Turborepo, featuring a NextJS frontend and a TypeScript backend.
+Friends BNB
 
-## Apps
 
-- `apps/frontend`: NextJS app with TypeScript, Tailwind 4, and Shadcn UI components
-- `apps/backend`: TypeScript backend with REST API
 
-## Getting Started
+## About
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Run development servers:
-   ```bash
-   npm run dev
-   ```
-
-3. Open [http://localhost:3000](http://localhost:3000) for the frontend
-4. Backend REST at [http://localhost:4000](http://localhost:4000/api/hello)
+Friends BNB Whether you're looking to track your repositories, analyze their performance, or generate documentation, this tool is designed to help.
 
 ## Features
 
-### Calendar Behavior
-- **Date Selection**: Calendar dates can only be selected, not deselected. Once a date is chosen, users must select a different date to change their selection.
-- **Availability Highlighting**: Available dates are highlighted in blue on the calendar for easy identification.
-- **URL Persistence**: Selected dates are reflected in the URL query parameters for shareable links.
+- ✨ Repository management
+- 🚀 Automated workflows
+- 📊 Data analysis
+- 🔧 Easy configuration
+- 📝 Comprehensive documentation
+- 🧠 Built with TypeScript
 
-## Package Management
+## Getting Started
 
-### Updating Dependencies
+### Prerequisites
 
-To check for and update packages to their latest versions:
+- Git
+- Node.js (v14 or higher) or your project's required runtime
+- Your system's package manager (npm, yarn, pnpm, or bun)
 
-```bash
-# Check for outdated packages (safe)
-npm run update-packages
+### Installation
 
-# Update all packages to latest versions
-npm run update-packages -- --update
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/pkibbey/stay-with-friends.git
+   cd stay-with-friends
+   ```
 
-This script uses `npm-check-updates` to check and update packages in both the frontend and backend apps.
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. Configure your environment:
+   Create a `.env.local` file with any required environment variables.
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+## Usage
+
+[Add usage examples and instructions here]
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For questions or issues, please open an issue on [GitHub Issues](https://github.com/pkibbey/stay-with-friends/issues).
+
+---
+
+**Repository:** [pkibbey/stay-with-friends](https://github.com/pkibbey/stay-with-friends)
+
+Generated with ❤️
