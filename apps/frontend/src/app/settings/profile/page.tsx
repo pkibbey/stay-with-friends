@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 import { apiGet } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageLayout } from '@/components/PageLayout'
@@ -8,7 +8,9 @@ import { ProfileClient } from '@/components/ProfileClient'
 import { SignInButton } from '@/components/SignInButton'
 
 export default async function Profile() {
-  const session = await getServerSession(authOptions)
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
 
   if (!session || !session.user?.email) {
     return (
@@ -40,14 +42,14 @@ export default async function Profile() {
     id: userData.id,
     email: userData.email || session.user.email || '',
     name: userData.name || session.user.name || '',
-    image: userData.image || session.user.image || null,
+    image: userData.image || session.user.image || undefined,
     created_at: userData.created_at || new Date().toISOString(),
     email_verified: userData.email_verified || undefined,
   } : {
     id: session.user.id || '',
     email: session.user.email || '',
     name: session.user.name || '',
-    image: session.user.image || null,
+    image: session.user.image || undefined,
     created_at: new Date().toISOString(),
     email_verified: undefined,
   }
@@ -57,8 +59,8 @@ export default async function Profile() {
       <div>
         <Card>
           <CardContent>
-            <ProfileClient 
-              initialUser={user} 
+            <ProfileClient
+              initialUser={user}
               userEmail={session.user.email}
               sessionData={{
                 user: session.user,

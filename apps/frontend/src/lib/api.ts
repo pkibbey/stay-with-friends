@@ -1,15 +1,5 @@
-export async function apiPatch(path: string, body: unknown): Promise<Response> {
-  const headers = await getAuthHeaders()
-  return fetch(joinPath(path), {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify(body),
-  })
-}
 // REST API utility for Stay With Friends
 // Usage: import { apiGet, apiPost, apiPut, apiDelete } from './api'
-
-import { getSession } from 'next-auth/react'
 
 interface ExtendedSession {
   user?: {
@@ -18,7 +8,7 @@ interface ExtendedSession {
     email?: string | null
     image?: string | null
   }
-  apiToken?: string
+  token?: string
 }
 
 // Allow overriding the API base via NEXT_PUBLIC_API_BASE (useful in dev and prod)
@@ -31,9 +21,12 @@ function joinPath(path: string) {
 }
 
 async function getAuthHeaders() {
-  const session = await getSession() as ExtendedSession
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (session?.apiToken) headers['Authorization'] = `Bearer ${session.apiToken}`
+
+  // For client-side requests, the session is managed by better-auth automatically
+  // The cookies are sent with the request automatically
+  // If you need custom authorization headers, add them here
+
   return headers
 }
 
@@ -64,6 +57,15 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
+}
+
+export async function apiPatch(path: string, body: unknown): Promise<Response> {
+  const headers = await getAuthHeaders()
+  return fetch(joinPath(path), {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(body),
+  })
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {

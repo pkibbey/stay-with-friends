@@ -8,8 +8,8 @@ import { HostLocation } from "@/components/HostLocation"
 import { HostDetailClient } from "@/components/HostDetailClient"
 import { parseDateFromUrl } from '@/lib/date-utils'
 import { apiGet } from '@/lib/api'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 import type { HostWithAvailabilities } from '@/types'
 import { BookingRequest } from '@stay-with-friends/shared-types'
 
@@ -22,8 +22,10 @@ export default async function HostDetailPage(props: HostDetailPageProps) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const hostId = params.id
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string })?.id
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+  const userId = session?.user?.id
 
   // Parse selected date from URL params
   const selectedDate = searchParams.date ? parseDateFromUrl(searchParams.date) : undefined
@@ -36,7 +38,7 @@ export default async function HostDetailPage(props: HostDetailPageProps) {
 
   // Fetch booking requests if user is logged in
   let bookingRequests: BookingRequest[] = []
-  if (userId && session?.apiToken) {
+  if (userId) {
     try {
       // REST: /api/booking-requests/requester/:requesterId
       const allBookingRequests = await apiGet<BookingRequest[]>(`/booking-requests/requester/${userId}`)
@@ -61,7 +63,7 @@ export default async function HostDetailPage(props: HostDetailPageProps) {
             />
             <HostLocation host={host} />
           </div>
-          
+
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <HostAbout host={host} />

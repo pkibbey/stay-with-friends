@@ -1,6 +1,6 @@
 import * as React from "react"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
 import { HeroSection } from "@/components/HeroSection"
 import { HowItWorksSection } from "@/components/HowItWorksSection"
 import { FeaturedHostsSection } from "@/components/FeaturedHostsSection"
@@ -13,7 +13,9 @@ import { DualPersonaSection } from "@/components/landing/DualPersonaSection"
 import { FinalCTA } from "@/components/landing/FinalCTA"
 
 export default async function Home() {
-  const session = await getServerSession(authOptions)
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
 
   if (!session) {
     // Logged-out marketing landing

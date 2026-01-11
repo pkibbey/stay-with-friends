@@ -1,10 +1,12 @@
 import { ReactNode } from "react"
-import { getServerSession } from "next-auth/next"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 
 export default async function SearchLayout({ children }: { children: ReactNode }) {
-  const session = await getServerSession(authOptions)
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   if (!session) {
     redirect("/auth/signin")
   }

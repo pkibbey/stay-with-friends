@@ -1,24 +1,22 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleGoogleSignIn = async () => {
     setLoading(true)
     try {
-      await signIn('email', { email })
+      await signIn.social({
+        provider: 'google',
+        callbackURL: '/',
+      })
     } catch (error) {
       console.error('Sign in error:', error)
-    } finally {
       setLoading(false)
     }
   }
@@ -29,31 +27,17 @@ export default function SignIn() {
         <CardHeader>
           <CardTitle>Sign in to Stay With Friends</CardTitle>
           <CardDescription>
-            Enter your email to receive a magic link
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-2 text-sm text-blue-600">
-                🔧 Development mode: Check console for magic link
-              </div>
-            )}
+            Sign in with your Google account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="your@email.com"
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Sending...' : 'Send Magic Link'}
-            </Button>
-          </form>
+          <Button
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? 'Signing in...' : 'Sign in with Google'}
+          </Button>
         </CardContent>
       </Card>
     </div>

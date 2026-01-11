@@ -15,13 +15,48 @@ interface SearchResultsProps {
   filters: SearchFiltersState
 }
 
+// Helper to ensure amenities is always an array
+function parseAmenities(amenities: unknown): string[] {
+  if (Array.isArray(amenities)) return amenities
+  if (typeof amenities === 'string') {
+    try {
+      const parsed = JSON.parse(amenities)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+// Helper to ensure photos is always an array
+function parsePhotos(photos: unknown): string[] {
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    // Handle case where photos might be double-stringified
+    let parsed = photos
+    try {
+      // First parse attempt
+      parsed = JSON.parse(photos)
+      // If the result is a string, parse again (handles double-stringification)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 function ResultCard({ result, filters }: { result: HostWithAvailabilities; filters: SearchFiltersState }) {
   // Check if result is available for selected dates
   const isAvailableForDates = React.useMemo(() => {
     if (!filters.startDate) return true
 
     const startDate = parseLocalDate(filters.startDate)
-    
+
     if (!result.availabilities || result.availabilities.length === 0) {
       return false
     }
@@ -47,21 +82,24 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video bg-gray-200 relative">
-        {result.photos &&result.photos.length > 0 ? (
-          <Image
-            unoptimized
-            width={400}
-            height={300}
-            src={result.photos[0]}
-            alt={result.name || 'Host photo'}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <Home className="w-16 h-16 text-gray-400" />
-          </div>
-        )}
-        
+        {(() => {
+          const photos = parsePhotos(result.photos)
+          return photos && photos.length > 0 ? (
+            <Image
+              unoptimized
+              width={400}
+              height={300}
+              src={photos[0]}
+              alt={result.name || 'Host photo'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Home className="w-16 h-16 text-gray-400" />
+            </div>
+          )
+        })()}
+
         {/* Availability badge */}
         <div className="absolute top-3 left-3">
           {filters.startDate ? (
@@ -76,13 +114,16 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
         </div>
 
         {/* Photo count */}
-        {result.photos && result.photos.length > 1 && (
-          <div className="absolute top-3 right-3">
-            <Badge variant="outline" className="bg-white/90 text-gray-700">
-              +{result.photos.length - 1} photos
-            </Badge>
-          </div>
-        )}
+        {(() => {
+          const photos = parsePhotos(result.photos)
+          return photos && photos.length > 1 && (
+            <div className="absolute top-3 right-3">
+              <Badge variant="outline" className="bg-white/90 text-gray-700">
+                +{photos.length - 1} photos
+              </Badge>
+            </div>
+          )
+        })()}
       </div>
 
       <CardHeader>
@@ -109,8 +150,8 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
             <div className="flex items-center">
               <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
               <span className="truncate">
-                {result.address ? 
-                  `${result.address}, ${result.city}, ${result.state}` : 
+                {result.address ?
+                  `${result.address}, ${result.city}, ${result.state}` :
                   `${result.city}, ${result.state}`
                 }
               </span>
@@ -132,7 +173,7 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
               </div>
             )}
           </div>
-          
+
           {/* Check-in/out times if available */}
           {(result.check_in_time || result.check_out_time) && (
             <div className="text-xs text-gray-500">
@@ -144,20 +185,25 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
         </div>
 
         {/* Amenities */}
-        {result.amenities && result.amenities.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {result.amenities?.slice(0, 4).length > 0 && result.amenities?.slice(0, 4).map((amenity) => (
-              <Badge key={String(amenity)} variant="outline" className="text-xs">
-                {amenity}
-              </Badge>
-            ))}
-            {result.amenities.length > 4 && (
-              <Badge variant="outline" className="text-xs">
-                +{result.amenities.length - 4} more
-              </Badge>
-            )}
-          </div>
-        )}
+        {(() => {
+          const amenitiesArray = parseAmenities(result.amenities)
+          if (amenitiesArray.length === 0) return null
+
+          return (
+            <div className="flex flex-wrap gap-1">
+              {amenitiesArray.slice(0, 4).map((amenity) => (
+                <Badge key={String(amenity)} variant="outline" className="text-xs">
+                  {amenity}
+                </Badge>
+              ))}
+              {amenitiesArray.length > 4 && (
+                <Badge variant="outline" className="text-xs">
+                  +{amenitiesArray.length - 4} more
+                </Badge>
+              )}
+            </div>
+          )
+        })()}
 
         {/* View Details */}
         <Link href={`/host/${result.id}`} className="flex-1">
@@ -174,7 +220,7 @@ function ResultCard({ result, filters }: { result: HostWithAvailabilities; filte
 export function SearchResults({ hosts, filters }: SearchResultsProps) {
   if (hosts.length === 0) {
     const hasFilters = filters.query || filters.startDate
-    
+
     return (
       <Card className="text-center py-12">
         <CardContent>
@@ -225,17 +271,17 @@ export function SearchResults({ hosts, filters }: SearchResultsProps) {
   // Build filter summary message
   const getFilterSummary = () => {
     const appliedFilters = []
-    
+
     if (filters.query) {
       appliedFilters.push(`matching "${filters.query}"`)
     }
-    
+
     if (filters.startDate) {
       appliedFilters.push(`available on ${formatDisplayDate(filters.startDate)}`)
     }
-    
+
     const hostText = hosts.length === 1 ? 'host' : 'hosts'
-    
+
     if (appliedFilters.length === 0) {
       return `Showing all ${hosts.length} ${hostText}`
     } else if (appliedFilters.length === 1) {
@@ -280,9 +326,9 @@ export function SearchResults({ hosts, filters }: SearchResultsProps) {
       {/* Results grid */}
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {hosts.map((host) => (
-          <ResultCard 
-            key={host.id} 
-            result={host} 
+          <ResultCard
+            key={host.id}
+            result={host}
             filters={filters}
           />
         ))}

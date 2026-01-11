@@ -8,7 +8,7 @@ import { Status, StatusIndicator, StatusLabel } from '@/components/ui/status'
 import { apiGet, apiDelete } from '@/lib/api'
 import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 import { Invitation } from '@stay-with-friends/shared-types'
 
 export default function SentInvitations() {

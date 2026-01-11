@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import { apiPatch } from '@/lib/api'
 import { useState } from 'react'
@@ -19,12 +19,12 @@ interface ProfileFormProps {
       email?: string | null
       image?: string | null
     }
-    apiToken?: string
+    token?: string
   }
 }
 
 export function ProfileForm({ user, onUserUpdate, sessionData }: ProfileFormProps) {
-  const { update } = useSession()
+  const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
   const [name, setName] = useState(user.name || '')
 
@@ -38,13 +38,6 @@ export function ProfileForm({ user, onUserUpdate, sessionData }: ProfileFormProp
       const updatedUser = { ...user, name }
       onUserUpdate(updatedUser)
       setName(name || '')
-      // Update the session to reflect the new name
-      await update({
-        user: {
-          ...sessionData.user,
-          name
-        }
-      })
       toast.success('Profile updated')
     } catch (error) {
       console.error('Error updating profile:', error)

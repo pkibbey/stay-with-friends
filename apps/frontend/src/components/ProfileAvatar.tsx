@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import { apiPatch } from '@/lib/api'
 import { useState } from 'react'
@@ -18,12 +18,12 @@ interface ProfileAvatarProps {
       email?: string | null
       image?: string | null
     }
-    apiToken?: string
+    token?: string
   }
 }
 
 export function ProfileAvatar({ user, onUserUpdate, sessionData }: ProfileAvatarProps) {
-  const { update } = useSession()
+  const { data: session } = useSession()
   const [uploadingImage, setUploadingImage] = useState(false)
 
   // Handle avatar upload
@@ -49,8 +49,8 @@ export function ProfileAvatar({ user, onUserUpdate, sessionData }: ProfileAvatar
 
       // Upload avatar to backend (assume /api/upload-avatar returns { url })
       const headers: Record<string, string> = {}
-      if (sessionData?.apiToken) {
-        headers['Authorization'] = `Bearer ${sessionData.apiToken}`
+      if (sessionData?.token) {
+        headers['Authorization'] = `Bearer ${sessionData.token}`
       }
       const response = await fetch('http://localhost:4000/api/upload-avatar', {
         method: 'POST',
@@ -63,13 +63,6 @@ export function ProfileAvatar({ user, onUserUpdate, sessionData }: ProfileAvatar
         await apiPatch(`/users/${user.id}`, { image: data.url })
         const updatedUser = { ...user, image: data.url }
         onUserUpdate(updatedUser)
-        // Update the session to reflect the new image
-        await update({
-          user: {
-            ...sessionData.user,
-            image: data.url
-          }
-        })
         toast.success('Profile picture updated')
       } else {
         console.error('Upload failed', data)

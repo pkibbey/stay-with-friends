@@ -1,3 +1,5 @@
+"use client"
+
 import { HostWithAvailabilities } from "@/types"
 import { Users } from "lucide-react"
 import Image from "next/image"

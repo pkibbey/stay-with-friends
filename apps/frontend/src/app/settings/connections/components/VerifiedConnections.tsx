@@ -9,7 +9,7 @@ import { ConnectionWithUser } from '@/types'
 import { apiGet, apiDelete } from '@/lib/api'
 import { toast } from 'sonner'
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 
 export default function VerifiedConnections() {
   const { data: session } = useSession()

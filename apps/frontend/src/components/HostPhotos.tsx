@@ -7,8 +7,29 @@ interface HostPhotosProps {
   host: HostWithAvailabilities
 }
 
+// Helper to ensure photos is always an array
+function parsePhotos(photos: unknown): string[] {
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    // Handle case where photos might be double-stringified
+    let parsed = photos
+    try {
+      // First parse attempt
+      parsed = JSON.parse(photos)
+      // If the result is a string, parse again (handles double-stringification)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 export function HostPhotos({ host }: HostPhotosProps) {
-  const displayPhotos = host.photos || []
+  const displayPhotos = parsePhotos(host.photos)
 
   // Don't render if no photos
   if (!displayPhotos || displayPhotos.length === 0) {

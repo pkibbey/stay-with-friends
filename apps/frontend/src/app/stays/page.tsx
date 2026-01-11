@@ -1,11 +1,11 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { PageLayout } from '@/components/PageLayout'
 import { BookingRequestWithRelations } from '@/types'
 import { BookingRequestsManager } from '@/components/BookingRequestsManager'
 import { apiGet } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Inbox } from 'lucide-react'
+import { auth } from '@/lib/auth'
 
 
 async function getMyBookingRequests(userId: string): Promise<BookingRequestWithRelations[]> {
@@ -29,7 +29,10 @@ async function getIncomingBookingRequests(userId: string): Promise<BookingReques
 }
 
 export default async function BookingsPage() {
-  const session = await getServerSession(authOptions)
+  // Get session from better-auth on the server
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
 
   if (!session?.user?.id) {
     return (

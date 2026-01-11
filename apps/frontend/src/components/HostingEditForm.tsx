@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 import { apiPost, apiPatch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -63,12 +63,33 @@ interface HostingEditFormProps {
   }
 }
 
+// Helper to ensure photos is always an array
+function parsePhotos(photos: unknown): string[] {
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    // Handle case where photos might be double-stringified
+    let parsed = photos
+    try {
+      // First parse attempt
+      parsed = JSON.parse(photos)
+      // If the result is a string, parse again (handles double-stringification)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEditFormProps) {
   const { data: session } = useSession()
   const [saving, setSaving] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [photos, setPhotos] = useState<string[]>(initialData?.photos || [])
+  const [photos, setPhotos] = useState<string[]>(parsePhotos(initialData?.photos))
 
   const isEditing = !!initialData
 
@@ -185,33 +206,33 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
       const amenities = ((values.amenities as string) || '').split(',').map((a: string) => a.trim()).filter((a: string) => a)
 
       if (isEditing && initialData) {
-          // Update existing host via REST
-          try {
-            await apiPatch(`/hosts/${initialData.id}`, {
-              name: values.name,
-              location: values.location || undefined,
-              description: values.description || undefined,
-              address: values.address || undefined,
-              city: values.city || undefined,
-              state: values.state || undefined,
-              zipCode: values.zipCode || undefined,
-              country: values.country || undefined,
-              latitude,
-              longitude,
-              amenities,
-              houseRules: values.houseRules || undefined,
-              checkInTime: values.checkInTime || undefined,
-              checkOutTime: values.checkOutTime || undefined,
-              maxGuests: values.maxGuests,
-              bedrooms: values.bedrooms,
-              bathrooms: values.bathrooms,
-              photos: photos.length > 0 ? photos : undefined
-            })
-            onSuccess()
-          } catch (err) {
-            console.error('Failed to update host:', err)
-            toast.error('Failed to update hosting. Please check your inputs and try again.')
-          }
+        // Update existing host via REST
+        try {
+          await apiPatch(`/hosts/${initialData.id}`, {
+            name: values.name,
+            location: values.location || undefined,
+            description: values.description || undefined,
+            address: values.address || undefined,
+            city: values.city || undefined,
+            state: values.state || undefined,
+            zipCode: values.zipCode || undefined,
+            country: values.country || undefined,
+            latitude,
+            longitude,
+            amenities,
+            houseRules: values.houseRules || undefined,
+            checkInTime: values.checkInTime || undefined,
+            checkOutTime: values.checkOutTime || undefined,
+            maxGuests: values.maxGuests,
+            bedrooms: values.bedrooms,
+            bathrooms: values.bathrooms,
+            photos: photos.length > 0 ? photos : undefined
+          })
+          onSuccess()
+        } catch (err) {
+          console.error('Failed to update host:', err)
+          toast.error('Failed to update hosting. Please check your inputs and try again.')
+        }
       } else {
         // Create new host via REST
         try {
@@ -417,16 +438,15 @@ export function HostingEditForm({ onSuccess, onCancel, initialData }: HostingEdi
           {/* Photos Section */}
           <div className="space-y-4">
             <h4 className="font-medium text-gray-900">Photos</h4>
-            
+
             {/* Photo Grid */}
             {photos.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative group">
-                    <div 
-                      className={`aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer transition-all ${
-                        index === 0 ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-2'
-                      }`}
+                    <div
+                      className={`aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer transition-all ${index === 0 ? 'ring-2 ring-blue-500 ring-offset-2' : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-2'
+                        }`}
                       onClick={() => makeFeaturedPhoto(index)}
                     >
                       <Image

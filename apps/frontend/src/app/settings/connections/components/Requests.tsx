@@ -9,7 +9,7 @@ import { AlertCircle, CheckCircle, X, Clock } from 'lucide-react'
 import { ConnectionWithUser } from '@/types'
 import { apiGet, apiPatch } from '@/lib/api'
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 
 export default function Requests() {
   const { data: session } = useSession()

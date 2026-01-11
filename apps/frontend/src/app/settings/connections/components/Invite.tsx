@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { UserPlus, Clock, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import { apiPost } from '@/lib/api'
 import { Banner, BannerTitle, BannerClose } from '@/components/ui/banner'
@@ -24,7 +24,7 @@ export default function Invite() {
     if (!userId || !email) return
     try {
       // REST endpoint: POST /invitations
-  const invitation = await apiPost<{ id: string; status?: string; token?: string }>('/invitations', {
+      const invitation = await apiPost<{ id: string; status?: string; token?: string }>('/invitations', {
         inviter_id: userId,
         invitee_email: email,
         message: message || undefined,
@@ -111,8 +111,8 @@ export default function Invite() {
       </Card>
 
       {lastInvitationUrl && (
-        <Banner 
-          className="bg-green-100 border-green-200 text-green-800 dark:bg-green-900/20 dark:text-green-200" 
+        <Banner
+          className="bg-green-100 border-green-200 text-green-800 dark:bg-green-900/20 dark:text-green-200"
           inset
           onClose={() => setLastInvitationUrl(null)}
         >

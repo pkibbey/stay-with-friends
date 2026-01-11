@@ -15,6 +15,20 @@ interface FeaturedHostsSectionProps {
   limit?: number
 }
 
+// Helper to ensure amenities is always an array
+function parseAmenities(amenities: unknown): string[] {
+  if (Array.isArray(amenities)) return amenities
+  if (typeof amenities === 'string') {
+    try {
+      const parsed = JSON.parse(amenities)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 function FeaturedHostCard({ host }: { host: HostWithAvailabilities }) {
   const availableNow = host.availabilities?.some(availability => {
     if (availability.status !== 'available') return false
@@ -109,20 +123,25 @@ function FeaturedHostCard({ host }: { host: HostWithAvailabilities }) {
         </div>
 
         {/* Amenities */}
-        {host.amenities && host.amenities.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {host.amenities.slice(0, 3).map((amenity) => (
-              <Badge key={amenity} variant="outline" className="text-xs">
-                {amenity}
-              </Badge>
-            ))}
-            {host.amenities.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{host.amenities.length - 3} more
-              </Badge>
-            )}
-          </div>
-        )}
+        {(() => {
+          const amenitiesArray = parseAmenities(host.amenities)
+          if (amenitiesArray.length === 0) return null
+
+          return (
+            <div className="flex flex-wrap gap-1">
+              {amenitiesArray.slice(0, 3).map((amenity) => (
+                <Badge key={amenity} variant="outline" className="text-xs">
+                  {amenity}
+                </Badge>
+              ))}
+              {amenitiesArray.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{amenitiesArray.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )
+        })()}
 
         {/* View Details */}
         <Link href={`/host/${host.id}`} className="flex-1">

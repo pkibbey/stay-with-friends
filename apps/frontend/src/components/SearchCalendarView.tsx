@@ -7,10 +7,46 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar as CalendarIcon, Home, MapPin, Users, Bed, Bath } from 'lucide-react'
 import { convertAvailabilityDates } from '@/lib/date-utils'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { HostWithAvailabilities } from '@/types'
 
 interface SearchCalendarViewProps {
   hosts: HostWithAvailabilities[]
+}
+
+// Helper to ensure amenities is always an array
+function parseAmenities(amenities: unknown): string[] {
+  if (Array.isArray(amenities)) return amenities
+  if (typeof amenities === 'string') {
+    try {
+      const parsed = JSON.parse(amenities)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+// Helper to ensure photos is always an array
+function parsePhotos(photos: unknown): string[] {
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    // Handle case where photos might be double-stringified
+    let parsed = photos
+    try {
+      // First parse attempt
+      parsed = JSON.parse(photos)
+      // If the result is a string, parse again (handles double-stringification)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
 }
 
 export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
@@ -20,7 +56,7 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
   // Create a map of date strings to hosts available on those dates
   const hostsByDate = useMemo(() => {
     const dateMap = new Map<string, HostWithAvailabilities[]>()
-    
+
     hosts.forEach(host => {
       if (host.availabilities) {
         host.availabilities.forEach(availability => {
@@ -43,7 +79,7 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
         })
       }
     })
-    
+
     return dateMap
   }, [hosts])
 
@@ -162,15 +198,29 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
                     <Card className="cursor-pointer hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
-                          {/* Host Image Placeholder */}
-                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
-                            <Home className="w-6 h-6 text-gray-400" />
+                          {/* Host Image */}
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                            {(() => {
+                              const photos = parsePhotos(host.photos)
+                              return photos && photos.length > 0 ? (
+                                <Image
+                                  unoptimized
+                                  width={64}
+                                  height={64}
+                                  src={photos[0]}
+                                  alt={host.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Home className="w-6 h-6 text-gray-400" />
+                              )
+                            })()}
                           </div>
-                          
+
                           {/* Host Details */}
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-lg truncate">{host.name}</h3>
-                            
+
                             {/* Location */}
                             {(host.city || host.state) && (
                               <div className="flex items-center gap-1 text-gray-600 mt-1">
@@ -180,7 +230,7 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
                                 </span>
                               </div>
                             )}
-                            
+
                             {/* Property Details */}
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                               {host.max_guests && (
@@ -202,29 +252,34 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* Description */}
                             {host.description && (
                               <p className="text-sm text-gray-600 mt-2 line-clamp-2">
                                 {host.description}
                               </p>
                             )}
-                            
+
                             {/* Amenities */}
-                            {host.amenities && host.amenities.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {host.amenities.slice(0, 3).map((amenity, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {amenity}
-                                  </Badge>
-                                ))}
-                                {host.amenities.length > 3 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{host.amenities.length - 3} more
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
+                            {(() => {
+                              const amenitiesArray = parseAmenities(host.amenities)
+                              if (amenitiesArray.length === 0) return null
+
+                              return (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {amenitiesArray.slice(0, 3).map((amenity, index) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      {amenity}
+                                    </Badge>
+                                  ))}
+                                  {amenitiesArray.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{amenitiesArray.length - 3} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </div>
                         </div>
                       </CardContent>

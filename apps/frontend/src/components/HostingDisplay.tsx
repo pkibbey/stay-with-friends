@@ -17,6 +17,41 @@ interface HostingDisplayProps {
   onAddNew: () => void
 }
 
+// Helper to ensure amenities is always an array
+function parseAmenities(amenities: unknown): string[] {
+  if (Array.isArray(amenities)) return amenities
+  if (typeof amenities === 'string') {
+    try {
+      const parsed = JSON.parse(amenities)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+// Helper to ensure photos is always an array
+function parsePhotos(photos: unknown): string[] {
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    // Handle case where photos might be double-stringified
+    let parsed = photos
+    try {
+      // First parse attempt
+      parsed = JSON.parse(photos)
+      // If the result is a string, parse again (handles double-stringification)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplayProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -146,26 +181,29 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                 </CardHeader>
                 <CardContent>
                   {/* Featured image preview (first photo is treated as featured) */}
-                  {hosting.photos && hosting.photos.length > 0 ? (
-                    <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
-                      <Image
-                        unoptimized
-                        priority
-                        src={hosting.photos[0]}
-                        alt={`${hosting.name} featured`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative flex items-center justify-center">
-                      <div className="text-center text-gray-400">
-                        <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                        <p className="text-sm">No photos uploaded</p>
+                  {(() => {
+                    const photos = parsePhotos(hosting.photos)
+                    return photos && photos.length > 0 ? (
+                      <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
+                        <Image
+                          unoptimized
+                          priority
+                          src={photos[0]}
+                          alt={`${hosting.name} featured`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="w-full h-48 md:h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 relative flex items-center justify-center">
+                        <div className="text-center text-gray-400">
+                          <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                          <p className="text-sm">No photos uploaded</p>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   <p className="text-gray-600 mb-4">{hosting.description}</p>
 
@@ -207,18 +245,23 @@ export function HostingDisplay({ hostings, onRefresh, onAddNew }: HostingDisplay
                     </div>
                   </div>
 
-                  {hosting.amenities && hosting.amenities.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="font-semibold mb-2">Amenities</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {hosting.amenities.map((amenity: string, index: number) => (
-                          <Badge key={index} variant="secondary">
-                            {amenity}
-                          </Badge>
-                        ))}
+                  {(() => {
+                    const amenitiesArray = parseAmenities(hosting.amenities)
+                    if (amenitiesArray.length === 0) return null
+
+                    return (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2">Amenities</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {amenitiesArray.map((amenity: string, index: number) => (
+                            <Badge key={index} variant="secondary">
+                              {amenity}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {hosting.house_rules && (
                     <div className="mb-4">

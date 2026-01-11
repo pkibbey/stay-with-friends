@@ -1,7 +1,6 @@
 'use client'
 
-import { useSession, signIn, signOut } from 'next-auth/react'
-// import { useState, useEffect } from 'react'
+import { useSession, signOut } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu'
 import Link from 'next/link'
@@ -9,7 +8,7 @@ import { usePathname } from 'next/navigation'
 import { TextLogo } from './TextLogo'
 
 export function Header() {
-  const { data: session, status } = useSession()
+  const { data: session, isPending } = useSession()
   const pathname = usePathname()
 
   const isActive = (path: string) => {
@@ -26,7 +25,7 @@ export function Header() {
           <TextLogo className="text-lg md:text-xl" />
         </Link>
         <nav className="flex items-center gap-6">
-          {status === 'loading' ? undefined : session ? (
+          {isPending ? undefined : session?.user ? (
             <>
               <div className="flex items-center gap-4">
                 <NavigationMenu>
@@ -55,10 +54,10 @@ export function Header() {
                         <NavigationMenuLink asChild>
                           <Link className={
                             `px-3 py-2 ${isActive('/settings/connections') && "font-semibold"}`
-                            } href="/settings/connections">Connections</Link>
+                          } href="/settings/connections">Connections</Link>
                         </NavigationMenuLink>
                         <NavigationMenuLink className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-sm transition-colors mb-1" onClick={() => signOut()}>
-                            Sign Out
+                          Sign Out
                         </NavigationMenuLink>
                       </NavigationMenuContent>
                     </NavigationMenuItem>
@@ -69,8 +68,10 @@ export function Header() {
             </>
           ) : (
             <>
-              <Button onClick={() => signIn()}>
-                Sign In
+              <Button asChild>
+                <Link href="/auth/signin">
+                  Sign In
+                </Link>
               </Button>
             </>
           )}
