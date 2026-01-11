@@ -208,7 +208,7 @@ export function SearchCalendarView({ hosts }: SearchCalendarViewProps) {
                                   width={64}
                                   height={64}
                                   src={photos[0]}
-                                  alt={host.name}
+                                  alt={host.name || 'home photo'}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
