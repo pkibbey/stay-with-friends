@@ -1,4 +1,8 @@
-# Stay With Friends
+<p align="center">
+  <img src="./logo.png" alt="Stay With Friends logo" width="220" />
+</p>
+
+<h1 align="center">Stay With Friends</h1>
 
 A trust-based accommodation platform that enables friends to connect, share their homes, and coordinate stays with each other. Stay With Friends simplifies the process of hosting friends and managing property availability through a social network-focused interface.
 
